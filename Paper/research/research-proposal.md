@@ -57,3 +57,26 @@ Implement a CVSS-inspired AI model that evaluates the severity of identified vul
 
 - Reward agents for successfully resolving vulnerabilities without introducing new ones.
 - Continuously update the agent policy using feedback from real-world contract deployments.
+
+## 6. Expected Outcomes
+
+- A fully functional prototype of the AI-based auditing system.
+- Improved detection rates compared to traditional tools.
+- Generation of effective patches for common vulnerabilities.
+- A reinforcement-learning framework that evolves with threat landscapes.
+
+## 7. Implications and Impact
+
+The proposed system would significantly reduce manual auditing effort, prevent exploits, and increase trust in blockchain-based applications. It can serve as a plug-in for CI/CD pipelines or IDEs used by developers.
+
+## 8. References
+
+1. Luu, L., Chu, D.-H., Olickel, H., Saxena, P., & Hobor, A. (2016). Making smart contracts smarter. _ACM CCS_.
+
+2. Tsankov, P., Dan, A., Drachsler-Cohen, D., Gervais, A., Buenzli, F., & Vechev, M. (2018). Securify: Practical security analysis of smart contracts. _ACM CCS_.
+
+3. Chen, T., Li, X., Luo, X., & Zhang, X. (2020). Survey of blockchain applications in cybersecurity. _ACM Computing Surveys_.
+
+4. Kumar, A., Dey, P., & Mehta, R. (2022). Using GPT-3 for Solidity Code Generation: Opportunities and Limitations. _arXiv_.
+
+5. OpenAI. (2023). Function Calling and Tool Use in GPT Models. _[Online Documentation]_.
