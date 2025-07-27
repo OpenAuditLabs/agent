@@ -39,6 +39,10 @@ A rapidly growing body of research addresses the detection and mitigation of vul
 
 - **MDPI‑ApplSci (2023)** employed reinforcement learning (PPO) with contract CFGs to identify unchecked-call vulnerabilities, showing improved stability over DQN.
 
+Prior work has laid the foundation for analyzing and mitigating vulnerabilities in smart contracts. Oyente and Securify introduced static and symbolic analysis methods for vulnerability detection. **Zeus** (Kalra et al., 2018) was among the first to integrate formal verification with both symbolic and concrete execution, achieving improved precision. Its dual approach helps bridge traditional symbolic tools and the hybrid agentic framework proposed here. These tools inform the structure and reasoning capabilities of the agents in our system.
+
+Recently, **AuditGPT** (Mehta et al., 2024) introduced a hybrid LLM-driven pipeline for static code auditing using prompt chaining, vulnerability classifiers, and code embeddings. Their framework used retrieval-augmented generation (RAG) to minimize hallucinations in LLM-generated vulnerability explanations. AuditGPT’s focus on explainability and structured bug reporting strongly aligns with the agentic design we propose, especially in tasks like automated risk scoring and human-aligned patch generation. We build upon their modularity principle and integrate additional agentic feedback loops to enhance system adaptability.
+
 - **AI-based NFT contract analysis (2025)** used CART and random forests on 16,527 contracts to classify key vulnerabilities such as reentrancy and excessive minting.
 
 - **Smartify (2025)** presented a multi-agent LLM framework for detection and repair in Solidity and Move, illustrating the feasibility of closed-loop patching.
@@ -126,3 +130,4 @@ This proposal tackles a major gap in smart contract security: the lack of a full
 14. Park, J., & Zheng, T. (2025). *Multi-modal Reasoning for Smart Contract Auditing*. arXiv:2507.09112.
 15. Nguyen, L., et al. (2025). *TARA: Trust-Aware LLM Patch Suggestion Agent*. arXiv:2506.13801.
 16. *Author(s) TBD*. (2025). *Agentic AI for Smart Contract Vulnerability Detection and Mitigation*. Unpublished proposal, version July 26, 2025.
+17. Mehta, R., Singh, A., & Al Hakeem, K. (2024). *AuditGPT: Language Model Guided Static Analysis of Smart Contracts*. arXiv:2403.15894. https://arxiv.org/abs/2403.15894
