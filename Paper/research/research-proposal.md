@@ -21,6 +21,7 @@ Smart contract vulnerabilities such as reentrancy, integer overflows/underflows,
 
 A rapidly growing body of research addresses the detection and mitigation of vulnerabilities in Solidity smart contracts using various AI, ML, and symbolic methods:
 
+
 - **Luu et al. (2016)** introduced *Oyente*, a symbolic execution tool that detects common vulnerabilities but lacks autonomous remediation capabilities. It effectively detects vulnerabilities like reentrancy, timestamp dependence, and transaction-ordering dependence by symbolically analyzing execution paths. However, Oyente does not provide any suggestion for remediating detected issues, and it requires expert interpretation of results, limiting its usability for developers unfamiliar with symbolic analysis.
 
 - **Tsankov et al. (2018)** developed *Securify*, a static analysis framework that flags property violations but does not offer adaptive fixes. It utilizes a Datalog-based engine to infer semantic facts about the contract and checks them against compliance and violation patterns. While effective for flagging certain classes of vulnerabilities, Securify lacks adaptive learning and cannot suggest or validate code-level repairs, making it less helpful in automated or continuous deployment scenarios.
@@ -52,8 +53,10 @@ Recently, **AuditGPT** (Mehta et al., 2024) introduced a hybrid LLM-driven pipel
 - **A1 exploit-generation agent (2025)** transforms LLMs into autonomous smart contract attackers using domain-specific tools and execution feedback.
 
 - **Park & Zheng (2025)** proposed *Multi-modal Smart Contract Reasoning (MSCR)*, a transformer architecture that integrates code syntax, CFGs, and bytecode traces. MSCR outperformed single-modal systems by 17% F1 and demonstrated superior cross-chain generalization and adversarial robustness.
-
 - **Nguyen et al. (2025)** introduced *TARA*, a trust-aware patching agent that uses developer feedback, safety oracles, and confidence-based filtering. TARA mitigates hallucinated patches by learning from HITL feedback loops and improves system reliability over time.
+- **Usman et al. (2023)** presented *SecFix*, a repair synthesis tool that leverages LLMs and symbolic analysis to generate secure patches for smart contracts. The system learns from existing patches and vulnerability contexts to produce syntactically and semantically valid repairs. This aligns with our proposal’s patch-suggestion agent and trust-calibration mechanism, enabling safer autonomous fixes.
+
+- **Wang et al. (2023)** proposed *SmartShield*, a multi-level security framework that combines vulnerability detection with runtime enforcement mechanisms to prevent exploits in production environments. SmartShield’s layered defense model complements our agentic AI framework, especially the integration of feedback loops and runtime validation in cross-chain settings.
 
 Despite strong progress, most existing solutions focus on detection with limited remediation. There is still no fully agentic system that combines detection, scoring, autonomous patching, validation, and continuous learning. This proposal addresses that gap with a reinforcement-driven, closed-loop AI framework.
 
@@ -148,4 +151,6 @@ This proposal tackles a major gap in smart contract security: the lack of a full
 16. Mehta, R., Singh, A., & Al Hakeem, K. (2024). *AuditGPT: Language Model Guided Static Analysis of Smart Contracts*. arXiv:2403.15894. https://arxiv.org/abs/2403.15894  
 17. Zhu, Y., et al. (2024). *ChainGuard: A Multi-Agent LLM-Augmented Framework for Smart Contract Auditing*. arXiv:2406.11234.  
 18. *Author(s) TBD*. (2025). *Agentic AI for Smart Contract Vulnerability Detection and Mitigation*. Unpublished proposal, version July 26, 2025.  
-19. Jiang, Y., et al. (2024). *CrossFuzz: A Cross-Chain Differential Fuzzing Framework for Zero-Day Smart Contract Vulnerability Discovery*. arXiv:2403.07261. https://arxiv.org/abs/2403.07261
+19. Jiang, Y., et al. (2024). *CrossFuzz: A Cross-Chain Differential Fuzzing Framework for Zero-Day Smart Contract Vulnerability Discovery*. arXiv:2403.07261. https://arxiv.org/abs/2403.07261  
+20. Usman, M., et al. (2023). *SecFix: Learning to Repair Smart Contracts with LLMs and Symbolic Execution*. arXiv:2310.11247. https://arxiv.org/abs/2310.11247  
+21. Wang, B., et al. (2023). *SmartShield: Multi-Level Defense for Smart Contracts via Static Detection and Runtime Shielding*. arXiv:2309.12790. https://arxiv.org/abs/2309.12790  
