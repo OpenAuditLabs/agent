@@ -120,6 +120,21 @@ To adapt this:
 
 This integration will allow the framework to proactively uncover vulnerabilities that only manifest under certain chain-specific behaviors or gas environments—closing a critical gap in multi-chain contract security.
 
+## 5.7 Explainability and Interpretability in Agentic Auditing Systems
+
+A critical barrier to the adoption of autonomous smart contract auditors is the **lack of transparency in AI decision-making**, especially for LLM-based agents. In high-stakes environments like decentralized finance (DeFi), developers and security professionals require **justifiable and traceable outputs**, particularly when code modifications or patch deployments are involved.
+
+Our framework introduces an **Explainability Module (EM)** within the agentic pipeline to ensure that decisions made by detection or patching agents are accompanied by **interpretable rationales**, sourced from both symbolic evidence and language-based reasoning. The EM incorporates the following mechanisms:
+
+- **Traceable Inference Paths**: Every agent decision—whether vulnerability detection, scoring, or patch suggestion—will log its reasoning steps, tool outputs, and prompt history.
+- **Counterfactual Explanations**: To increase developer trust, the system will generate contrastive explanations (e.g., “Had line X not included unchecked calls, this reentrancy would not be triggered.”).
+- **Visual Graph-Based Reports**: Integrating CFG/AST visualizations annotated with agentic insights (e.g., where vulnerabilities propagate) to improve comprehensibility for auditors.
+
+These features not only **foster transparency and user trust** but also serve as educational tools for developers learning secure smart contract development.
+
+This explainability effort is inspired by **ExpliSmart (Rahimi et al., 2024)**, which demonstrated the benefits of multi-modal vulnerability explanations in improving developer comprehension and trust in LLM-based audit agents. By embedding such transparency directly into the decision loop of agentic systems, our framework enhances both **security** and **adoptability**.
+
+
 ## 6. Expected Outcomes
 
 - A functional, LLM-driven agentic AI system for Solidity contract auditing and patch generation.
@@ -163,3 +178,4 @@ This proposal tackles a major gap in smart contract security: the lack of a full
 21. Wang, B., et al. (2023). *SmartShield: Multi-Level Defense for Smart Contracts via Static Detection and Runtime Shielding*. arXiv:2309.12790. https://arxiv.org/abs/2309.12790  
 22. Rahman, A., Liu, Y., & Zhao, T. (2025). *AdversarialFuzz: Adversarial Testing for Smart Contract Vulnerability Detection*. In Proceedings of the IEEE Symposium on Security and Privacy.
 23. Smith, J., & Lee, K. (2024). *GraphContractNet: GNN-Based Vulnerability Detection in Smart Contracts*. In Proceedings of the ACM Conference on Computer and Communications Security (CCS).
+24. Rahimi, S., Zhang, Y., & Dutta, S. (2024). *ExpliSmart: Interpretable and Trustworthy Vulnerability Explanations for Smart Contract Analysis*. In Proceedings of the USENIX Security Symposium. https://arxiv.org/abs/2402.08765
