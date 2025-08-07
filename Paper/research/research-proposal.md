@@ -152,6 +152,30 @@ We propose integrating **Autonomous Prompt Optimization (APO)** and **Self-Refle
 This enhancement aligns with your reinforcement learning loop and allows agents to **self-optimize over time** without relying solely on external training updates. It also increases the robustness of the system in **zero-shot or low-data scenarios**, such as previously unseen vulnerability patterns.
 
 
+### 5.9 Benchmarking, Reproducibility, and OpenAudit Integration
+
+To ensure the **reproducibility** and **benchmarkability** of our agentic AI framework, we integrate with and extend **OpenAuditBenchmark (Rahman et al., 2025)**, a recently proposed open-source dataset for smart contract vulnerability detection, prioritization, and patch suggestion. OpenAuditBenchmark addresses the fragmentation in prior evaluation efforts by curating a large-scale, annotated dataset of:
+
+- Vulnerable Solidity contracts and corresponding patches,
+- Categorized weaknesses aligned with the SWC registry,
+- Ground truth severity labels derived from real exploit consequences,
+- Patch success indicators (e.g., static validation, test case pass/fail, runtime deployability).
+
+#### Integration Plan
+
+- **Evaluation Standardization**: We adopt OpenAudit’s test sets and evaluation protocols (e.g., precision@k, F1, patch success rate) to compare agent performance against prior work (e.g., AuditGPT, Smartify).
+- **Fine-Tuning Dataset**: Use OpenAudit’s paired (vulnerable, patched) contracts to further fine-tune our LLM agents, especially for patch generation and scoring calibration.
+- **Agent Performance Logging**: Incorporate a module that logs detection/patch decisions alongside OpenAudit’s ground truth, allowing fine-grained error analysis and failure attribution.
+- **Contribution Loop**: Our framework will generate new vulnerability-patch pairs and submit validated outputs to the OpenAudit repository, fostering **continual dataset growth** for the research community.
+
+#### Reproducibility Enhancements
+
+- Full experiment code, hyperparameters, prompt configurations, and agent orchestration policies will be versioned and open-sourced under a permissive license.
+- Docker-based environment packaging ensures results can be replicated on different systems.
+
+By aligning our evaluation pipeline with a **community-driven benchmark** and emphasizing open science, this framework goes beyond performance gains—it **enables fair comparison, future extension, and real-world adoption** of agentic auditing tools.
+
+
 
 ## 6. Expected Outcomes
 
@@ -200,3 +224,4 @@ This proposal tackles a major gap in smart contract security: the lack of a full
 23. Smith, J., & Lee, K. (2024). *GraphContractNet: GNN-Based Vulnerability Detection in Smart Contracts*. In Proceedings of the ACM Conference on Computer and Communications Security (CCS).
 24. Rahimi, S., Zhang, Y., & Dutta, S. (2024). *ExpliSmart: Interpretable and Trustworthy Vulnerability Explanations for Smart Contract Analysis*. In Proceedings of the USENIX Security Symposium. https://arxiv.org/abs/2402.08765
 25. Shinn, N., Lin, Z., & Tan, C. (2023). *Reflexion: Language Agents with Verbal Reinforcement Learning*. arXiv:2303.11366. https://arxiv.org/abs/2303.11366
+26. Rahman, A., Nuhan, A., & Mozumder, B. (2025). *OpenAuditBenchmark: A Dataset for Agentic AI in Smart Contract Vulnerability Detection, Prioritization, and Patch Suggestion*. arXiv:2507.15812. https://arxiv.org/abs/2507.15812
