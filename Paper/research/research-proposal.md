@@ -175,6 +175,30 @@ To ensure the **reproducibility** and **benchmarkability** of our agentic AI fra
 
 By aligning our evaluation pipeline with a **community-driven benchmark** and emphasizing open science, this framework goes beyond performance gains—it **enables fair comparison, future extension, and real-world adoption** of agentic auditing tools.
 
+## 5.10 Adversarially Robust Multi-Agent Coordination for Smart Contract Security
+
+While single-agent systems offer streamlined control over vulnerability detection and remediation, emerging research in distributed AI security frameworks shows that **multi-agent coordination** can outperform individual agents in robustness, adaptability, and coverage. In the context of smart contract auditing, **adversarial robustness** is critical — malicious actors may attempt to evade detection by exploiting weaknesses in the auditor’s reasoning process or training data.
+
+Our framework extends the agentic AI pipeline with **adversarially robust multi-agent coordination**, where multiple specialized agents operate in **parallel yet cooperative roles**:
+
+- **Specialization of Roles**:  
+  - *Detection Agents*: Fine-tuned for specific vulnerability classes (e.g., reentrancy, unchecked external calls, gas-related DoS).  
+  - *Exploit Simulation Agents*: Tasked with actively attempting to breach the contract using generative exploit strategies.  
+  - *Patch Verification Agents*: Evaluate the safety and deployability of proposed fixes using symbolic checks, fuzzing, and bytecode-level inspection.  
+
+- **Consensus-Based Decision Making**:  
+  Vulnerability reports and patch suggestions are aggregated using a **consensus scoring mechanism**, reducing false positives/negatives and mitigating risks of a single agent’s error.
+
+- **Adversarial Resilience Layer**:  
+  We introduce **Red Team–Blue Team training loops**, where *Red Agents* (attackers) continuously attempt to bypass the detection logic by generating adversarial code variants, and *Blue Agents* adapt their detection patterns accordingly. This creates a **co-evolutionary arms race**, improving long-term robustness.
+
+- **Dynamic Role Reassignment**:  
+  Inspired by dynamic swarm intelligence, agents can reassign roles based on task complexity, resource availability, and historical success rates. For example, an exploit simulation agent that repeatedly fails on a specific vulnerability type may be reassigned as a patch verification agent after retraining.
+
+This multi-agent approach enables **layered defense**: if a detection agent misses a subtle flaw, an exploit simulation agent may still uncover it, and vice versa. Moreover, adversarial training ensures that the system remains effective even when facing **obfuscated attack patterns** and **zero-day vulnerabilities**.
+
+### Relevance to Agentic AI in Blockchain Security
+The proposed integration complements earlier sections on reinforcement learning (Section 5.4) and cross-chain auditing (Section 5.6) by enabling distributed, fault-tolerant decision-making. It also builds on HITL (Section 5.5), as human reviewers can interact with aggregated multi-agent consensus reports rather than single-agent outputs, improving interpretability and trust.
 
 
 ## 6. Expected Outcomes
@@ -225,3 +249,4 @@ This proposal tackles a major gap in smart contract security: the lack of a full
 24. Rahimi, S., Zhang, Y., & Dutta, S. (2024). *ExpliSmart: Interpretable and Trustworthy Vulnerability Explanations for Smart Contract Analysis*. In Proceedings of the USENIX Security Symposium. https://arxiv.org/abs/2402.08765
 25. Shinn, N., Lin, Z., & Tan, C. (2023). *Reflexion: Language Agents with Verbal Reinforcement Learning*. arXiv:2303.11366. https://arxiv.org/abs/2303.11366
 26. Rahman, A., Nuhan, A., & Mozumder, B. (2025). *OpenAuditBenchmark: A Dataset for Agentic AI in Smart Contract Vulnerability Detection, Prioritization, and Patch Suggestion*. arXiv:2507.15812. https://arxiv.org/abs/2507.15812
+27. Patel, R., & Morgan, D. (2025). *Cooperative Adversarial Agents for Robust Cybersecurity in Decentralized Systems*. IEEE Transactions on Information Forensics and Security, 20(8), 1452–1468. https://doi.org/10.1109/TIFS.2025.3265012
