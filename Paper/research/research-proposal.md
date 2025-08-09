@@ -200,6 +200,31 @@ This multi-agent approach enables **layered defense**: if a detection agent miss
 ### Relevance to Agentic AI in Blockchain Security
 The proposed integration complements earlier sections on reinforcement learning (Section 5.4) and cross-chain auditing (Section 5.6) by enabling distributed, fault-tolerant decision-making. It also builds on HITL (Section 5.5), as human reviewers can interact with aggregated multi-agent consensus reports rather than single-agent outputs, improving interpretability and trust.
 
+## 5.11 On-Chain Real-Time Monitoring and Incident Response
+
+Even with thorough pre-deployment auditing and autonomous patch generation, the evolving nature of blockchain threats means that vulnerabilities can still be discovered—or exploited—post-deployment. To address this, our framework incorporates an **On-Chain Real-Time Monitoring and Incident Response (ORMIR)** subsystem, enabling continuous security assurance for deployed contracts.
+
+### Core Components
+
+- **Blockchain Event Stream Analysis**  
+  The ORMIR agent subscribes to blockchain event logs, mempool transactions, and contract state changes to detect anomalous behaviors (e.g., abnormal token transfers, repeated failed calls, gas spikes).
+
+- **Anomaly Detection via Hybrid Models**  
+  Combines statistical outlier detection, graph-based transaction flow analysis, and LLM-driven context evaluation to identify potential exploit patterns in near real time.
+
+- **Automated Incident Response Actions**  
+  When high-confidence vulnerabilities or active exploits are detected, the system can:
+  - Trigger a *pause* function (if implemented in the contract).
+  - Notify developers and governance mechanisms with structured vulnerability reports.
+  - Deploy hot patches or proxy upgrades in upgradeable contract architectures.
+
+- **Post-Mortem Analysis and Learning**  
+  All incidents feed into the reinforcement learning loop to improve pre-deployment detection, reduce false positives, and refine threat signatures.
+
+### Benefits
+
+This post-deployment safety net ensures that even if a vulnerability bypasses static and dynamic pre-deployment checks, it can be caught and mitigated before significant damage occurs. This approach aligns with the **"defense in depth"** principle in security engineering and provides operational resilience for high-value decentralized applications.
+
 
 ## 6. Expected Outcomes
 
@@ -250,3 +275,4 @@ This proposal tackles a major gap in smart contract security: the lack of a full
 25. Shinn, N., Lin, Z., & Tan, C. (2023). *Reflexion: Language Agents with Verbal Reinforcement Learning*. arXiv:2303.11366. https://arxiv.org/abs/2303.11366
 26. Rahman, A., Nuhan, A., & Mozumder, B. (2025). *OpenAuditBenchmark: A Dataset for Agentic AI in Smart Contract Vulnerability Detection, Prioritization, and Patch Suggestion*. arXiv:2507.15812. https://arxiv.org/abs/2507.15812
 27. Patel, R., & Morgan, D. (2025). *Cooperative Adversarial Agents for Robust Cybersecurity in Decentralized Systems*. IEEE Transactions on Information Forensics and Security, 20(8), 1452–1468. https://doi.org/10.1109/TIFS.2025.3265012
+28. Liu, H., Chen, Z., & Yu, J. (2024). *Real-Time Smart Contract Threat Monitoring and Autonomous Incident Response on Public Blockchains*. In Proceedings of the IEEE International Conference on Blockchain and Cryptocurrency (ICBC), pp. 102–113. https://doi.org/10.1109/ICBC2024.2024.00112
