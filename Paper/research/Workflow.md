@@ -19,27 +19,51 @@ The workflow applies to all engineering teams involved in:
 ---
 
 ## 3. Phased Development Plan
+# Phase 1: Dataset & Knowledge Base Initialization (Placeholder)
 
-### **Phase 1: Data Acquisition & Preprocessing**
-**Objective:** Establish robust, clean, and structured datasets for training and evaluation.
+## Objective
+Reserve this phase slot for the finalized dataset acquisition and preprocessing workflow without prescribing concrete steps.
 
-**Tasks:**
-- **Data Sources:**
-  - Download Solidity contracts from SWC Registry, Etherscan verified source, and public exploits repositories.
-  - Include paired vulnerable–patched contracts from **OpenAuditBenchmark**.
-- **Preprocessing:**
-  - Normalize code style and structure.
-  - Extract **AST** (Abstract Syntax Tree), **CFG** (Control Flow Graph), opcode sequences.
-  - Label vulnerability types and severity.
-- **Output:**
-  - Store in `/data/processed/` with metadata (vulnerability class, source ID, CWE/SWC tag).
-
-**How to do it:**
-- Use `solidity-parser` for AST extraction.
-- Convert bytecode to CFG using **Slither** or custom parser.
-- Implement Python scripts for dataset ingestion and labeling.
+## Overview
+This placeholder outlines the eventual role of Phase 1, signaling where complete details on sourcing, normalizing, and annotating smart contract data will be inserted once the **Dataset Workflow Document** is finalized.
 
 ---
+
+## Placeholder Elements
+
+### Data Categories
+- Source code repositories (e.g., verified smart contracts)
+- Bytecode artifacts
+- Vulnerability metadata and labels
+- Benchmark cases (paired vulnerable/patched examples)
+
+### Artifact Types
+- Abstract Syntax Trees (AST)
+- Control Flow Graphs (CFG)
+- Opcode sequences
+
+### Output Convention
+- **Directory:** `/data/processed/`
+- **Metadata fields:** placeholder keys (e.g., `vuln_class`, `source_id`, `swc_tag`)
+
+---
+
+## Guidance for Downstream Phases
+- Refer to these high-level placeholders in schema definitions, API contracts, and test stubs.
+- Avoid hard coding parsers or tool versions; rely on mock interfaces until the detailed workflow is published.
+- Use **"TBD by Dataset Workflow Document"** in code comments where actual ingestion or labeling logic will reside.
+
+---
+
+## Temporary Exit Criteria
+- Completion and approval of the dedicated Dataset Workflow Document by the data engineering and security teams.
+- Replacement of this section with detailed procedures, tooling choices, and verification steps under controlled versioning.
+
+---
+
+## Next Action
+Proceed with Phases 2 and beyond using stubbed dataset interfaces; revisit Phase 1 once the comprehensive Dataset Workflow Document is ready for integration.
+
 
 ### **Phase 2: Static & Dynamic Analysis Integration**
 **Objective:** Wrap existing analyzers and fuzzers into unified Python modules.
@@ -189,3 +213,33 @@ The workflow applies to all engineering teams involved in:
 
 ✅ **Next Step Recommendation:**  
 Start with **Phase 1** & **Phase 2** in parallel — one team handles data ingestion & processing, while another develops static/dynamic analysis wrappers so you can seed initial LLM fine-tuning in **Phase 4** as early as possible.
+
+
+# Technical Requirements and Implementation Guidelines by Phase
+
+---
+
+## Phase 1: Dataset & Knowledge Base Initialization (Placeholder)
+
+### Core Technologies Required
+- **Data Management:** Understanding of data versioning systems (DVC, Git LFS) for large dataset management.
+- **Metadata Standards:** Knowledge of vulnerability classification frameworks (CWE, SWC Registry).
+- **Storage Solutions:** Experience with structured data storage (PostgreSQL, MongoDB) for metadata management.
+- **Data Quality:** Familiarity with data validation and cleaning methodologies for blockchain code analysis.
+
+### Key Implementation Skills
+- Dataset curation and preprocessing pipeline design.
+- Vulnerability taxonomy and labeling system development.
+- Data governance and quality assurance protocols.
+
+---
+
+## Phase 2: Static & Dynamic Analysis Integration
+
+### Essential Technologies
+
+#### Static Analysis Tools
+- **Slither:** Python-based framework.  
+  Installation:  
+  ```bash
+  pip install slither-analyzer
