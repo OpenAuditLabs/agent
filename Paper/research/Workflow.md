@@ -272,13 +272,14 @@ We can start with **Phase 1** & **Phase 2** in parallel — one team handles dat
 
 ### Repository Layout
 
-
-llm\_core/
+```text
+llm_core/
 prompts/        # templates, system messages, role-specific prompts
 rag/            # indexers, retrievers, chunkers (code-aware)
 finetune/       # training scripts, configs, data mappers
 evaluators/     # unit tests, automatic metrics (exactness, compilability, tests pass)
 policies/       # guardrails, content policies, tool-use constraints
+```
 
 
 
@@ -286,8 +287,9 @@ policies/       # guardrails, content policies, tool-use constraints
 ### Data Pipeline
 1. Ingest vulnerable–patched pairs; derive training triples:
 
-
-{ vuln\_code, findings/context, patch/rationale }
+```json
+{ "vuln_code": "...", "findings_context": "...", "patch_rationale": "..." }
+```
 
 2. Enrich with:
 - Detector outputs (from Phase 2)
@@ -309,10 +311,11 @@ policies/       # guardrails, content policies, tool-use constraints
 
 ### Prompt Optimization Module
 - Store trials with:
-
-
-prompt\_id, inputs, retrieved contexts, outputs, outcome metrics
-(compile, tests, fuzz pass)
+  - prompt_id
+  - inputs
+  - retrieved contexts
+  - outputs
+  - outcome metrics (compile, tests, fuzz pass)
 
 
 - **Self-reflection:** summarize failures, hypothesize adjustments, generate prompt edits.
@@ -322,7 +325,7 @@ prompt\_id, inputs, retrieved contexts, outputs, outcome metrics
 
 ### Training Strategy
 - **Stage 1:** SFT on curated pairs with rationales.
-- **Stage 2:** Preference optimization (DPO/ORPO) using human/LiDAR-style preferences:
+- **Stage 2:** Preference optimization (DPO/ORPO) using human- or rubric-based preferences:
 - Smaller diffs
 - Gas neutrality
 - Explicit checks
@@ -402,13 +405,13 @@ prompt\_id, inputs, retrieved contexts, outputs, outcome metrics
 - Implementing feedback loops that capture user decisions and update model datasets.
 
 ## Implementation Guidelines
-- Expose an **“Explain”** endpoint returning: tool logs, LLM attention maps or chain-of-thought summaries, and patch rationale.
+- Expose an **“Explain”** endpoint returning: tool logs, concise reasoning summaries (no raw chain-of-thought), and patch rationale.
 - Build a review dashboard with side-by-side code diffs, inline comments, and confidence indicators.
 - Persist user feedback in a versioned store; trigger downstream retraining or prompt-ranking updates.
 
 ---
 
-# Phase 7: Reinforcement Learning Loop
+### Phase 7: Reinforcement Learning Loop
 
 ## Core Technologies Required
 - **RL Libraries:** RLlib or Stable Baselines 3 for PPO implementations.
@@ -427,7 +430,7 @@ prompt\_id, inputs, retrieved contexts, outputs, outcome metrics
 
 ---
 
-# Phase 8: API, CI/CD & Deployment
+### Phase 8: API, CI/CD & Deployment
 
 ## Core Technologies Required
 - **Web Frameworks:** FastAPI or gRPC for high-throughput endpoints.
@@ -447,11 +450,6 @@ prompt\_id, inputs, retrieved contexts, outputs, outcome metrics
 
 ---
 
-# Verification & Acceptance Criteria
-- **Unit test coverage** ≥ 85% across all modules.
-- **Benchmark F1 score improvement** ≥ +5% over AuditGPT and Smartify.
-- **Human-approved patch rate** ≥ 80% in HITL reviews.
-- **Post-deployment defense success** ≥ 90% against red-team simulations.
 
 
 
