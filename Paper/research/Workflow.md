@@ -102,6 +102,9 @@ Proceed with Phases 2 and beyond using stubbed dataset interfaces; revisit Phase
 
 ---
 
+
+
+
 ### **Phase 4: LLM & Prompt Management**
 **Objective:** Train/fine-tune LLM for interpretation, scoring, and patch suggestion.
 
@@ -249,6 +252,52 @@ We can start with **Phase 1** & **Phase 2** in parallel — one team handles dat
 
 
 ```markdown
+
+
+# 3.1 Cross-Phase Integration Requirements
+
+## JSON Schema Standards (Immediate Implementation)
+All phases must adhere to unified data contracts to prevent integration delays:
+
+### Findings Schema
+```json
+{
+  "finding_id": "string (UUID)",
+  "swc_id": "string (SWC-XXX format)",
+  "severity": "enum [Critical, Major, Medium, Minor, Informational]",
+  "tool_name": "string",
+  "tool_version": "string",
+  "file_path": "string",
+  "line_span": {"start": "int", "end": "int"},
+  "function_name": "string",
+  "bytecode_offset": "int (optional)",
+  "description": "string",
+  "reproduction_steps": "string",
+  "proof_of_concept": "string (optional)",
+  "exploit_complexity": "enum [Low, Medium, High]",
+  "confidence": "float [0.0-1.0]",
+  "sanitizer_present": "boolean",
+  "recommendations": "array[string]",
+  "timestamp": "ISO 8601"
+}
+```
+
+## Interim Severity Calibration (Phase 3 Stopgap)
+
+Until full CVSS-inspired scoring is implemented, we can use this classification:
+
+| Severity        | Description                         | Examples                                                       |
+|-----------------|-------------------------------------|----------------------------------------------------------------|
+| **Critical**    | Direct fund loss, contract takeover | Reentrancy with fund drain, arbitrary code execution           |
+| **Major**       | Service disruption, governance bypass | DoS attacks, flash loan governance manipulation               |
+| **Medium**      | Logic errors, privilege escalation  | Access control flaws, incorrect state transitions              |
+| **Minor**       | Best practice violations            | Missing input validation, inefficient patterns                 |
+| **Informational** | Code quality issues               | Style violations, unused variables                             |
+
+**Mapping Rule:** Tools output severity → normalize to this ladder → store in findings schema.
+
+
+
 # Phase 4: LLM & Prompt Management
 
 ## Core Technologies Required
