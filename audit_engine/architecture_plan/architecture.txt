@@ -1,0 +1,29 @@
+audit_engine/
+├── core/
+│   ├── __init__.py
+│   ├── engine.py              # Main audit orchestrator
+│   ├── schemas.py             # Pydantic models for unified JSON schema
+│   └── config.py              # Configuration management
+├── static_analysis/
+│   ├── __init__.py
+│   ├── slither_adapter.py     # Slither integration
+│   ├── mythril_adapter.py     # Mythril integration
+│   └── manticore_adapter.py   # Manticore integration
+├── dynamic_analysis/
+│   ├── __init__.py
+│   ├── echidna_adapter.py     # Echidna fuzzing
+│   └── adversarial_fuzz.py    # AdversarialFuzz implementation
+├── scoring/
+│   ├── __init__.py
+│   ├── scoring_engine.py      # CVSS-inspired scoring
+│   └── severity_mapping.py    # SWC to severity mapping
+├── utils/
+│   ├── __init__.py
+│   ├── file_handler.py        # Contract file operations
+│   ├── report_generator.py    # JSON report generation
+│   └── logger.py              # Structured logging
+└── tests/
+    ├── test_slither.py
+    ├── test_mythril.py
+    ├── test_echidna.py
+    └── sample_contracts/

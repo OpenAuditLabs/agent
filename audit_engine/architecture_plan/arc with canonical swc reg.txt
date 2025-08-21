@@ -1,0 +1,47 @@
+audit_engine/
+├── core/
+│   ├── config.py            # Centralized settings, loads SWC registry JSON
+│   ├── schemas.py           # Pydantic models including swc_id and swc_entry fields
+│   └── engine.py            # Orchestrator wiring all subsystems
+│
+├── data/
+│   └── swc_registry.json    # Canonical SWC metadata loaded at startup
+│
+├── static_analysis/
+│   ├── slither_adapter.py   # Slither → Finding, maps check names via SWC map
+│   ├── mythril_adapter.py   # Mythril → Finding, trusts issue.swc_id
+│   └── manticore_adapter.py # (stub for future integration)
+│
+├── dynamic_analysis/
+│   ├── echidna_adapter.py   # Echidna fuzz outputs → Finding, assigns SWC-MISC if unknown
+│   └── adversarial_fuzz.py  # (AdversarialFuzz stub)
+│
+├── scoring/
+│   ├── scoring_engine.py    # CVSS-inspired scoring, severity thresholds
+│   └── severity_mapping.py  # SWC to base scores loaded from registry
+│
+├── utils/
+│   ├── file_handler.py      # Reads .sol files
+│   ├── swc_loader.py        # Loads and indexes SWC registry into SWC_MAP
+│   ├── report_generator.py  # Exports AuditReport as JSON with SWC links
+│   └── logger.py            # Standardized logging
+│
+└── tests/
+    ├── static_analysis/
+    │   ├── test_slither_adapter.py
+    │   ├── test_mythril_adapter.py
+    │   └── test_manticore_adapter.py
+    ├── dynamic_analysis/
+    │   ├── test_echidna_adapter.py
+    │   └── test_adversarial_fuzz.py
+    ├── scoring/
+    │   ├── test_scoring_engine.py
+    │   └── test_severity_mapping.py
+    ├── utils/
+    │   ├── test_file_handler.py
+    │   ├── test_swc_loader.py
+    │   └── test_report_generator.py
+    ├── core/
+    │   ├── test_schemas.py
+    │   └── test_engine_integration.py
+    └── conftest.py          # Shared pytest fixtures (sample Finding, SWC JSON, .sol files)
