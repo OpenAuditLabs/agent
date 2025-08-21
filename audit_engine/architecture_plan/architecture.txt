@@ -6,6 +6,7 @@ audit_engine/
 │   └── config.py              # Configuration management
 ├── static_analysis/
 │   ├── __init__.py
+│   ├── base.py                # AbstractAdapter: run() -> list[Finding] | ToolError
 │   ├── slither_adapter.py     # Slither integration
 │   ├── mythril_adapter.py     # Mythril integration
 │   └── manticore_adapter.py   # Manticore integration
@@ -20,8 +21,11 @@ audit_engine/
 ├── utils/
 │   ├── __init__.py
 │   ├── file_handler.py        # Contract file operations
+│   ├── swc_loader.py          # Loads and indexes SWC registry into SWC_MAP
 │   ├── report_generator.py    # JSON report generation
 │   └── logger.py              # Structured logging
+├── data/
+│   └── swc_registry.json      # Canonical SWC metadata.
 └── tests/
     ├── test_slither.py
     ├── test_mythril.py
