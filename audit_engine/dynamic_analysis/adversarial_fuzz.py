@@ -10,19 +10,27 @@ from audit_engine.core.schemas import Finding, ToolError
 
 # Manticore is imported lazily in run() to avoid a hard import-time dependency.
 
-try:
-    from manticore.ethereum import ManticoreEVM
-    from manticore.core.smtlib import Operators
-except ImportError as err:
-    return [self.standardize_finding({
-        "title": "AdversarialFuzz Error",
-        "description": "Manticore must be installed: pip install manticore",
-        "severity": "Low",
-        "swc_id": "",
-        "line_numbers": [],
-        "confidence": "Low",
-        "tool": getattr(self, "tool_name", self.__class__.__name__),
-    })]
+# Manticore is imported lazily inside run() to avoid a hard dependency.
+
+def run(self, contract_path: str, solc_version: str = "0.8.19", max_states: int = 100, **kwargs) -> List[Finding]:
+    """
+    Runs adversarial fuzzing on a Solidity contract using symbolic execution for edge-case path discovery.
+    Returns a list of Finding objects upon exploitable states or assertion/require failures.
+    """
+    findings = []
+    try:
+        from manticore.ethereum import ManticoreEVM
+        from manticore.core.smtlib import Operators
+    except ImportError:
+        return [self.standardize_finding({
+            "title": "AdversarialFuzz Error",
+            "description": "Manticore must be installed: pip install manticore",
+            "severity": "Low",
+            "swc_id": "",
+            "line_numbers": [],
+            "confidence": "Low",
+            "tool": getattr(self, "tool_name", self.__class__.__name__),
+        })]
 
 
 class AdversarialFuzz(AbstractAdapter):
@@ -100,6 +108,16 @@ class AdversarialFuzz(AbstractAdapter):
                     else:
                         m.constrain(Operators.SGE(val, -(2**(bits - 1))))
                         m.constrain(Operators.SLE(val, 2**(bits - 1) - 1))
+                elif inp["type"] == "bool":
+                    val = m.make_symbolic_value(name=f"{func_name}_{inp['name']}_bool")
+                    # Constrain to {0,1}
+                    m.constrain(Operators.Or(val == 0, val == 1))
+                else:
+                    # Fallback: treat as 256-bit value
+                    val = m.make_symbolic_value(name=f"{func_name}_{inp['name']}_any")
+                    m.constrain(Operators.ULE(val, 2**256 - 1))
+                symbolic_args.append(val)
+
 
             try:
                 m.transaction(
