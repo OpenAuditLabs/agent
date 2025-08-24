@@ -8,11 +8,22 @@ from typing import List
 from audit_engine.static_analysis.base import AbstractAdapter
 from audit_engine.core.schemas import Finding, ToolError
 
+# Manticore is imported lazily in run() to avoid a hard import-time dependency.
+
 try:
     from manticore.ethereum import ManticoreEVM
     from manticore.core.smtlib import Operators
-except ImportError as e:
-    raise ImportError("Manticore must be installed: pip install manticore")
+except ImportError as err:
+    return [self.standardize_finding({
+        "title": "AdversarialFuzz Error",
+        "description": "Manticore must be installed: pip install manticore",
+        "severity": "Low",
+        "swc_id": "",
+        "line_numbers": [],
+        "confidence": "Low",
+        "tool": getattr(self, "tool_name", self.__class__.__name__),
+    })]
+
 
 class AdversarialFuzz(AbstractAdapter):
     """
@@ -20,8 +31,8 @@ class AdversarialFuzz(AbstractAdapter):
     It generates syntactically valid but edge-case inputs, explores transactions, and reports exploitable findings.
     """
 
-    TOOL_NAME = "AdversarialFuzz"
-    TOOL_VERSION = "1.1.0"
+    tool_name = "AdversarialFuzz"
+    tool_version = "1.1.0"
 
     def run(self, contract_path: str, solc_version: str = "0.8.19", max_states: int = 100, **kwargs) -> List[Finding]:
         """
@@ -30,7 +41,15 @@ class AdversarialFuzz(AbstractAdapter):
         """
         findings = []
         if not os.path.isfile(contract_path):
-            raise ToolError(f"Contract file {contract_path} does not exist.")
+            return [self.standardize_finding({
+                "title": "AdversarialFuzz Error",
+                "description": f"Contract file {contract_path} does not exist.",
+                "severity": "Low",
+                "swc_id": "",
+                "line_numbers": [],
+                "confidence": "Low",
+                "tool": getattr(self, "tool_name", self.__class__.__name__),
+            })]
 
         with open(contract_path, "r") as f:
             source = f.read()
@@ -44,8 +63,16 @@ class AdversarialFuzz(AbstractAdapter):
                 owner=user_account,
                 solc_version=solc_version
             )
-        except Exception as e:
-            raise ToolError(f"Contract compilation/deploy failed: {e}")
+        except Exception as err:
+            return [self.standardize_finding({
+                "title": "AdversarialFuzz Error",
+                "description": f"Contract compilation/deploy failed: {err}",
+                "severity": "Low",
+                "swc_id": "",
+                "line_numbers": [],
+                "confidence": "Low",
+                "tool": getattr(self, "tool_name", self.__class__.__name__),
+            })]
 
         # Extract ABI to fuzz all public/external and payable functions
         abi = getattr(contract_account, "abi", [])
@@ -62,13 +89,17 @@ class AdversarialFuzz(AbstractAdapter):
                 # Use type info if available to generate appropriate symbolic values
                 if inp["type"] == "address":
                     val = m.make_symbolic_value(name=f"{func_name}_{inp['name']}_address")
+                    # 160-bit EVM address space
+                    m.constrain(Operators.ULT(val, 2**160))
                 elif inp["type"].startswith("uint") or inp["type"].startswith("int"):
                     val = m.make_symbolic_value(name=f"{func_name}_{inp['name']}_int")
-                elif inp["type"] == "bool":
-                    val = m.make_symbolic_value(name=f"{func_name}_{inp['name']}_bool")
-                else:
-                    val = m.make_symbolic_buffer(32, name=f"{func_name}_{inp['name']}_buf")
-                symbolic_args.append(val)
+                    bits_str = "".join(ch for ch in inp["type"] if ch.isdigit()) or "256"
+                    bits = int(bits_str)
+                    if inp["type"].startswith("uint"):
+                        m.constrain(Operators.ULE(val, 2**bits - 1))
+                    else:
+                        m.constrain(Operators.SGE(val, -(2**(bits - 1))))
+                        m.constrain(Operators.SLE(val, 2**(bits - 1) - 1))
 
             try:
                 m.transaction(
@@ -91,53 +122,37 @@ class AdversarialFuzz(AbstractAdapter):
             world = state.platform
             # Check for exception
             for exc in getattr(world, "_exceptions", []):
-                finding = Finding(
-                    finding_id=str(uuid.uuid4()),
-                    swc_id="SWC-123",  # Map exception types to SWC if you have mapping logic in severity_mapping.py
-                    severity="Major",
-                    tool_name=self.TOOL_NAME,
-                    tool_version=self.TOOL_VERSION,
-                    file_path=contract_path,
-                    line_span={"start": exc.get("pc", 0), "end": exc.get("pc", 0)},
-                    function_name=None,  # Optional: parse from exc or runtime context
-                    bytecode_offset=exc.get("pc", 0),
-                    description=f"{exc.get('type', 'Exception')}: {exc.get('description', '')}",
-                    reproduction_steps=json.dumps(exc),
-                    proof_of_concept="Replay the transaction in the given workspace with provided symbolic input.",
-                    exploit_complexity="High",
-                    confidence=0.8,
-                    sanitizer_present=False,
-                    recommendations=["Add input validation", "Enforce require/assert checks"],
-                    timestamp=datetime.utcnow().isoformat() + "Z"
-                )
-                findings.append(finding)
+                finding = {
+                    "title": f"Runtime exception: {exc.get('type', 'Exception')}",
+                    "description": exc.get("description", ""),
+                    "severity": "High",
+                    "swc_id": "SWC-123",
+                    "line_numbers": [],
+                    "confidence": "High",
+                    "tool": getattr(self, "tool_name", self.__class__.__name__),
+                }
+                findings.append(self.standardize_finding(finding))
+
 
             # Check for abnormal balance changes as signs of reentrancy, DoS, etc.
             actors = world.accounts
             for addr, account in actors.items():
                 # You can extend with specific exploitation logic (e.g. checking for >10x balance increase)
                 balance = account.balance
-                if balance > 10 ** 22:  # Arbitrary threshold for abnormal gain
-                    finding = Finding(
-                        finding_id=str(uuid.uuid4()),
-                        swc_id="SWC-105",  # Example: Unprotected Ether Withdrawal
-                        severity="Critical",
-                        tool_name=self.TOOL_NAME,
-                        tool_version=self.TOOL_VERSION,
-                        file_path=contract_path,
-                        line_span={"start": 0, "end": 0},
-                        function_name=None,
-                        bytecode_offset=None,
-                        description=f"Abnormal Ether transfer detected: {balance}",
-                        reproduction_steps=f"Actor {addr} balance {balance}",
-                        proof_of_concept="Fuzz inputs that lead to abnormal actor balance.",
-                        exploit_complexity="Medium",
-                        confidence=0.9,
-                        sanitizer_present=False,
-                        recommendations=["Add withdrawal limits", "Restrict Ether transfer access"],
-                        timestamp=datetime.utcnow().isoformat() + "Z"
-                    )
-                    findings.append(finding)
+                cond = Operators.UGT(balance, 10 ** 22)
+                if state.can_be_true(cond):
+
+                    finding = {
+                        "title": "Abnormal Ether transfer detected",
+                        "description": f"Actor {hex(addr) if isinstance(addr, int) else addr} balance: {balance}",
+                        "severity": "High",
+                        "swc_id": "SWC-105",
+                        "line_numbers": [],
+                        "confidence": "High",
+                        "tool": getattr(self, "tool_name", self.__class__.__name__),
+                    }
+                    findings.append(self.standardize_finding(finding))
+
 
         return findings
 
