@@ -14,12 +14,13 @@ Key Features:
 - Trust-calibrated output with confidence scoring
 """
 
-from typing import List, Dict, Any, Optional, Iterable, Union
+import asyncio
+import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from enum import Enum
-import logging
-import asyncio
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Dict, Iterable, List, Optional, Union
+import time
 
 from .echidna_adapter import EchidnaAdapter
 from .adversarial_fuzz import AdversarialFuzz
@@ -32,6 +33,18 @@ __all__ = [
     "AdversarialFuzz",
     "run_dynamic_analysis"
 ]
+
+# Constants to avoid magic numbers
+DEFAULT_ANALYSIS_TIMEOUT = 600
+DEFAULT_MAX_WORKERS = 4
+CONFIDENCE_THRESHOLDS = {
+    'critical': 0.97,
+    'high': 0.9,
+    'medium': 0.7,
+    'low': 0.0
+}
+DEFAULT_TOOL_ACCURACY = 0.8
+ADVERSARIAL_BOOST_FACTOR = 1.1
 
 class ConfidenceLevel(Enum):
     """Trust calibration levels for HITL integration as per research paper Section 5.5"""
@@ -66,29 +79,63 @@ class DynamicAnalysisOrchestrator:
     def __init__(self, config: Optional[Dict[str, Any]] = None, logger: Optional[logging.Logger] = None):
         self.config = config or {}
         self.logger = logger or logging.getLogger(__name__)
-        self.adapters = self._initialize_adapters()
+        self.adapters: List[Any] = []
         self.rl_feedback_enabled = self.config.get("reinforcement_learning", False)
         self.cross_chain_enabled = self.config.get("cross_chain_analysis", False)
+        
+        # Log configuration securely without exposing sensitive data
+        self.logger.info(f"DynamicAnalysisOrchestrator initialized with config: {self._masked_config_dict()}")
+        
+        try:
+            self.adapters = self._initialize_adapters()
+        except Exception as e:
+            self.logger.error(f"Failed to initialize adapters: {e}")
+            # Don't re-raise to allow graceful degradation
+
+    def _masked_config_dict(self) -> Dict[str, Any]:
+        """
+        Create a masked version of config for safe logging.
+        Masks sensitive keys that might contain tokens, passwords, or secrets.
+        """
+        def mask_sensitive_data(obj: Any) -> Any:
+            if isinstance(obj, dict):
+                masked = {}
+                for key, value in obj.items():
+                    key_lower = key.lower()
+                    # Check for sensitive key patterns
+                    if any(sensitive in key_lower for sensitive in 
+                          ("key", "token", "secret", "password", "auth", "credential", "api_key")):
+                        masked[key] = "***"
+                    else:
+                        masked[key] = mask_sensitive_data(value)
+                return masked
+            elif isinstance(obj, list):
+                return [mask_sensitive_data(item) for item in obj]
+            else:
+                return obj
+        
+        return mask_sensitive_data(self.config)
         
     def _initialize_adapters(self) -> List[Any]:
         """Initialize dynamic analysis adapters with configuration"""
         adapters = []
         
-        try:
-            # Standard Echidna fuzzing
-            if self.config.get("enable_echidna", True):
+        # Standard Echidna fuzzing
+        if self.config.get("enable_echidna", True):
+            try:
                 echidna_config = self.config.get("echidna", {})
                 adapters.append(EchidnaAdapter(config=echidna_config, logger=self.logger))
-            
-            # Adversarial fuzzing as per Rahman et al. (2025)
-            if self.config.get("enable_adversarial_fuzz", True):
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize EchidnaAdapter: {e}")
+        
+        # Adversarial fuzzing as per Rahman et al. (2025)
+        if self.config.get("enable_adversarial_fuzz", True):
+            try:
                 adversarial_config = self.config.get("adversarial_fuzz", {})
                 adapters.append(AdversarialFuzz(config=adversarial_config, logger=self.logger))
+            except Exception as e:
+                self.logger.warning(f"Failed to initialize AdversarialFuzz: {e}")
                 
-        except Exception as e:
-            self.logger.error(f"Failed to initialize dynamic analysis adapters: {e}")
-            raise
-            
         return adapters
     
     async def analyze_contracts(
@@ -100,31 +147,16 @@ class DynamicAnalysisOrchestrator:
         Asynchronous multi-agent analysis with consensus-based decision making
         as described in Section 5.10 of the research paper.
         """
-        results = []
-        
-        # Parallel execution of multiple analysis agents
         if not self.adapters:
-            self.logger.warning("No dynamic analysis adapters enabled; returning empty results.")
+            self.logger.warning("No dynamic analysis adapters available; returning empty results.")
             return []
-        max_workers = max(1, min(self.config.get("max_workers", len(self.adapters)), len(self.adapters)))
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = []
-            
-            for adapter in self.adapters:
-                future = executor.submit(self._run_adapter_analysis, adapter, contract_paths)
-                futures.append((adapter, future))
-            
-            # Collect results with timeout handling
-            for adapter, future in futures:
-                try:
-                    adapter_results = future.result(timeout=self.config.get("analysis_timeout", 600))
-                    processed_results = self._process_adapter_results(adapter, adapter_results)
-                    results.extend(processed_results)
-                except Exception as e:
-                    self.logger.error(f"Adapter {adapter.__class__.__name__} failed: {e}")
-                    continue
-        
-        # Apply consensus scoring and multi-agent coordination
+
+        contract_list = list(contract_paths)
+        if not contract_list:
+            self.logger.warning("No contract paths provided for analysis.")
+            return []
+
+        results = await self._execute_parallel_analysis(contract_list)
         consensus_results = self._apply_consensus_scoring(results)
         
         # Reinforcement learning feedback integration
@@ -132,20 +164,61 @@ class DynamicAnalysisOrchestrator:
             await self._update_rl_feedback(consensus_results)
         
         return consensus_results
+
+    async def _execute_parallel_analysis(self, contract_paths: List[str]) -> List[AnalysisResult]:
+        """Execute analysis across multiple adapters in parallel"""
+        results = []
+        max_workers = min(
+            self.config.get("max_workers", DEFAULT_MAX_WORKERS), 
+            len(self.adapters)
+        )
+        
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all adapter tasks
+            future_to_adapter = {
+                executor.submit(self._run_adapter_analysis, adapter, contract_paths): adapter
+                for adapter in self.adapters
+            }
+            
+            # Collect results with proper error handling
+            for future in as_completed(future_to_adapter):
+                adapter = future_to_adapter[future]
+                try:
+                    timeout = self.config.get("analysis_timeout", DEFAULT_ANALYSIS_TIMEOUT)
+                    adapter_results = future.result(timeout=timeout)
+                    processed_results = self._process_adapter_results(adapter, adapter_results)
+                    results.extend(processed_results)
+                except Exception as e:
+                    self.logger.error(f"Adapter {adapter.__class__.__name__} failed: {e}")
+                    
+        return results
     
-    def _run_adapter_analysis(self, adapter: Any, contract_paths: Iterable[str]) -> List[Any]:
+    def _run_adapter_analysis(self, adapter: Any, contract_paths: List[str]) -> List[Any]:
         """Run individual adapter analysis with error handling"""
+        findings: List[Any] = []
+        adapter_name = adapter.__class__.__name__
+        
         try:
-            findings: List[Any] = []
-            timeout = self.config.get(f"{adapter.__class__.__name__}_timeout", self.config.get("analysis_timeout", 600))
-            for path in list(contract_paths):
-                result = adapter.run(path, timeout=timeout)
-                if result:
-                    findings.extend(result if isinstance(result, list) else [result])
-            return findings
+            timeout = self.config.get(
+                f"{adapter_name}_timeout", 
+                self.config.get("analysis_timeout", DEFAULT_ANALYSIS_TIMEOUT)
+            )
+            
+            for path in contract_paths:
+                try:
+                    result = adapter.run(path, timeout=timeout)
+                    if result:
+                        if isinstance(result, list):
+                            findings.extend(result)
+                        else:
+                            findings.append(result)
+                except Exception as e:
+                    self.logger.warning(f"Analysis failed for {path} with {adapter_name}: {e}")
+                    
         except Exception as e:
-            self.logger.error(f"Analysis failed for {adapter.__class__.__name__}: {e}")
-            return []
+            self.logger.error(f"Critical failure in {adapter_name}: {e}")
+            
+        return findings
     
     def _process_adapter_results(self, adapter: Any, raw_results: List[Any]) -> List[AnalysisResult]:
         """
@@ -156,77 +229,103 @@ class DynamicAnalysisOrchestrator:
         
         for result in raw_results:
             try:
-                # Extract standard fields from dicts or objects
-                if isinstance(result, dict):
-                    severity = result.get('severity', 'Medium')
-                    vuln_type = result.get('swc_id') or result.get('title') or 'unknown'
-                    details = result
-                else:
-                    severity = getattr(result, 'severity', 'Medium')
-                    vuln_type = getattr(result, 'vulnerability_type', getattr(result, 'swc_id', 'unknown'))
-                    details = getattr(result, 'details', {'raw': repr(result)})
-                
-                # Calculate confidence level using trust calibration
-                confidence = self._calculate_confidence_level(adapter, result)
-                
-                # Generate remediation suggestions if applicable
-                remediation = self._generate_remediation_suggestion(result)
-                
-                # Cross-chain impact analysis (Section 5.6)
-                cross_chain_impact = None
-                if self.cross_chain_enabled:
-                    cross_chain_impact = self._analyze_cross_chain_impact(result)
-                
-                analysis_result = AnalysisResult(
-                    tool_name=adapter.__class__.__name__,
-                    vulnerability_type=vuln_type,
-                    severity=severity,
-                    confidence=confidence,
-                    finding_details=details,
-                    remediation_suggestion=remediation,
-                    cross_chain_impact=cross_chain_impact
-                )
-                
-                processed.append(analysis_result)
-                
+                processed_result = self._create_analysis_result(adapter, result)
+                if processed_result:
+                    processed.append(processed_result)
             except Exception as e:
                 self.logger.warning(f"Failed to process result from {adapter.__class__.__name__}: {e}")
-                continue
                 
         return processed
+
+    def _create_analysis_result(self, adapter: Any, result: Any) -> Optional[AnalysisResult]:
+        """Create a standardized AnalysisResult from adapter output"""
+        try:
+            # Extract fields with proper type handling
+            severity, vuln_type, details = self._extract_result_fields(result)
+            confidence = self._calculate_confidence_level(adapter, result)
+            remediation = self._generate_remediation_suggestion(result)
+            
+            # Cross-chain impact analysis
+            cross_chain_impact = None
+            if self.cross_chain_enabled:
+                cross_chain_impact = self._analyze_cross_chain_impact(result)
+            
+            return AnalysisResult(
+                tool_name=adapter.__class__.__name__,
+                vulnerability_type=vuln_type,
+                severity=severity,
+                confidence=confidence,
+                finding_details=details,
+                remediation_suggestion=remediation,
+                cross_chain_impact=cross_chain_impact,
+                timestamp=str(time.time())
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to create AnalysisResult: {e}")
+            return None
+
+    def _extract_result_fields(self, result: Any) -> tuple[str, str, Dict[str, Any]]:
+        """Extract severity, vulnerability type, and details from result"""
+        if isinstance(result, dict):
+            severity = result.get('severity', 'Medium')
+            vuln_type = result.get('swc_id') or result.get('title') or 'unknown'
+            details = result
+        else:
+            severity = getattr(result, 'severity', 'Medium')
+            vuln_type = (
+                getattr(result, 'vulnerability_type', None) or 
+                getattr(result, 'swc_id', None) or 
+                'unknown'
+            )
+            details = getattr(result, 'details', {'raw': repr(result)})
+        
+        return severity, vuln_type, details
     
     def _calculate_confidence_level(self, adapter: Any, result: Any) -> ConfidenceLevel:
         """
         Implement trust calibration as described in Section 5.5.
         Uses multi-modal consistency checks and historical accuracy.
         """
-        # Derive score from adapter output (string confidence or explicit score)
-        score = None
-        if isinstance(result, dict):
-            conf = str(result.get("confidence", "")).lower()
-            score = {"high": 0.9, "medium": 0.7, "low": 0.4}.get(conf)
-        if score is None:
-            score = float(getattr(result, "confidence_score", 0.5))
-
+        # Extract confidence score from result
+        score = self._extract_confidence_score(result)
+        
+        # Apply adapter-specific adjustments
         if isinstance(adapter, AdversarialFuzz):
-            score *= 1.1
+            score = min(1.0, score * ADVERSARIAL_BOOST_FACTOR)
 
-        tool_accuracy = float(self.config.get(f"{adapter.__class__.__name__}_accuracy", 0.8))
-        adjusted = max(0.0, min(1.0, score * tool_accuracy))
+        # Apply tool accuracy weighting
+        tool_accuracy = self.config.get(
+            f"{adapter.__class__.__name__}_accuracy", 
+            DEFAULT_TOOL_ACCURACY
+        )
+        adjusted_score = max(0.0, min(1.0, score * tool_accuracy))
 
-        if adjusted >= 0.97:
+        return self._score_to_confidence_level(adjusted_score)
+
+    def _extract_confidence_score(self, result: Any) -> float:
+        """Extract numerical confidence score from result"""
+        if isinstance(result, dict):
+            conf_str = str(result.get("confidence", "")).lower()
+            confidence_mapping = {"high": 0.9, "medium": 0.7, "low": 0.4}
+            if conf_str in confidence_mapping:
+                return confidence_mapping[conf_str]
+        
+        return float(getattr(result, "confidence_score", 0.5))
+
+    def _score_to_confidence_level(self, score: float) -> ConfidenceLevel:
+        """Convert numerical score to ConfidenceLevel enum"""
+        if score >= CONFIDENCE_THRESHOLDS['critical']:
             return ConfidenceLevel.CRITICAL
-        if adjusted >= 0.9:
+        elif score >= CONFIDENCE_THRESHOLDS['high']:
             return ConfidenceLevel.HIGH
-        if adjusted >= 0.7:
+        elif score >= CONFIDENCE_THRESHOLDS['medium']:
             return ConfidenceLevel.MEDIUM
-        return ConfidenceLevel.LOW
+        else:
+            return ConfidenceLevel.LOW
     
     def _generate_remediation_suggestion(self, result: Any) -> Optional[str]:
         """Generate actionable remediation suggestions"""
-        # Placeholder for LLM-based remediation generation
-        # Would integrate with GPT-4 or fine-tuned models as per research
-        vuln_type = getattr(result, 'vulnerability_type', '')
+        vuln_type = getattr(result, 'vulnerability_type', '').lower()
         
         remediation_templates = {
             'reentrancy': 'Consider using the checks-effects-interactions pattern or ReentrancyGuard modifier',
@@ -234,67 +333,95 @@ class DynamicAnalysisOrchestrator:
             'unchecked_call': 'Always check return values of external calls and handle failures appropriately'
         }
         
-        return remediation_templates.get(vuln_type.lower())
+        return remediation_templates.get(vuln_type)
     
     def _analyze_cross_chain_impact(self, result: Any) -> Optional[List[str]]:
         """
         Cross-chain vulnerability analysis as per Section 5.6.
         Identifies vulnerabilities that may manifest differently across chains.
         """
-        if not self.cross_chain_enabled:
-            return None
+        vuln_type = getattr(result, 'vulnerability_type', '').lower()
         
-        # Placeholder for cross-chain differential analysis
-        # Would implement semantic diffing across EVM-compatible chains
-        affected_chains = []
+        # Define chain-specific vulnerability mappings
+        chain_mappings = {
+            'gas_limit': ['ethereum', 'polygon', 'bsc'],
+            'block_gas_limit': ['ethereum', 'polygon', 'bsc'],
+            'timestamp_dependence': ['ethereum', 'arbitrum']
+        }
         
-        vuln_type = getattr(result, 'vulnerability_type', '')
-        if vuln_type in ['gas_limit', 'block_gas_limit']:
-            affected_chains = ['ethereum', 'polygon', 'bsc']  # Different gas limits
-        elif vuln_type in ['timestamp_dependence']:
-            affected_chains = ['ethereum', 'arbitrum']  # Different block times
-        
-        return affected_chains if affected_chains else None
+        return chain_mappings.get(vuln_type)
     
     def _apply_consensus_scoring(self, results: List[AnalysisResult]) -> List[AnalysisResult]:
         """
         Multi-agent consensus mechanism as described in Section 5.10.
         Aggregates findings from multiple tools to reduce false positives.
         """
-        # Group results by vulnerability type and location
-        grouped_results = {}
-        
-        for result in results:
-            key = f"{result.vulnerability_type}_{hash(str(result.finding_details))}"
-            if key not in grouped_results:
-                grouped_results[key] = []
-            grouped_results[key].append(result)
-        
+        if not results:
+            return []
+
+        # Group results by vulnerability signature
+        grouped_results = self._group_results_by_signature(results)
         consensus_results = []
         
         for group in grouped_results.values():
-            if len(group) == 1:
-                # Single detection - adjust confidence
-                result = group[0]
-                if result.confidence == ConfidenceLevel.HIGH:
-                    result.confidence = ConfidenceLevel.MEDIUM
-                consensus_results.append(result)
-            else:
-                # Multiple detections - increase confidence
-                primary_result = max(group, key=lambda r: self._confidence_weight(r.confidence))
-                levels = list(ConfidenceLevel)
-                idx = levels.index(primary_result.confidence)
-                new_idx = min(idx + 1, len(levels) - 1)
-                primary_result.confidence = levels[new_idx]
-                
-                # Merge finding details from all tools
-                merged_details = primary_result.finding_details.copy()
-                merged_details['consensus_tools'] = [r.tool_name for r in group]
-                primary_result.finding_details = merged_details
-                
-                consensus_results.append(primary_result)
+            consensus_result = self._create_consensus_result(group)
+            if consensus_result:
+                consensus_results.append(consensus_result)
         
         return consensus_results
+
+    def _group_results_by_signature(self, results: List[AnalysisResult]) -> Dict[str, List[AnalysisResult]]:
+        """Group results by vulnerability signature for consensus analysis"""
+        grouped = {}
+        for result in results:
+            # Create a more robust signature based on vulnerability type and key details
+            details_hash = hash(str(sorted(result.finding_details.items())))
+            key = f"{result.vulnerability_type}_{details_hash}"
+            
+            if key not in grouped:
+                grouped[key] = []
+            grouped[key].append(result)
+        
+        return grouped
+
+    def _create_consensus_result(self, group: List[AnalysisResult]) -> Optional[AnalysisResult]:
+        """Create consensus result from group of similar findings"""
+        if not group:
+            return None
+
+        if len(group) == 1:
+            # Single detection - slightly reduce confidence
+            result = group[0]
+            result.confidence = self._adjust_single_detection_confidence(result.confidence)
+            return result
+        else:
+            # Multiple detections - increase confidence through consensus
+            return self._merge_multiple_detections(group)
+
+    def _adjust_single_detection_confidence(self, confidence: ConfidenceLevel) -> ConfidenceLevel:
+        """Adjust confidence for single tool detection"""
+        if confidence == ConfidenceLevel.HIGH:
+            return ConfidenceLevel.MEDIUM
+        return confidence
+
+    def _merge_multiple_detections(self, group: List[AnalysisResult]) -> AnalysisResult:
+        """Merge multiple tool detections into consensus result"""
+        # Select primary result with highest confidence
+        primary_result = max(group, key=lambda r: self._confidence_weight(r.confidence))
+        
+        # Boost confidence due to consensus
+        confidence_levels = list(ConfidenceLevel)
+        current_idx = confidence_levels.index(primary_result.confidence)
+        new_idx = min(current_idx + 1, len(confidence_levels) - 1)
+        primary_result.confidence = confidence_levels[new_idx]
+        
+        # Merge finding details from all tools
+        merged_details = primary_result.finding_details.copy()
+        merged_details['consensus_tools'] = [r.tool_name for r in group]
+        merged_details['detection_count'] = len(group)
+        primary_result.finding_details = merged_details
+        
+        return primary_result
     
     def _confidence_weight(self, confidence: ConfidenceLevel) -> int:
         """Convert confidence level to numeric weight for comparison"""
@@ -311,13 +438,19 @@ class DynamicAnalysisOrchestrator:
         Reinforcement learning feedback loop as described in Section 5.4.
         Updates agent behavior based on analysis outcomes.
         """
-        if not self.rl_feedback_enabled:
-            return
+        try:
+            feedback_data = self._generate_feedback_data(results)
+            self.logger.info(f"RL Feedback collected: {feedback_data}")
+            # TODO: Implement actual RL model updates
+        except Exception as e:
+            self.logger.error(f"Failed to update RL feedback: {e}")
+
+    def _generate_feedback_data(self, results: List[AnalysisResult]) -> Dict[str, Any]:
+        """Generate structured feedback data for RL training"""
+        tool_names = {r.tool_name for r in results}
         
-        # Placeholder for RL feedback implementation
-        # Would integrate with policy gradient methods or PPO
-        feedback_data = {
-            'analysis_timestamp': str(asyncio.get_event_loop().time()),
+        return {
+            'analysis_timestamp': str(time.time()),
             'total_findings': len(results),
             'confidence_distribution': {
                 level.value: sum(1 for r in results if r.confidence == level)
@@ -325,14 +458,10 @@ class DynamicAnalysisOrchestrator:
             },
             'tool_performance': {
                 tool: sum(1 for r in results if r.tool_name == tool)
-                for tool in set(r.tool_name for r in results)
+                for tool in tool_names
             }
         }
-        
-        self.logger.info(f"RL Feedback collected: {feedback_data}")
-        # TODO: Implement actual RL model updates
 
-# Convenience function for backward compatibility and simple usage
 def run_dynamic_analysis(
     contract_paths: Iterable[str],
     config: Optional[Dict[str, Any]] = None,
@@ -352,39 +481,61 @@ def run_dynamic_analysis(
         List of standardized analysis results
     """
     if adapters:
-        # Legacy mode for backward compatibility
-        findings = []
-        for adapter in adapters:
-            try:
-                timeout = (config or {}).get(f"{adapter.__class__.__name__}_timeout", (config or {}).get("analysis_timeout", 600))
-                for path in list(contract_paths):
-                    result = adapter.run(path, timeout=timeout)
-                    if result:
-                        findings.extend(result if isinstance(result, list) else [result])
-            except Exception as e:
-                if logger:
-                    logger.error(f"Adapter {adapter.__class__.__name__} failed: {e}")
-        return [
-            AnalysisResult(
-                tool_name="unknown",
-                vulnerability_type="unknown", 
-                severity="medium",
-                confidence=ConfidenceLevel.MEDIUM,
-                finding_details={"raw_finding": finding}
-            ) for finding in findings
-        ]
+        return _run_legacy_analysis(contract_paths, config, logger, adapters)
     
     # Modern agentic AI orchestration
     orchestrator = DynamicAnalysisOrchestrator(config=config, logger=logger)
+    return _run_async_analysis(orchestrator, contract_paths)
+
+def _run_legacy_analysis(
+    contract_paths: Iterable[str],
+    config: Optional[Dict[str, Any]],
+    logger: Optional[logging.Logger],
+    adapters: List[Any]
+) -> List[AnalysisResult]:
+    """Legacy mode for backward compatibility"""
+    findings = []
+    config = config or {}
     
-    # Run synchronously for backward compatibility
-    import asyncio
+    for adapter in adapters:
+        try:
+            timeout = config.get(
+                f"{adapter.__class__.__name__}_timeout",
+                config.get("analysis_timeout", DEFAULT_ANALYSIS_TIMEOUT)
+            )
+            for path in list(contract_paths):
+                result = adapter.run(path, timeout=timeout)
+                if result:
+                    findings.extend(result if isinstance(result, list) else [result])
+        except Exception as e:
+            if logger:
+                logger.error(f"Adapter {adapter.__class__.__name__} failed: {e}")
+    
+    return [
+        AnalysisResult(
+            tool_name="unknown",
+            vulnerability_type="unknown", 
+            severity="medium",
+            confidence=ConfidenceLevel.MEDIUM,
+            finding_details={"raw_finding": finding}
+        ) for finding in findings
+    ]
+
+def _run_async_analysis(
+    orchestrator: DynamicAnalysisOrchestrator, 
+    contract_paths: Iterable[str]
+) -> List[AnalysisResult]:
+    """Run async analysis with proper event loop handling"""
     try:
-        asyncio.get_running_loop()
-    except RuntimeError:
-        return asyncio.run(orchestrator.analyze_contracts(contract_paths))
-    else:
+        # Check if we're already in an event loop
+        loop = asyncio.get_running_loop()
+        # If we are, run in a thread to avoid blocking
         from concurrent.futures import ThreadPoolExecutor
-        with ThreadPoolExecutor(max_workers=1) as ex:
-            future = ex.submit(lambda: asyncio.run(orchestrator.analyze_contracts(contract_paths)))
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                lambda: asyncio.run(orchestrator.analyze_contracts(contract_paths))
+            )
             return future.result()
+    except RuntimeError:
+        # No event loop running, safe to create one
+        return asyncio.run(orchestrator.analyze_contracts(contract_paths))
