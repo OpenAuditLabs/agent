@@ -103,7 +103,11 @@ class DynamicAnalysisOrchestrator:
         results = []
         
         # Parallel execution of multiple analysis agents
-        with ThreadPoolExecutor(max_workers=len(self.adapters)) as executor:
+        if not self.adapters:
+            self.logger.warning("No dynamic analysis adapters enabled; returning empty results.")
+            return []
+        max_workers = max(1, min(self.config.get("max_workers", len(self.adapters)), len(self.adapters)))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = []
             
             for adapter in self.adapters:
@@ -132,7 +136,13 @@ class DynamicAnalysisOrchestrator:
     def _run_adapter_analysis(self, adapter: Any, contract_paths: Iterable[str]) -> List[Any]:
         """Run individual adapter analysis with error handling"""
         try:
-            return adapter.run(contract_paths)
+            findings: List[Any] = []
+            timeout = self.config.get(f"{adapter.__class__.__name__}_timeout", self.config.get("analysis_timeout", 600))
+            for path in list(contract_paths):
+                result = adapter.run(path, timeout=timeout)
+                if result:
+                    findings.extend(result if isinstance(result, list) else [result])
+            return findings
         except Exception as e:
             self.logger.error(f"Analysis failed for {adapter.__class__.__name__}: {e}")
             return []
@@ -146,10 +156,15 @@ class DynamicAnalysisOrchestrator:
         
         for result in raw_results:
             try:
-                # Extract standard fields
-                vuln_type = getattr(result, 'vulnerability_type', 'unknown')
-                severity = getattr(result, 'severity', 'medium')
-                details = getattr(result, 'details', {})
+                # Extract standard fields from dicts or objects
+                if isinstance(result, dict):
+                    severity = result.get('severity', 'Medium')
+                    vuln_type = result.get('swc_id') or result.get('title') or 'unknown'
+                    details = result
+                else:
+                    severity = getattr(result, 'severity', 'Medium')
+                    vuln_type = getattr(result, 'vulnerability_type', getattr(result, 'swc_id', 'unknown'))
+                    details = getattr(result, 'details', {'raw': repr(result)})
                 
                 # Calculate confidence level using trust calibration
                 confidence = self._calculate_confidence_level(adapter, result)
@@ -185,26 +200,27 @@ class DynamicAnalysisOrchestrator:
         Implement trust calibration as described in Section 5.5.
         Uses multi-modal consistency checks and historical accuracy.
         """
-        # Default confidence scoring logic
-        confidence_score = getattr(result, 'confidence_score', 0.5)
-        
-        # Adjust based on tool reliability
+        # Derive score from adapter output (string confidence or explicit score)
+        score = None
+        if isinstance(result, dict):
+            conf = str(result.get("confidence", "")).lower()
+            score = {"high": 0.9, "medium": 0.7, "low": 0.4}.get(conf)
+        if score is None:
+            score = float(getattr(result, "confidence_score", 0.5))
+
         if isinstance(adapter, AdversarialFuzz):
-            confidence_score *= 1.2  # Higher weight for adversarial findings
-        
-        # Historical accuracy adjustment (would be loaded from training data)
-        tool_accuracy = self.config.get(f"{adapter.__class__.__name__}_accuracy", 0.8)
-        adjusted_score = confidence_score * tool_accuracy
-        
-        # Map to confidence levels
-        if adjusted_score >= 0.9:
-            return ConfidenceLevel.HIGH
-        elif adjusted_score >= 0.7:
-            return ConfidenceLevel.MEDIUM
-        elif adjusted_score >= 0.4:
-            return ConfidenceLevel.LOW
-        else:
+            score *= 1.1
+
+        tool_accuracy = float(self.config.get(f"{adapter.__class__.__name__}_accuracy", 0.8))
+        adjusted = max(0.0, min(1.0, score * tool_accuracy))
+
+        if adjusted >= 0.97:
             return ConfidenceLevel.CRITICAL
+        if adjusted >= 0.9:
+            return ConfidenceLevel.HIGH
+        if adjusted >= 0.7:
+            return ConfidenceLevel.MEDIUM
+        return ConfidenceLevel.LOW
     
     def _generate_remediation_suggestion(self, result: Any) -> Optional[str]:
         """Generate actionable remediation suggestions"""
@@ -266,13 +282,10 @@ class DynamicAnalysisOrchestrator:
             else:
                 # Multiple detections - increase confidence
                 primary_result = max(group, key=lambda r: self._confidence_weight(r.confidence))
-                primary_result.confidence = min(
-                    ConfidenceLevel.HIGH, 
-                    ConfidenceLevel(list(ConfidenceLevel)[
-                        min(len(ConfidenceLevel) - 1, 
-                            list(ConfidenceLevel).index(primary_result.confidence) + 1)
-                    ])
-                )
+                levels = list(ConfidenceLevel)
+                idx = levels.index(primary_result.confidence)
+                new_idx = min(idx + 1, len(levels) - 1)
+                primary_result.confidence = levels[new_idx]
                 
                 # Merge finding details from all tools
                 merged_details = primary_result.finding_details.copy()
@@ -286,10 +299,10 @@ class DynamicAnalysisOrchestrator:
     def _confidence_weight(self, confidence: ConfidenceLevel) -> int:
         """Convert confidence level to numeric weight for comparison"""
         weights = {
-            ConfidenceLevel.CRITICAL: 0,
             ConfidenceLevel.LOW: 1,
             ConfidenceLevel.MEDIUM: 2,
-            ConfidenceLevel.HIGH: 3
+            ConfidenceLevel.HIGH: 3,
+            ConfidenceLevel.CRITICAL: 4,
         }
         return weights.get(confidence, 1)
     
@@ -343,9 +356,11 @@ def run_dynamic_analysis(
         findings = []
         for adapter in adapters:
             try:
-                result = adapter.run(contract_paths)
-                if result:
-                    findings.extend(result if isinstance(result, list) else [result])
+                timeout = (config or {}).get(f"{adapter.__class__.__name__}_timeout", (config or {}).get("analysis_timeout", 600))
+                for path in list(contract_paths):
+                    result = adapter.run(path, timeout=timeout)
+                    if result:
+                        findings.extend(result if isinstance(result, list) else [result])
             except Exception as e:
                 if logger:
                     logger.error(f"Adapter {adapter.__class__.__name__} failed: {e}")
@@ -365,8 +380,11 @@ def run_dynamic_analysis(
     # Run synchronously for backward compatibility
     import asyncio
     try:
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(orchestrator.analyze_contracts(contract_paths))
+        asyncio.get_running_loop()
     except RuntimeError:
-        # No event loop running
         return asyncio.run(orchestrator.analyze_contracts(contract_paths))
+    else:
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=1) as ex:
+            future = ex.submit(lambda: asyncio.run(orchestrator.analyze_contracts(contract_paths)))
+            return future.result()
