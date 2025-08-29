@@ -411,7 +411,7 @@ class DynamicAnalysisOrchestrator:
 
 def run_dynamic_analysis(
     contract_paths: Iterable[str],
-    config: Optional[Dict[str, Any]] = None,
+    config: Optional[Union[Dict[str, Any], DynamicAnalysisConfig]] = None,
     logger: Optional[logging.Logger] = None,
     adapters: Optional[List[Any]] = None,
 ) -> List[AnalysisResult]:
@@ -431,9 +431,10 @@ def run_dynamic_analysis(
         return _run_legacy_analysis(contract_paths, config, logger, adapters)
     
     # Modern agentic AI orchestration
-    # Ensure config is passed as dict for compatibility
+    # Ensure config is passed as dict for compatibility with adapter-specific keys
     config_dict = config
     if hasattr(config, 'to_runtime_config'):
+        # Use the improved to_runtime_config method that includes adapter-specific keys
         config_dict = config.to_runtime_config()
     elif hasattr(config, 'model_dump'):
         config_dict = config.model_dump()

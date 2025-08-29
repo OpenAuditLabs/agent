@@ -117,7 +117,7 @@ class DynamicAnalysisConfig(BaseSettings):
         if isinstance(obj, dict):
             masked = {}
             for key, value in obj.items():
-                key_lower = key.lower()
+                key_lower = str(key).lower()
                 # Narrow match: exact known keys or common suffixes
                 is_sensitive = (
                     key_lower in self._sensitive_patterns
