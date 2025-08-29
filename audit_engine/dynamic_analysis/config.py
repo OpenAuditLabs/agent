@@ -2,10 +2,24 @@
 Configuration management for Dynamic Analysis Module
 """
 
-from functools import lru_cache
 from typing import Any, Dict, Optional, Set
-from pydantic import Field, field_validator, model_validator
-from pydantic_settings import BaseSettings
+from pydantic import Field
+
+try:
+    # Pydantic v2
+    from pydantic_settings import BaseSettings, SettingsConfigDict  # type: ignore
+    from pydantic import model_validator  # type: ignore[attr-defined]
+    _PYDANTIC_V2 = True
+except Exception:  # pragma: no cover
+    # Pydantic v1 fallback
+    from pydantic import BaseSettings, root_validator  # type: ignore
+    _PYDANTIC_V2 = False
+    # Shim to keep the decorator usage consistent on v1
+    def model_validator(*, mode: str = "after"):  # type: ignore
+        pre = (mode == "before")
+        def _wrap(fn):
+            return root_validator(pre=pre, allow_reuse=True)(fn)
+        return _wrap
 
 
 class DynamicAnalysisConfig(BaseSettings):
@@ -45,14 +59,23 @@ class DynamicAnalysisConfig(BaseSettings):
     api_key: Optional[str] = Field(None, description="API key for external services")
     auth_token: Optional[str] = Field(None, description="Authentication token")
     
-    model_config = {
-        "env_prefix": "AUDIT_",
-        "env_file": ".env",
-        "case_sensitive": False,
-        "env_nested_delimiter": "__",
-        "extra": "forbid",  # Prevent unexpected configuration keys
-        "validate_assignment": True,  # Validate on assignment
-    }
+    if _PYDANTIC_V2:
+        model_config = SettingsConfigDict(
+            env_prefix="AUDIT_",
+            env_file=".env",
+            case_sensitive=False,
+            env_nested_delimiter="__",
+            extra="forbid",
+            validate_assignment=True,
+        )
+    else:
+        class Config:
+            env_prefix = "AUDIT_"
+            env_file = ".env"
+            case_sensitive = False
+            env_nested_delimiter = "__"
+            extra = "forbid"
+            validate_assignment = True
     
     @model_validator(mode='after')
     def validate_model(self) -> 'DynamicAnalysisConfig':
@@ -70,13 +93,12 @@ class DynamicAnalysisConfig(BaseSettings):
             
         return self
     
-    @lru_cache(maxsize=1)
     def masked_dict(self) -> Dict[str, Any]:
         """
         Return a dictionary representation with sensitive fields masked
         """
-        # Use model_dump for Pydantic v2 compatibility
-        config_dict = self.model_dump()
+        # Use model_dump for Pydantic v2 compatibility, dict() for v1
+        config_dict = self.model_dump() if hasattr(self, "model_dump") else self.dict()
         return self._mask_sensitive_data(config_dict)
     
     def _mask_sensitive_data(self, obj: Any) -> Any:
@@ -86,16 +108,20 @@ class DynamicAnalysisConfig(BaseSettings):
         # Define comprehensive set of sensitive key patterns as class constant
         if not hasattr(self, '_sensitive_patterns'):
             self._sensitive_patterns: Set[str] = {
-                "api_key", "auth_token", "password", "secret", "token", 
-                "key", "credential", "auth", "pass", "pwd"
+                "api_key", "access_key", "secret_key", "private_key", "client_secret",
+                "password", "pass", "pwd",
+                "secret", "token", "auth_token", "bearer_token", "refresh_token",
             }
         
         if isinstance(obj, dict):
             masked = {}
             for key, value in obj.items():
                 key_lower = key.lower()
-                # Check if key contains any sensitive pattern
-                is_sensitive = any(pattern in key_lower for pattern in self._sensitive_patterns)
+                # Narrow match: exact known keys or common suffixes
+                is_sensitive = (
+                    key_lower in self._sensitive_patterns
+                    or key_lower.endswith(("_key", "_secret", "_token"))
+                )
                 
                 if is_sensitive and value is not None:
                     # Mask with partial visibility for debugging
@@ -111,7 +137,6 @@ class DynamicAnalysisConfig(BaseSettings):
         else:
             return obj
     
-    @lru_cache(maxsize=None)
     def get_tool_config(self, tool_name: str) -> Dict[str, Any]:
         """
         Get configuration for a specific tool with fallback to defaults
@@ -123,19 +148,19 @@ class DynamicAnalysisConfig(BaseSettings):
         
         return tool_configs.get(tool_name.lower(), {})
     
-    @lru_cache(maxsize=None)
     def get_tool_accuracy(self, tool_name: str) -> float:
         """
         Get accuracy setting for a specific tool
         """
+        normalized = tool_name.replace(" ", "").replace("_", "").lower()
         accuracy_map = {
-            "echidna_adapter": self.echidna_adapter_accuracy,
+            "echidna": self.echidna_adapter_accuracy,
+            "echidnaadapter": self.echidna_adapter_accuracy,
             "adversarialfuzz": self.adversarial_fuzz_accuracy,
+            "adversarial": self.adversarial_fuzz_accuracy,
         }
-        
-        return accuracy_map.get(tool_name.lower(), 0.8)  # Default accuracy
+        return accuracy_map.get(normalized, 0.8)
     
-    @lru_cache(maxsize=None)
     def is_tool_enabled(self, tool_name: str) -> bool:
         """
         Check if a specific tool is enabled
@@ -146,16 +171,19 @@ class DynamicAnalysisConfig(BaseSettings):
         }
         
         return tool_map.get(tool_name.lower(), False)
+    
+    def to_runtime_config(self) -> Dict[str, Any]:
+        """
+        Export configuration as a plain dictionary for orchestrator usage.
+        Ensures all adapter-specific keys are present and no keys are silently dropped.
+        """
+        return self.model_dump() if hasattr(self, "model_dump") else self.dict()
+    
+    def validate_config(self) -> None:
         """
         Perform additional configuration validation
+        
+        Deprecated: Use model_validator instead
         """
-        # Ensure at least one analysis tool is enabled
-        if not (self.enable_echidna or self.enable_adversarial_fuzz):
-            raise ValueError("At least one analysis tool must be enabled")
-        
-        # Validate tool-specific configurations
-        if self.enable_echidna and not isinstance(self.echidna, dict):
-            raise ValueError("Echidna configuration must be a dictionary")
-        
-        if self.enable_adversarial_fuzz and not isinstance(self.adversarial_fuzz, dict):
-            raise ValueError("Adversarial fuzz configuration must be a dictionary")
+        # This method is now redundant as validation is handled by model_validator
+        pass
