@@ -3,7 +3,7 @@ Configuration management for Dynamic Analysis Module
 """
 
 from typing import Any, Dict, Optional, Set
-from pydantic import BaseModel, Field, validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -53,7 +53,7 @@ class DynamicAnalysisConfig(BaseSettings):
         "validate_assignment": True,  # Validate on assignment
     }
     
-    @validator('analysis_timeout')
+    @field_validator('analysis_timeout')
     @classmethod
     def validate_timeout(cls, v: int) -> int:
         """Validate analysis timeout is reasonable"""
@@ -63,7 +63,7 @@ class DynamicAnalysisConfig(BaseSettings):
             raise ValueError("Analysis timeout cannot exceed 1 hour")
         return v
     
-    @validator('max_workers')
+    @field_validator('max_workers')
     @classmethod
     def validate_max_workers(cls, v: int) -> int:
         """Validate max workers is reasonable"""
@@ -101,7 +101,7 @@ class DynamicAnalysisConfig(BaseSettings):
                 if is_sensitive and value is not None:
                     # Mask with partial visibility for debugging
                     if isinstance(value, str) and len(value) > 8:
-                        masked[key] = f"{value[:3]}***{value[-2:]}
+                        masked[key] = f"{value[:3]}***{value[-2:]}"
                     else:
                         masked[key] = "***"
                 else:
