@@ -14,12 +14,6 @@ except Exception:  # pragma: no cover
     # Pydantic v1 fallback
     from pydantic import BaseSettings, root_validator  # type: ignore
     _PYDANTIC_V2 = False
-    # Shim to keep the decorator usage consistent on v1
-    def model_validator(*, mode: str = "after"):  # type: ignore
-        pre = (mode == "before")
-        def _wrap(fn):
-            return root_validator(pre=pre, allow_reuse=True)(fn)
-        return _wrap
 
 
 class DynamicAnalysisConfig(BaseSettings):
@@ -77,21 +71,27 @@ class DynamicAnalysisConfig(BaseSettings):
             extra = "forbid"
             validate_assignment = True
     
-    @model_validator(mode='after')
-    def validate_model(self) -> 'DynamicAnalysisConfig':
-        """Validate the entire model after all fields are set"""
-        # Ensure at least one analysis tool is enabled
-        if not (self.enable_echidna or self.enable_adversarial_fuzz):
-            raise ValueError("At least one analysis tool must be enabled")
-        
-        # Validate tool-specific configurations
-        if self.enable_echidna and not isinstance(self.echidna, dict):
-            raise ValueError("Echidna configuration must be a dictionary")
-        
-        if self.enable_adversarial_fuzz and not isinstance(self.adversarial_fuzz, dict):
-            raise ValueError("Adversarial fuzz configuration must be a dictionary")
-            
-        return self
+    # Validation (v2 instance "after" validator; v1 class-level root validator)
+    if _PYDANTIC_V2:
+        @model_validator(mode="after")
+        def _validate_after(self) -> "DynamicAnalysisConfig":
+            if not (self.enable_echidna or self.enable_adversarial_fuzz):
+                raise ValueError("At least one analysis tool must be enabled")
+            if self.enable_echidna and not isinstance(self.echidna, dict):
+                raise ValueError("Echidna configuration must be a dictionary")
+            if self.enable_adversarial_fuzz and not isinstance(self.adversarial_fuzz, dict):
+                raise ValueError("Adversarial fuzz configuration must be a dictionary")
+            return self
+    else:
+        @root_validator
+        def _validate_v1(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+            if not (values.get("enable_echidna") or values.get("enable_adversarial_fuzz")):
+                raise ValueError("At least one analysis tool must be enabled")
+            if values.get("enable_echidna") and not isinstance(values.get("echidna"), dict):
+                raise ValueError("Echidna configuration must be a dictionary")
+            if values.get("enable_adversarial_fuzz") and not isinstance(values.get("adversarial_fuzz"), dict):
+                raise ValueError("Adversarial fuzz configuration must be a dictionary")
+            return values
     
     def masked_dict(self) -> Dict[str, Any]:
         """
@@ -111,6 +111,7 @@ class DynamicAnalysisConfig(BaseSettings):
                 "api_key", "access_key", "secret_key", "private_key", "client_secret",
                 "password", "pass", "pwd",
                 "secret", "token", "auth_token", "bearer_token", "refresh_token",
+                "authorization", "x-api-key", "x_api_key",
             }
         
         if isinstance(obj, dict):
@@ -120,7 +121,7 @@ class DynamicAnalysisConfig(BaseSettings):
                 # Narrow match: exact known keys or common suffixes
                 is_sensitive = (
                     key_lower in self._sensitive_patterns
-                    or key_lower.endswith(("_key", "_secret", "_token"))
+                    or key_lower.endswith(("_key", "_secret", "_token", "-key", "-secret", "-token"))
                 )
                 
                 if is_sensitive and value is not None:
