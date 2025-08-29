@@ -173,7 +173,10 @@ class DynamicAnalysisOrchestrator:
             confidence_mapping = {"high": 0.9, "medium": 0.7, "low": 0.4}
             if conf_str in confidence_mapping:
                 return confidence_mapping[conf_str]
-        
+            try:
+                return float(result.get("confidence_score", 0.5))
+            except (TypeError, ValueError):
+                return 0.5
         return float(getattr(result, "confidence_score", 0.5))
 
     def _score_to_confidence_level(self, score: float) -> ConfidenceLevel:
