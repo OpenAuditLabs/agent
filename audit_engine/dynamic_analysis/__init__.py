@@ -24,6 +24,7 @@ import time
 
 from .echidna_adapter import EchidnaAdapter
 from .adversarial_fuzz import AdversarialFuzz
+from .config import DynamicAnalysisConfig
 
 __all__ = [
     "DynamicAnalysisOrchestrator",
@@ -97,15 +98,30 @@ class DynamicAnalysisOrchestrator:
         Create a masked version of config for safe logging.
         Masks sensitive keys that might contain tokens, passwords, or secrets.
         """
+        # Define specific sensitive patterns to avoid false positives
+        sensitive_patterns = {
+            "api_key", "access_key", "secret_key", "private_key", "client_secret",
+            "password", "pass", "pwd",
+            "secret", "token", "auth_token", "bearer_token", "refresh_token",
+        }
+        
         def mask_sensitive_data(obj: Any) -> Any:
             if isinstance(obj, dict):
                 masked = {}
                 for key, value in obj.items():
                     key_lower = key.lower()
-                    # Check for sensitive key patterns
-                    if any(sensitive in key_lower for sensitive in 
-                          ("key", "token", "secret", "password", "auth", "credential", "api_key")):
-                        masked[key] = "***"
+                    # Narrow match: exact known keys or common suffixes
+                    is_sensitive = (
+                        key_lower in sensitive_patterns
+                        or key_lower.endswith(("_key", "_secret", "_token"))
+                    )
+                    
+                    if is_sensitive and value is not None:
+                        # Mask with partial visibility for debugging
+                        if isinstance(value, str) and len(value) > 8:
+                            masked[key] = f"{value[:3]}***{value[-2:]}"
+                        else:
+                            masked[key] = "***"
                     else:
                         masked[key] = mask_sensitive_data(value)
                 return masked
@@ -115,29 +131,85 @@ class DynamicAnalysisOrchestrator:
                 return obj
         
         return mask_sensitive_data(self.config)
-        
+
     def _initialize_adapters(self) -> List[Any]:
         """Initialize dynamic analysis adapters with configuration"""
         adapters = []
         
+        # Handle both dict and DynamicAnalysisConfig objects
+        if hasattr(self.config, 'enable_echidna'):
+            # Pydantic config object
+            enable_echidna = self.config.enable_echidna
+            enable_adversarial_fuzz = self.config.enable_adversarial_fuzz
+            echidna_config = self.config.echidna if hasattr(self.config, 'echidna') else {}
+            adversarial_config = self.config.adversarial_fuzz if hasattr(self.config, 'adversarial_fuzz') else {}
+        else:
+            # Dict config
+            enable_echidna = self.config.get("enable_echidna", True)
+            enable_adversarial_fuzz = self.config.get("enable_adversarial_fuzz", True)
+            echidna_config = self.config.get("echidna", {})
+            adversarial_config = self.config.get("adversarial_fuzz", {})
+        
         # Standard Echidna fuzzing
-        if self.config.get("enable_echidna", True):
+        if enable_echidna:
             try:
-                echidna_config = self.config.get("echidna", {})
                 adapters.append(EchidnaAdapter(config=echidna_config, logger=self.logger))
             except Exception as e:
                 self.logger.warning(f"Failed to initialize EchidnaAdapter: {e}")
         
         # Adversarial fuzzing as per Rahman et al. (2025)
-        if self.config.get("enable_adversarial_fuzz", True):
+        if enable_adversarial_fuzz:
             try:
-                adversarial_config = self.config.get("adversarial_fuzz", {})
                 adapters.append(AdversarialFuzz(config=adversarial_config, logger=self.logger))
             except Exception as e:
                 self.logger.warning(f"Failed to initialize AdversarialFuzz: {e}")
                 
         return adapters
-    
+
+    def _extract_confidence_score(self, result: Any) -> float:
+        """Extract numerical confidence score from result"""
+        if isinstance(result, dict):
+            conf_str = str(result.get("confidence", "")).lower()
+            confidence_mapping = {"high": 0.9, "medium": 0.7, "low": 0.4}
+            if conf_str in confidence_mapping:
+                return confidence_mapping[conf_str]
+        
+        return float(getattr(result, "confidence_score", 0.5))
+
+    def _score_to_confidence_level(self, score: float) -> ConfidenceLevel:
+        """Convert numerical score to ConfidenceLevel enum"""
+        if score >= CONFIDENCE_THRESHOLDS['critical']:
+            return ConfidenceLevel.CRITICAL
+        elif score >= CONFIDENCE_THRESHOLDS['high']:
+            return ConfidenceLevel.HIGH
+        elif score >= CONFIDENCE_THRESHOLDS['medium']:
+            return ConfidenceLevel.MEDIUM
+        else:
+            return ConfidenceLevel.LOW
+
+    def _calculate_confidence_level(self, adapter: Any, result: Any) -> ConfidenceLevel:
+        """
+        Implement trust calibration as described in Section 5.5.
+        Uses multi-modal consistency checks and historical accuracy.
+        """
+        # Extract confidence score from result
+        score = self._extract_confidence_score(result)
+        
+        # Apply adapter-specific adjustments
+        if isinstance(adapter, AdversarialFuzz):
+            score = min(1.0, score * ADVERSARIAL_BOOST_FACTOR)
+
+        # Apply tool accuracy weighting - check both PascalCase and snake_case
+        class_name = adapter.__class__.__name__
+        snake_case = "".join([f"_{c.lower()}" if c.isupper() else c for c in class_name]).lstrip("_")
+        tool_accuracy = self.config.get(
+            f"{class_name}_accuracy",
+            self.config.get(f"{snake_case}_accuracy", DEFAULT_TOOL_ACCURACY),
+        )
+        adjusted_score = max(0.0, min(1.0, score * tool_accuracy))
+
+        return self._score_to_confidence_level(adjusted_score)
+
     async def analyze_contracts(
         self, 
         contract_paths: Iterable[str],
@@ -157,13 +229,12 @@ class DynamicAnalysisOrchestrator:
             return []
 
         results = await self._execute_parallel_analysis(contract_list)
-        consensus_results = self._apply_consensus_scoring(results)
         
         # Reinforcement learning feedback integration
         if self.rl_feedback_enabled:
-            await self._update_rl_feedback(consensus_results)
+            await self._update_rl_feedback(results)
         
-        return consensus_results
+        return results
 
     async def _execute_parallel_analysis(self, contract_paths: List[str]) -> List[AnalysisResult]:
         """Execute analysis across multiple adapters in parallel"""
@@ -281,48 +352,6 @@ class DynamicAnalysisOrchestrator:
         
         return severity, vuln_type, details
     
-    def _calculate_confidence_level(self, adapter: Any, result: Any) -> ConfidenceLevel:
-        """
-        Implement trust calibration as described in Section 5.5.
-        Uses multi-modal consistency checks and historical accuracy.
-        """
-        # Extract confidence score from result
-        score = self._extract_confidence_score(result)
-        
-        # Apply adapter-specific adjustments
-        if isinstance(adapter, AdversarialFuzz):
-            score = min(1.0, score * ADVERSARIAL_BOOST_FACTOR)
-
-        # Apply tool accuracy weighting
-        tool_accuracy = self.config.get(
-            f"{adapter.__class__.__name__}_accuracy", 
-            DEFAULT_TOOL_ACCURACY
-        )
-        adjusted_score = max(0.0, min(1.0, score * tool_accuracy))
-
-        return self._score_to_confidence_level(adjusted_score)
-
-    def _extract_confidence_score(self, result: Any) -> float:
-        """Extract numerical confidence score from result"""
-        if isinstance(result, dict):
-            conf_str = str(result.get("confidence", "")).lower()
-            confidence_mapping = {"high": 0.9, "medium": 0.7, "low": 0.4}
-            if conf_str in confidence_mapping:
-                return confidence_mapping[conf_str]
-        
-        return float(getattr(result, "confidence_score", 0.5))
-
-    def _score_to_confidence_level(self, score: float) -> ConfidenceLevel:
-        """Convert numerical score to ConfidenceLevel enum"""
-        if score >= CONFIDENCE_THRESHOLDS['critical']:
-            return ConfidenceLevel.CRITICAL
-        elif score >= CONFIDENCE_THRESHOLDS['high']:
-            return ConfidenceLevel.HIGH
-        elif score >= CONFIDENCE_THRESHOLDS['medium']:
-            return ConfidenceLevel.MEDIUM
-        else:
-            return ConfidenceLevel.LOW
-    
     def _generate_remediation_suggestion(self, result: Any) -> Optional[str]:
         """Generate actionable remediation suggestions"""
         vuln_type = getattr(result, 'vulnerability_type', '').lower()
@@ -350,89 +379,7 @@ class DynamicAnalysisOrchestrator:
         }
         
         return chain_mappings.get(vuln_type)
-    
-    def _apply_consensus_scoring(self, results: List[AnalysisResult]) -> List[AnalysisResult]:
-        """
-        Multi-agent consensus mechanism as described in Section 5.10.
-        Aggregates findings from multiple tools to reduce false positives.
-        """
-        if not results:
-            return []
 
-        # Group results by vulnerability signature
-        grouped_results = self._group_results_by_signature(results)
-        consensus_results = []
-        
-        for group in grouped_results.values():
-            consensus_result = self._create_consensus_result(group)
-            if consensus_result:
-                consensus_results.append(consensus_result)
-        
-        return consensus_results
-
-    def _group_results_by_signature(self, results: List[AnalysisResult]) -> Dict[str, List[AnalysisResult]]:
-        """Group results by vulnerability signature for consensus analysis"""
-        grouped = {}
-        for result in results:
-            # Create a more robust signature based on vulnerability type and key details
-            details_hash = hash(str(sorted(result.finding_details.items())))
-            key = f"{result.vulnerability_type}_{details_hash}"
-            
-            if key not in grouped:
-                grouped[key] = []
-            grouped[key].append(result)
-        
-        return grouped
-
-    def _create_consensus_result(self, group: List[AnalysisResult]) -> Optional[AnalysisResult]:
-        """Create consensus result from group of similar findings"""
-        if not group:
-            return None
-
-        if len(group) == 1:
-            # Single detection - slightly reduce confidence
-            result = group[0]
-            result.confidence = self._adjust_single_detection_confidence(result.confidence)
-            return result
-        else:
-            # Multiple detections - increase confidence through consensus
-            return self._merge_multiple_detections(group)
-
-    def _adjust_single_detection_confidence(self, confidence: ConfidenceLevel) -> ConfidenceLevel:
-        """Adjust confidence for single tool detection"""
-        if confidence == ConfidenceLevel.HIGH:
-            return ConfidenceLevel.MEDIUM
-        return confidence
-
-    def _merge_multiple_detections(self, group: List[AnalysisResult]) -> AnalysisResult:
-        """Merge multiple tool detections into consensus result"""
-        # Select primary result with highest confidence
-        primary_result = max(group, key=lambda r: self._confidence_weight(r.confidence))
-        
-        # Boost confidence due to consensus
-        confidence_levels = list(ConfidenceLevel)
-        current_idx = confidence_levels.index(primary_result.confidence)
-        new_idx = min(current_idx + 1, len(confidence_levels) - 1)
-        primary_result.confidence = confidence_levels[new_idx]
-        
-        # Merge finding details from all tools
-        merged_details = primary_result.finding_details.copy()
-        merged_details['consensus_tools'] = [r.tool_name for r in group]
-        merged_details['detection_count'] = len(group)
-        primary_result.finding_details = merged_details
-        
-        return primary_result
-    
-    def _confidence_weight(self, confidence: ConfidenceLevel) -> int:
-        """Convert confidence level to numeric weight for comparison"""
-        weights = {
-            ConfidenceLevel.LOW: 1,
-            ConfidenceLevel.MEDIUM: 2,
-            ConfidenceLevel.HIGH: 3,
-            ConfidenceLevel.CRITICAL: 4,
-        }
-        return weights.get(confidence, 1)
-    
     async def _update_rl_feedback(self, results: List[AnalysisResult]) -> None:
         """
         Reinforcement learning feedback loop as described in Section 5.4.
@@ -473,7 +420,7 @@ def run_dynamic_analysis(
     
     Args:
         contract_paths: Paths to smart contract files
-        config: Configuration dictionary
+        config: Configuration dictionary or DynamicAnalysisConfig instance
         logger: Logger instance
         adapters: Pre-initialized adapters (for testing)
     
@@ -484,7 +431,16 @@ def run_dynamic_analysis(
         return _run_legacy_analysis(contract_paths, config, logger, adapters)
     
     # Modern agentic AI orchestration
-    orchestrator = DynamicAnalysisOrchestrator(config=config, logger=logger)
+    # Ensure config is passed as dict for compatibility
+    config_dict = config
+    if hasattr(config, 'to_runtime_config'):
+        config_dict = config.to_runtime_config()
+    elif hasattr(config, 'model_dump'):
+        config_dict = config.model_dump()
+    elif hasattr(config, 'dict'):
+        config_dict = config.dict()
+    
+    orchestrator = DynamicAnalysisOrchestrator(config=config_dict, logger=logger)
     return _run_async_analysis(orchestrator, contract_paths)
 
 def _run_legacy_analysis(
