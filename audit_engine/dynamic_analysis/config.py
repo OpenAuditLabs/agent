@@ -2,8 +2,9 @@
 Configuration management for Dynamic Analysis Module
 """
 
+from functools import lru_cache
 from typing import Any, Dict, Optional, Set
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -53,26 +54,23 @@ class DynamicAnalysisConfig(BaseSettings):
         "validate_assignment": True,  # Validate on assignment
     }
     
-    @field_validator('analysis_timeout')
-    @classmethod
-    def validate_timeout(cls, v: int) -> int:
-        """Validate analysis timeout is reasonable"""
-        if v <= 0:
-            raise ValueError("Analysis timeout must be positive")
-        if v > 3600:  # 1 hour max
-            raise ValueError("Analysis timeout cannot exceed 1 hour")
-        return v
+    @model_validator(mode='after')
+    def validate_model(self) -> 'DynamicAnalysisConfig':
+        """Validate the entire model after all fields are set"""
+        # Ensure at least one analysis tool is enabled
+        if not (self.enable_echidna or self.enable_adversarial_fuzz):
+            raise ValueError("At least one analysis tool must be enabled")
+        
+        # Validate tool-specific configurations
+        if self.enable_echidna and not isinstance(self.echidna, dict):
+            raise ValueError("Echidna configuration must be a dictionary")
+        
+        if self.enable_adversarial_fuzz and not isinstance(self.adversarial_fuzz, dict):
+            raise ValueError("Adversarial fuzz configuration must be a dictionary")
+            
+        return self
     
-    @field_validator('max_workers')
-    @classmethod
-    def validate_max_workers(cls, v: int) -> int:
-        """Validate max workers is reasonable"""
-        if v <= 0:
-            raise ValueError("Max workers must be positive")
-        if v > 16:  # Reasonable upper limit
-            raise ValueError("Max workers cannot exceed 16")
-        return v
-    
+    @lru_cache(maxsize=1)
     def masked_dict(self) -> Dict[str, Any]:
         """
         Return a dictionary representation with sensitive fields masked
@@ -85,18 +83,19 @@ class DynamicAnalysisConfig(BaseSettings):
         """
         Recursively mask sensitive data in configuration
         """
-        # Define comprehensive set of sensitive key patterns
-        sensitive_patterns: Set[str] = {
-            "api_key", "auth_token", "password", "secret", "token", 
-            "key", "credential", "auth", "pass", "pwd"
-        }
+        # Define comprehensive set of sensitive key patterns as class constant
+        if not hasattr(self, '_sensitive_patterns'):
+            self._sensitive_patterns: Set[str] = {
+                "api_key", "auth_token", "password", "secret", "token", 
+                "key", "credential", "auth", "pass", "pwd"
+            }
         
         if isinstance(obj, dict):
             masked = {}
             for key, value in obj.items():
                 key_lower = key.lower()
                 # Check if key contains any sensitive pattern
-                is_sensitive = any(pattern in key_lower for pattern in sensitive_patterns)
+                is_sensitive = any(pattern in key_lower for pattern in self._sensitive_patterns)
                 
                 if is_sensitive and value is not None:
                     # Mask with partial visibility for debugging
@@ -112,6 +111,7 @@ class DynamicAnalysisConfig(BaseSettings):
         else:
             return obj
     
+    @lru_cache(maxsize=None)
     def get_tool_config(self, tool_name: str) -> Dict[str, Any]:
         """
         Get configuration for a specific tool with fallback to defaults
@@ -123,6 +123,7 @@ class DynamicAnalysisConfig(BaseSettings):
         
         return tool_configs.get(tool_name.lower(), {})
     
+    @lru_cache(maxsize=None)
     def get_tool_accuracy(self, tool_name: str) -> float:
         """
         Get accuracy setting for a specific tool
@@ -134,6 +135,7 @@ class DynamicAnalysisConfig(BaseSettings):
         
         return accuracy_map.get(tool_name.lower(), 0.8)  # Default accuracy
     
+    @lru_cache(maxsize=None)
     def is_tool_enabled(self, tool_name: str) -> bool:
         """
         Check if a specific tool is enabled
@@ -144,8 +146,6 @@ class DynamicAnalysisConfig(BaseSettings):
         }
         
         return tool_map.get(tool_name.lower(), False)
-    
-    def validate_config(self) -> None:
         """
         Perform additional configuration validation
         """
