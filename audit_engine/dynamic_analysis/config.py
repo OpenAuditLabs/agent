@@ -178,7 +178,18 @@ class DynamicAnalysisConfig(BaseSettings):
         Export configuration as a plain dictionary for orchestrator usage.
         Ensures all adapter-specific keys are present and no keys are silently dropped.
         """
-        return self.model_dump() if hasattr(self, "model_dump") else self.dict()
+        if hasattr(self, "model_dump"):
+            data = self.model_dump(by_alias=True, exclude_none=True)
+        else:
+            data = self.dict(by_alias=True, exclude_none=True)
+
+        # Ensure orchestrator-specific keys exist
+        data.setdefault("EchidnaAdapter_accuracy", self.echidna_adapter_accuracy)
+        data.setdefault("AdversarialFuzz_accuracy", self.adversarial_fuzz_accuracy)
+        # Provide per-adapter timeouts (fallback to global)
+        data.setdefault("EchidnaAdapter_timeout", data.get("analysis_timeout", self.analysis_timeout))
+        data.setdefault("AdversarialFuzz_timeout", data.get("analysis_timeout", self.analysis_timeout))
+        return data
     
     def validate_config(self) -> None:
         """
