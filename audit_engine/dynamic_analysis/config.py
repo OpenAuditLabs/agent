@@ -61,7 +61,7 @@ class DynamicAnalysisConfig(BaseSettings):
     
     if _PYDANTIC_V2:
         model_config = SettingsConfigDict(
-            env_prefix="AUDIT_",
+            env_prefix="DYNAMIC_ANALYSIS_",
             env_file=".env",
             case_sensitive=False,
             env_nested_delimiter="__",
@@ -70,7 +70,7 @@ class DynamicAnalysisConfig(BaseSettings):
         )
     else:
         class Config:
-            env_prefix = "AUDIT_"
+            env_prefix = "DYNAMIC_ANALYSIS_"
             env_file = ".env"
             case_sensitive = False
             env_nested_delimiter = "__"
