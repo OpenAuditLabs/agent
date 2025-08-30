@@ -433,3 +433,50 @@ def run_dynamic_analysis(
     if adapters:
         return _run_legacy_analysis(contract_paths, config, logger, adapters)
     
+    # Modern agentic AI orchestration
+    # Ensure config is passed as dict for compatibility with adapter-specific keys
+    config_dict = config
+    if hasattr(config, 'to_runtime_config'):
+        # Use the improved to_runtime_config method that includes adapter-specific keys
+        config_dict = config.to_runtime_config()
+    elif hasattr(config, 'model_dump'):
+        config_dict = config.model_dump()
+    elif hasattr(config, 'dict'):
+        config_dict = config.dict()
+    
+    orchestrator = DynamicAnalysisOrchestrator(config=config_dict, logger=logger)
+    return _run_async_analysis(orchestrator, contract_paths)
+
+def _run_legacy_analysis(
+    contract_paths: Iterable[str],
+    config: Optional[Dict[str, Any]],
+    logger: Optional[logging.Logger],
+    adapters: List[Any]
+) -> List[AnalysisResult]:
+    """Legacy mode for backward compatibility"""
+    findings = []
+    config = config or {}
+    
+    for adapter in adapters:
+        try:
+            timeout = config.get(
+                f"{adapter.__class__.__name__}_timeout",
+                config.get("analysis_timeout", DEFAULT_ANALYSIS_TIMEOUT)
+            )
+            for path in list(contract_paths):
+                result = adapter.run(path, timeout=timeout)
+                if result:
+                    findings.extend(result if isinstance(result, list) else [result])
+        except Exception as e:
+            if logger:
+                logger.error(f"Adapter {adapter.__class__.__name__} failed: {e}")
+    
+    return [
+        AnalysisResult(
+            tool_name="unknown",
+            vulnerability_type="unknown", 
+            severity="medium",
+            confidence=ConfidenceLevel.MEDIUM,
+            finding_details={"raw_finding": finding}
+        ) for finding in findings
+    ]
