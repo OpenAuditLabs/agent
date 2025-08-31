@@ -149,6 +149,19 @@ class AnalysisResult(BaseModel):
             if count > 0:
                 self.severity_distribution[severity] = count
 
+        # Compute confidence distribution by bucketing float confidences
+        self.confidence_distribution = {}
+        def bucket(c: float) -> ConfidenceLevel:
+            if c >= 0.9:
+                return ConfidenceLevel.HIGH
+            if c >= 0.7:
+                return ConfidenceLevel.MEDIUM
+            return ConfidenceLevel.LOW
+        for level in ConfidenceLevel:
+            count = sum(1 for f in self.findings if bucket(getattr(f, "confidence", 0.0)) == level)
+            if count > 0:
+                self.confidence_distribution[level] = count
+
     class Config:
         use_enum_values = True
         json_encoders = {

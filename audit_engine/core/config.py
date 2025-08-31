@@ -29,23 +29,8 @@ class StaticAnalysisConfig(BaseSettings):
         env_prefix = "STATIC_ANALYSIS_"
 
 
-class DynamicAnalysisConfig(BaseSettings):
-    """Dynamic analysis configuration"""
-    enable_echidna: bool = Field(default=True, description="Enable Echidna fuzzing")
-    enable_adversarial_fuzz: bool = Field(default=True, description="Enable adversarial fuzzing")
-    
-    # Tool configs
-    echidna: Dict[str, Any] = Field(default_factory=dict)
-    adversarial_fuzz: Dict[str, Any] = Field(default_factory=dict)
-    
-    # Analysis settings
-    analysis_timeout: int = Field(default=600, description="Analysis timeout in seconds")
-    max_workers: int = Field(default=2, description="Maximum parallel workers")
-    reinforcement_learning: bool = Field(default=False, description="Enable RL feedback")
-    cross_chain_analysis: bool = Field(default=False, description="Enable cross-chain analysis")
-
-    class Config:
-        env_prefix = "DYNAMIC_ANALYSIS_"
+# Reuse the richer, validated config from the dynamic module
+from audit_engine.dynamic_analysis.config import DynamicAnalysisConfig  # noqa: E402
 
 
 class ScoringConfig(BaseSettings):
