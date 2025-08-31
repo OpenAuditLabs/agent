@@ -149,3 +149,53 @@ class DynamicAnalysisConfig(BaseSettings):
         
         return tool_configs.get(tool_name.lower(), {})
     
+    def get_tool_accuracy(self, tool_name: str) -> float:
+        """
+        Get accuracy setting for a specific tool
+        """
+        normalized = tool_name.replace(" ", "").replace("_", "").lower()
+        accuracy_map = {
+            "echidna": self.echidna_adapter_accuracy,
+            "echidnaadapter": self.echidna_adapter_accuracy,
+            "adversarialfuzz": self.adversarial_fuzz_accuracy,
+            "adversarial": self.adversarial_fuzz_accuracy,
+        }
+        return accuracy_map.get(normalized, 0.8)
+    
+    def is_tool_enabled(self, tool_name: str) -> bool:
+        """
+        Check if a specific tool is enabled
+        """
+        tool_map = {
+            "echidna": self.enable_echidna,
+            "adversarial_fuzz": self.enable_adversarial_fuzz,
+        }
+        
+        return tool_map.get(tool_name.lower(), False)
+    
+    def to_runtime_config(self) -> Dict[str, Any]:
+        """
+        Export configuration as a plain dictionary for orchestrator usage.
+        Ensures all adapter-specific keys are present and no keys are silently dropped.
+        """
+        if hasattr(self, "model_dump"):
+            data = self.model_dump(by_alias=True, exclude_none=True)
+        else:
+            data = self.dict(by_alias=True, exclude_none=True)
+
+        # Ensure orchestrator-specific keys exist
+        data.setdefault("EchidnaAdapter_accuracy", self.echidna_adapter_accuracy)
+        data.setdefault("AdversarialFuzz_accuracy", self.adversarial_fuzz_accuracy)
+        # Provide per-adapter timeouts (fallback to global)
+        data.setdefault("EchidnaAdapter_timeout", data.get("analysis_timeout", self.analysis_timeout))
+        data.setdefault("AdversarialFuzz_timeout", data.get("analysis_timeout", self.analysis_timeout))
+        return data
+    
+    def validate_config(self) -> None:
+        """
+        Perform additional configuration validation
+        
+        Deprecated: Use model_validator instead
+        """
+        # This method is now redundant as validation is handled by model_validator
+        pass
