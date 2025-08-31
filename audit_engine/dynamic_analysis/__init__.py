@@ -98,24 +98,31 @@ class DynamicAnalysisOrchestrator:
         Create a masked version of config for safe logging.
         Masks sensitive keys that might contain tokens, passwords, or secrets.
         """
+        # If config has its own masking, use it
+        if hasattr(self.config, "masked_dict"):
+            try:
+                return self.config.masked_dict()  # type: ignore[no-any-return]
+            except Exception:
+                self.logger.exception("Failed to mask config via masked_dict(); falling back to local masker")
         # Define specific sensitive patterns to avoid false positives
         sensitive_patterns = {
             "api_key", "access_key", "secret_key", "private_key", "client_secret",
             "password", "pass", "pwd",
             "secret", "token", "auth_token", "bearer_token", "refresh_token",
+            "authorization", "x-api-key", "x_api_key",
         }
-        
+
         def mask_sensitive_data(obj: Any) -> Any:
             if isinstance(obj, dict):
                 masked = {}
                 for key, value in obj.items():
                     key_lower = key.lower()
-                    # Narrow match: exact known keys or common suffixes
+                    # Narrow match: exact known keys or common suffixes (underscore and hyphen)
                     is_sensitive = (
                         key_lower in sensitive_patterns
-                        or key_lower.endswith(("_key", "_secret", "_token"))
+                        or key_lower.endswith(("_key", "_secret", "_token", "-key", "-secret", "-token"))
                     )
-                    
+
                     if is_sensitive and value is not None:
                         # Mask with partial visibility for debugging
                         if isinstance(value, str) and len(value) > 8:
@@ -129,7 +136,7 @@ class DynamicAnalysisOrchestrator:
                 return [mask_sensitive_data(item) for item in obj]
             else:
                 return obj
-        
+
         return mask_sensitive_data(self.config)
 
     def _initialize_adapters(self) -> List[Any]:

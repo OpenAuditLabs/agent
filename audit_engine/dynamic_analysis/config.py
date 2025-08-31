@@ -10,7 +10,7 @@ try:
     from pydantic_settings import BaseSettings, SettingsConfigDict  # type: ignore
     from pydantic import model_validator  # type: ignore[attr-defined]
     _PYDANTIC_V2 = True
-except Exception:  # pragma: no cover
+except (ImportError, AttributeError):  # pragma: no cover
     # Pydantic v1 fallback
     from pydantic import BaseSettings, root_validator  # type: ignore
     _PYDANTIC_V2 = False
@@ -183,13 +183,17 @@ class DynamicAnalysisConfig(BaseSettings):
         else:
             data = self.dict(by_alias=True, exclude_none=True)
 
-        # Ensure orchestrator-specific keys exist
-        data.setdefault("EchidnaAdapter_accuracy", self.echidna_adapter_accuracy)
-        data.setdefault("AdversarialFuzz_accuracy", self.adversarial_fuzz_accuracy)
-        # Provide per-adapter timeouts (fallback to global)
-        data.setdefault("EchidnaAdapter_timeout", data.get("analysis_timeout", self.analysis_timeout))
-        data.setdefault("AdversarialFuzz_timeout", data.get("analysis_timeout", self.analysis_timeout))
-        return data
+    # Ensure orchestrator-specific keys exist
+    data.setdefault("EchidnaAdapter_accuracy", self.echidna_adapter_accuracy)
+    data.setdefault("AdversarialFuzz_accuracy", self.adversarial_fuzz_accuracy)
+    data.setdefault("echidna_adapter_accuracy", self.echidna_adapter_accuracy)
+    data.setdefault("adversarial_fuzz_accuracy", self.adversarial_fuzz_accuracy)
+    # Provide per-adapter timeouts (fallback to global)
+    data.setdefault("EchidnaAdapter_timeout", data.get("analysis_timeout", self.analysis_timeout))
+    data.setdefault("AdversarialFuzz_timeout", data.get("analysis_timeout", self.analysis_timeout))
+    data.setdefault("echidna_adapter_timeout", data.get("analysis_timeout", self.analysis_timeout))
+    data.setdefault("adversarial_fuzz_timeout", data.get("analysis_timeout", self.analysis_timeout))
+    return data
     
     def validate_config(self) -> None:
         """

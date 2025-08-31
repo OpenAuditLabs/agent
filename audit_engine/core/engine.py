@@ -67,42 +67,58 @@ class AuditEngine:
     def dynamic_orchestrator(self) -> DynamicAnalysisOrchestrator:
         """Lazy-load dynamic analysis orchestrator"""
         if self._dynamic_orchestrator is None:
+            dac = self.config.dynamic_analysis
+            dac_dict = (
+                dac.to_runtime_config() if hasattr(dac, "to_runtime_config")
+                else dac.model_dump() if hasattr(dac, "model_dump")
+                else dac.dict() if hasattr(dac, "dict")
+                else dac
+            )
             self._dynamic_orchestrator = DynamicAnalysisOrchestrator(
-                config=self.config.dynamic_analysis,
+                config=dac_dict,
                 logger=self.logger
             )
         return self._dynamic_orchestrator
     
     def _initialize_static_adapters(self) -> List[StaticAdapter]:
         """Initialize static analysis tool adapters"""
-        adapters = []
-        
-        try:
-            # Import adapters dynamically to avoid hard dependencies
-            if self.config.static_analysis.get("enable_slither", True):
+        adapters: List[StaticAdapter] = []
+        sa_cfg = self.config.static_analysis
+
+        # Import adapters dynamically to avoid hard dependencies
+        if getattr(sa_cfg, "enable_slither", True):
+            try:
                 from ..static_analysis.slither_adapter import SlitherAdapter
-                adapters.append(SlitherAdapter(
-                    config=self.config.static_analysis.get("slither", {}),
-                    logger=self.logger
-                ))
-            
-            if self.config.static_analysis.get("enable_mythril", True):
+                slither_cfg = getattr(sa_cfg, "slither", {})
+                slither_cfg = slither_cfg.model_dump() if hasattr(slither_cfg, "model_dump") else (
+                    slither_cfg.dict() if hasattr(slither_cfg, "dict") else slither_cfg
+                )
+                adapters.append(SlitherAdapter(config=slither_cfg, logger=self.logger))
+            except ImportError as e:
+                self.logger.warning(f"Slither adapter unavailable: {e}")
+
+        if getattr(sa_cfg, "enable_mythril", True):
+            try:
                 from ..static_analysis.mythril_adapter import MythrilAdapter
-                adapters.append(MythrilAdapter(
-                    config=self.config.static_analysis.get("mythril", {}),
-                    logger=self.logger
-                ))
-            
-            if self.config.static_analysis.get("enable_manticore", False):
+                mythril_cfg = getattr(sa_cfg, "mythril", {})
+                mythril_cfg = mythril_cfg.model_dump() if hasattr(mythril_cfg, "model_dump") else (
+                    mythril_cfg.dict() if hasattr(mythril_cfg, "dict") else mythril_cfg
+                )
+                adapters.append(MythrilAdapter(config=mythril_cfg, logger=self.logger))
+            except ImportError as e:
+                self.logger.warning(f"Mythril adapter unavailable: {e}")
+
+        if getattr(sa_cfg, "enable_manticore", False):
+            try:
                 from ..static_analysis.manticore_adapter import ManticoreAdapter
-                adapters.append(ManticoreAdapter(
-                    config=self.config.static_analysis.get("manticore", {}),
-                    logger=self.logger
-                ))
-                
-        except ImportError as e:
-            self.logger.warning(f"Failed to import static analysis adapter: {e}")
-        
+                mcore_cfg = getattr(sa_cfg, "manticore", {})
+                mcore_cfg = mcore_cfg.model_dump() if hasattr(mcore_cfg, "model_dump") else (
+                    mcore_cfg.dict() if hasattr(mcore_cfg, "dict") else mcore_cfg
+                )
+                adapters.append(ManticoreAdapter(config=mcore_cfg, logger=self.logger))
+            except ImportError as e:
+                self.logger.warning(f"Manticore adapter unavailable: {e}")
+
         self.logger.info(f"Initialized {len(adapters)} static analysis adapters")
         return adapters
     
@@ -260,38 +276,46 @@ class AuditEngine:
             return findings, errors
         
         # Run adapters in parallel with timeout
+        from concurrent.futures import TimeoutError
         with ThreadPoolExecutor(max_workers=len(self.static_adapters)) as executor:
-            futures = []
-            
-            for adapter in self.static_adapters:
-                for contract_path in contract_paths:
-                    future = executor.submit(self._run_static_adapter, adapter, contract_path)
-                    futures.append((adapter, future))
-            
-            # Collect results with timeout
-            for adapter, future in futures:
-                try:
-                    adapter_findings = future.result(timeout=request.max_analysis_time)
+            future_to_adapter = {
+                executor.submit(self._run_static_adapter, adapter, contract_path, request.max_analysis_time): adapter
+                for adapter in self.static_adapters
+                for contract_path in contract_paths
+            }
+            try:
+                for future in as_completed(future_to_adapter, timeout=request.max_analysis_time):
+                    adapter_findings = future.result()
                     findings.extend(adapter_findings)
-                except Exception as e:
-                    self.logger.error(f"Static adapter {adapter.__class__.__name__} failed: {e}")
-                    errors.append(ToolError(
-                        tool_name=adapter.__class__.__name__,
-                        error_type=type(e).__name__,
-                        error_message=str(e)
-                    ))
-        
+            except TimeoutError:
+                # Cancel outstanding tasks and record errors
+                for f, adapter in future_to_adapter.items():
+                    if not f.done():
+                        f.cancel()
+                        errors.append(ToolError(
+                            tool_name=adapter.__class__.__name__,
+                            error_type="TimeoutError",
+                            error_message=f"Static analysis exceeded {request.max_analysis_time}s"
+                        ))
+            except Exception as e:
+                self.logger.exception("Static analysis execution failed")
+                errors.append(ToolError(
+                    tool_name="static_analysis",
+                    error_type=type(e).__name__,
+                    error_message=str(e)
+                ))
         self.logger.info(f"Static analysis completed: {len(findings)} findings, {len(errors)} errors")
         return findings, errors
     
     def _run_static_adapter(self, adapter: StaticAdapter, contract_path: str) -> List[Finding]:
         """Run individual static analysis adapter"""
-        try:
-            raw_results = adapter.run(contract_path)
-            return self._normalize_static_findings(adapter, raw_results)
-        except Exception as e:
-            self.logger.error(f"Static adapter {adapter.__class__.__name__} failed on {contract_path}: {e}")
-            raise
+        def _run_static_adapter(self, adapter: StaticAdapter, contract_path: str, timeout: Optional[int] = None) -> List[Finding]:
+            try:
+                raw_results = adapter.run(contract_path, timeout=timeout)
+                return self._normalize_static_findings(adapter, raw_results)
+            except Exception as e:
+                self.logger.exception(f"Static adapter {adapter.__class__.__name__} failed on {contract_path}")
+                raise
     
     def _normalize_static_findings(self, adapter: StaticAdapter, raw_results: List[Any]) -> List[Finding]:
         """Normalize static analysis results to Finding schema"""
@@ -322,17 +346,18 @@ class AuditEngine:
             # Convert AnalysisResult objects to Finding objects
             findings = []
             for result in analysis_results:
+                details = getattr(result, "finding_details", {}) or {}
                 finding = Finding(
-                    swc_id=result.finding_details.get("swc_id"),
-                    severity=self._map_severity(result.severity),
-                    tool_name=result.tool_name,
-                    tool_version="1.0.0",  # TODO: Get actual version
-                    file_path=contract_paths[0],  # TODO: Extract from result
-                    description=result.vulnerability_type,
-                    reproduction_steps=str(result.finding_details),
-                    confidence=self._confidence_to_float(result.confidence),
-                    recommendations=result.remediation_suggestion.split('\n') if result.remediation_suggestion else [],
-                    cross_chain_impact=result.cross_chain_impact
+                    swc_id=details.get("swc_id"),
+                    severity=self._map_severity(getattr(result, "severity", "Medium")),
+                    tool_name=getattr(result, "tool_name", "unknown"),
+                    tool_version=getattr(result, "tool_version", "unknown"),
+                    file_path=details.get("file_path") or details.get("contract_path") or getattr(result, "contract_path", "unknown"),
+                    description=getattr(result, "vulnerability_type", str(details)),
+                    reproduction_steps=str(details.get("reproduction_steps", details)),
+                    confidence=self._confidence_to_float(getattr(result, "confidence", 0.5)),
+                    recommendations=getattr(result, "remediation_suggestion", "").split('\n') if getattr(result, "remediation_suggestion", None) else [],
+                    cross_chain_impact=getattr(result, "cross_chain_impact", None)
                 )
                 findings.append(finding)
             
@@ -351,37 +376,40 @@ class AuditEngine:
         """Convert tool-specific result to standardized Finding"""
         # Handle dict results (most common)
         if isinstance(raw_result, dict):
+            recs = raw_result.get("recommendations", [])
+            if isinstance(recs, str):
+                recs = [recs]
             return Finding(
                 swc_id=raw_result.get("swc_id"),
                 severity=self._map_severity(raw_result.get("severity", "Medium")),
-                tool_name=tool_name,
+                tool_name=raw_result.get("tool", tool_name),
                 tool_version=raw_result.get("tool_version", "1.0.0"),
-                file_path=raw_result.get("file_path", "unknown"),
-                line_span=None,  # TODO: Parse line numbers
+                file_path=raw_result.get("file_path") or raw_result.get("path", "unknown"),
+                line_span=None,  # TODO: Parse/normalize line numbers if available
                 function_name=raw_result.get("function_name"),
                 description=raw_result.get("description", "No description"),
                 reproduction_steps=raw_result.get("reproduction_steps", "No steps provided"),
-                confidence=float(raw_result.get("confidence", 0.5)),
-                recommendations=raw_result.get("recommendations", [])
+                confidence=self._confidence_to_float(raw_result.get("confidence", 0.5)),
+                recommendations=recs
             )
-        
         # Handle object results
         return Finding(
             swc_id=getattr(raw_result, "swc_id", None),
             severity=self._map_severity(getattr(raw_result, "severity", "Medium")),
-            tool_name=tool_name,
-            tool_version="1.0.0",
+            tool_name=getattr(raw_result, "tool", tool_name),
+            tool_version=getattr(raw_result, "tool_version", "1.0.0"),
             file_path=getattr(raw_result, "file_path", "unknown"),
             description=getattr(raw_result, "description", str(raw_result)),
             reproduction_steps=getattr(raw_result, "reproduction_steps", "No steps provided"),
-            confidence=float(getattr(raw_result, "confidence", 0.5))
+            confidence=self._confidence_to_float(getattr(raw_result, "confidence", 0.5)),
+            recommendations=getattr(raw_result, "recommendations", [])
         )
     
     def _map_severity(self, severity: str) -> SeverityLevel:
         """Map tool severity strings to standardized SeverityLevel"""
         severity_map = {
             "critical": SeverityLevel.CRITICAL,
-            "high": SeverityLevel.CRITICAL,
+            "high": SeverityLevel.MAJOR,
             "major": SeverityLevel.MAJOR,
             "medium": SeverityLevel.MEDIUM,
             "low": SeverityLevel.MINOR,

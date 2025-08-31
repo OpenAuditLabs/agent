@@ -6,7 +6,8 @@ for smart contract vulnerability detection and mitigation.
 """
 
 from .engine import AuditEngine
-from .config import AuditConfig, StaticAnalysisConfig, DynamicAnalysisConfig, ScoringConfig, AgentConfig
+from .config import AuditConfig, StaticAnalysisConfig, ScoringConfig, AgentConfig
+from ..dynamic_analysis.config import DynamicAnalysisConfig
 from .schemas import (
     Finding, AnalysisRequest, AnalysisResult, ToolError,
     SeverityLevel, ConfidenceLevel, ExploitComplexity,
