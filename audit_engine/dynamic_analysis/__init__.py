@@ -470,6 +470,7 @@ def _run_legacy_analysis(
         except Exception as e:
             if logger:
                 logger.error(f"Adapter {adapter.__class__.__name__} failed: {e}")
+
     return [
         AnalysisResult(
             tool_name="unknown",
