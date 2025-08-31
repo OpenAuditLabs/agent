@@ -470,7 +470,6 @@ def _run_legacy_analysis(
         except Exception as e:
             if logger:
                 logger.error(f"Adapter {adapter.__class__.__name__} failed: {e}")
-    
     return [
         AnalysisResult(
             tool_name="unknown",
@@ -480,3 +479,22 @@ def _run_legacy_analysis(
             finding_details={"raw_finding": finding}
         ) for finding in findings
     ]
+
+def _run_async_analysis(
+    orchestrator: DynamicAnalysisOrchestrator, 
+    contract_paths: Iterable[str]
+) -> List[AnalysisResult]:
+    """Run async analysis with proper event loop handling"""
+    try:
+        # Check if we're already in an event loop
+        loop = asyncio.get_running_loop()
+        # If we are, run in a thread to avoid blocking
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                lambda: asyncio.run(orchestrator.analyze_contracts(contract_paths))
+            )
+            return future.result()
+    except RuntimeError:
+        # No event loop running, safe to create one
+        return asyncio.run(orchestrator.analyze_contracts(contract_paths))
