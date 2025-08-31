@@ -440,3 +440,4 @@ class AuditEngine:
         """Phase 7: Collect reinforcement learning feedback (placeholder)"""
         # TODO: Implement RL feedback collection
         self.logger.debug("RL feedback collection not yet implemented")
+        return adapters
