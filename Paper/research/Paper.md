@@ -256,6 +256,17 @@ This comprehensive DAO governance security module ensures that agentic AI system
 
 This post-deployment safety net ensures that even if a vulnerability bypasses static and dynamic pre-deployment checks, it can be caught and mitigated before significant damage occurs. This approach aligns with the **"defense in depth"** principle in security engineering and provides operational resilience for high-value decentralized applications.
 
+## 5.12 Extensibility and Modularity in Agentic AI Security Frameworks
+
+A key advantage of the proposed agentic AI framework is its extensible and modular architecture. This design enables rapid integration of new analysis tools, scoring models, and agentic components as the security landscape evolves. By abstracting tool interfaces and standardizing output schemas, the system can easily incorporate emerging static and dynamic analyzers, novel scoring algorithms, and future LLM-based modules without major refactoring.
+
+**Tool Adapter Pattern:** Each analysis tool (e.g., Mythril, Manticore, Echidna) is wrapped in a standardized adapter, allowing seamless addition or replacement of tools as new vulnerabilities and detection methods arise.
+
+**Unified Data Schema:** Findings from all tools are normalized to a common schema, facilitating aggregation, scoring, and downstream processing.
+
+**Configurable Orchestration:** The core engine coordinates analysis phases and can be configured to enable or disable specific tools, scoring strategies, or agentic features.
+
+**Future-Proofing:** Hooks for explainability, human-in-the-loop feedback, and reinforcement learning are present, ensuring the framework can evolve with advances in AI and security research.
 
 ## 6. Expected Outcomes
 
