@@ -80,4 +80,29 @@ async def test_enhanced_audit():
                 print("\nDetection Tips:")
                 for tip in detection_tips:
                     print(f"  • {tip}")
+        if finding.vulnerability_details:
+            print(f"\nVulnerability Details:")
+            print(f"  Name: {finding.vulnerability_details.get('name')}")
+            print(f"  Impact: {finding.vulnerability_details.get('impact')}")
+            print(f"\nDetailed Description:")
+            print(f"{finding.vulnerability_details.get('description')}")
+        
+        if finding.suggested_fixes:
+            print(f"\nSuggested Fixes:")
+            for j, fix in enumerate(finding.suggested_fixes, 1):
+                print(f"\nFix {j}: {fix.get('pattern')}")
+                print("-" * 40)
+                print(f"Description: {fix.get('description')}")
+                print("\nExample Implementation:")
+                print(f"{fix.get('code_example')}")
+        
+        if finding.recommendations:
+            print("\nRecommendations:")
+            for rec in finding.recommendations:
+                print(f"- {rec}")
+        
+        print("\n")
+
+if __name__ == "__main__":
+    asyncio.run(test_enhanced_audit())
         
