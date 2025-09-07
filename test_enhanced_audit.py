@@ -53,3 +53,31 @@ async def test_enhanced_audit():
     
     print(f"\n✅ Analysis completed in {result.duration_seconds:.2f} seconds")
     print(f"📊 Found {result.total_findings} vulnerabilities\n")
+
+    # Display enhanced findings with detailed information
+    for i, finding in enumerate(result.findings, 1):
+        print(f"\n{'='*80}")
+        print(f"Finding {i}:")
+        print(f"{'='*80}")
+        
+        # Basic Information
+        print(f"Description: {finding.description}")
+        print(f"Severity: {finding.severity}")
+        print(f"SWC ID: {finding.swc_id or 'N/A'}")
+        print(f"Confidence: {finding.confidence:.2f}")
+        
+        # Location Information
+        print(f"\nVulnerable File: {finding.file_path}")
+        if finding.line_span:
+            print(f"Lines: {finding.line_span.start}-{finding.line_span.end}")
+        if finding.function_name:
+            print(f"Function: {finding.function_name}")
+            
+        # Detection Tips
+        if finding.swc_id:
+            detection_tips = get_detection_tips(finding.swc_id)
+            if detection_tips:
+                print("\nDetection Tips:")
+                for tip in detection_tips:
+                    print(f"  • {tip}")
+        
