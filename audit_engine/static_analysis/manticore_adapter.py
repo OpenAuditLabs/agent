@@ -122,4 +122,48 @@ class ManticoreAdapter(AbstractAdapter):
             findings.append(finding)
         
         return [self.standardize_finding(f) for f in findings]            
-            
+
+    def _parse_global_findings(self, output_dir: Path) -> List[Dict]:
+        """Parse global.findings file"""
+        findings = []
+        global_file = output_dir / "global.findings"
+        if global_file.exists():
+            try:
+                with open(global_file, 'r') as f:
+                    data = json.load(f)
+                for issue in data.get("issues", []):
+                    finding = {
+                        "title": issue.get("title", "Unknown Issue"),
+                        "description": issue.get("description", ""),
+                        "severity": self._map_manticore_severity(issue.get("severity", "medium")),
+                        "swc_id": issue.get("swc_id", ""),
+                        "line_numbers": issue.get("lines", []),
+                        "confidence": "High" if issue.get("severity") == "high" else "Medium",
+                        "tool": "Manticore"
+                    }
+                    findings.append(self.standardize_finding(finding))
+            except Exception:
+                pass
+        return findings
+    
+    def _parse_testcase_findings(self, output_dir: Path) -> List[Dict]:
+        """Parse testcase files for additional findings"""
+        findings = []
+        for test_file in output_dir.glob("test_*.json"):
+            try:
+                with open(test_file, 'r') as f:
+                    data = json.load(f)
+                if data.get("error"):
+                    finding = {
+                        "title": "Runtime Error Detected",
+                        "description": f"Runtime error: {data.get('error', 'Unknown error')}",
+                        "severity": "High",
+                        "swc_id": "SWC-110",  # Assert violation
+                        "line_numbers": [],
+                        "confidence": "High",
+                        "tool": "Manticore"
+                    }
+                    findings.append(self.standardize_finding(finding))
+            except Exception:
+                pass
+        return findings            
