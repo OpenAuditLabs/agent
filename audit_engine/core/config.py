@@ -7,7 +7,15 @@ and validation using Pydantic settings.
 
 import os
 from typing import Dict, Any, Optional
-from pydantic import BaseSettings, Field, validator
+try:
+    # Pydantic v2
+    from pydantic_settings import BaseSettings  # type: ignore
+    from pydantic import Field
+    from pydantic import field_validator as _field_validator
+except Exception:  # pragma: no cover
+    # Pydantic v1 fallback
+    from pydantic import BaseSettings, Field  # type: ignore
+    from pydantic import validator as _field_validator  # type: ignore
 
 
 class StaticAnalysisConfig(BaseSettings):
@@ -97,12 +105,13 @@ class AuditConfig(BaseSettings):
     save_intermediate_results: bool = Field(default=False, description="Save intermediate analysis results")
     results_directory: str = Field(default="./results", description="Results output directory")
 
-    @validator('log_level')
-    def validate_log_level(cls, v):
+    @_field_validator('log_level')
+    def validate_log_level(cls, v):  # type: ignore[override]
         valid_levels = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
-        if v.upper() not in valid_levels:
+        value_upper = v.upper() if isinstance(v, str) else str(v).upper()
+        if value_upper not in valid_levels:
             raise ValueError(f'log_level must be one of {valid_levels}')
-        return v.upper()
+        return value_upper
 
     class Config:
         env_prefix = "AUDIT_"
@@ -116,5 +125,7 @@ class AuditConfig(BaseSettings):
         return cls()
 
     def dict(self, **kwargs) -> Dict[str, Any]:
-        """Convert to dictionary with nested configs"""
+        """Convert to dictionary with nested configs (v1 compat)"""
+        if hasattr(super(), 'model_dump'):
+            return self.model_dump()  # type: ignore[attr-defined]
         return super().dict(**kwargs)
