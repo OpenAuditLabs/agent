@@ -9,7 +9,13 @@ from datetime import datetime
 from enum import Enum
 from typing import List, Optional, Dict, Any, Union
 from uuid import UUID, uuid4
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
+try:
+    # Pydantic v2
+    from pydantic import field_validator as _field_validator
+except ImportError:  # pragma: no cover
+    # Fallback for pydantic v1 environments
+    from pydantic import validator as _field_validator
 
 
 class SeverityLevel(str, Enum):
@@ -41,9 +47,10 @@ class LineSpan(BaseModel):
     start: int = Field(..., description="Starting line number (1-indexed)")
     end: int = Field(..., description="Ending line number (1-indexed)")
     
-    @validator('end')
-    def end_must_be_gte_start(cls, v, values):
-        if 'start' in values and v < values['start']:
+    @_field_validator('end')
+    def end_must_be_gte_start(cls, v, values):  # type: ignore[override]
+        start_value = values.get('start') if isinstance(values, dict) else getattr(values, 'start', None)
+        if start_value is not None and v < start_value:
             raise ValueError('end line must be >= start line')
         return v
 
@@ -54,11 +61,13 @@ class Finding(BaseModel):
     Used across all analysis phases for consistent data exchange.
     """
     finding_id: UUID = Field(default_factory=uuid4, description="Unique finding identifier")
-    swc_id: Optional[str] = Field(None, regex=r"SWC-\d{3}", description="SWC registry ID (SWC-XXX format)")
+    swc_id: Optional[str] = Field(None, pattern=r"SWC-\d{3}", description="SWC registry ID (SWC-XXX format)")
     severity: SeverityLevel = Field(..., description="Vulnerability severity level")
     tool_name: str = Field(..., description="Analysis tool that generated finding")
     tool_version: str = Field(..., description="Version of analysis tool")
     file_path: str = Field(..., description="Path to vulnerable source file")
+    vulnerability_details: Optional[Dict[str, Any]] = Field(None, description="Detailed vulnerability information")
+    suggested_fixes: Optional[List[Dict[str, Any]]] = Field(None, description="Suggested fixes with code examples")
     line_span: Optional[LineSpan] = Field(None, description="Source code line range")
     function_name: Optional[str] = Field(None, description="Function containing vulnerability")
     bytecode_offset: Optional[int] = Field(None, description="Bytecode offset for EVM-level findings")
