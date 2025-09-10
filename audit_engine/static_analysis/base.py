@@ -14,6 +14,8 @@ class StandardFinding(TypedDict, total=False):
     file: str
     raw: Dict[str, Any]
 
+from ..core.vulnerability_patterns import get_vulnerability_info, get_fix_suggestions
+
 class AbstractAdapter(ABC):
     @abstractmethod
     def run(self, contract_path: str, **kwargs) -> List[StandardFinding]:
@@ -38,29 +40,11 @@ class AbstractAdapter(ABC):
         else:
             line_numbers = ln or []
 
-        return {
-            "title": str(finding.get("title", "")),
-            "description": str(finding.get("description", "")),
-            "severity": self._map_severity(severity_raw),
-            "swc_id": str(finding.get("swc_id", "")),
-            "line_numbers": line_numbers,
-            "confidence": str(finding.get("confidence", "Medium")),
-            "tool": finding.get("tool", getattr(self, "tool_name", self.__class__.__name__)),
-            # Extras that do not break consumers but preserve fidelity
-            "original_severity": severity_raw,
-        }
+        # Get vulnerability details and fixes
+        swc_id = str(finding.get("swc_id", ""))
+        vuln_info = get_vulnerability_info(swc_id) if swc_id else None
+        fixes = get_fix_suggestions(swc_id) if swc_id else []
 
-    def _map_severity(self, severity) -> str:
-        if severity is None:
-            return "Medium"
-        key = str(severity).strip().lower()
-        mapping = {
-            "critical": "High",
-            "high": "High",
-            "medium": "Medium",
-            "moderate": "Medium",
-            "low": "Low",
-            "info": "Low",
-            "informational": "Low",
-        }
-        return mapping.get(key, "Medium")
+
+
+        
