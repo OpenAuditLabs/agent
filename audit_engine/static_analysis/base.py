@@ -46,5 +46,38 @@ class AbstractAdapter(ABC):
         fixes = get_fix_suggestions(swc_id) if swc_id else []
 
 
+        standardized = {
+            "title": str(finding.get("title", "")),
+            "description": str(finding.get("description", "")),
+            "severity": self._map_severity(severity_raw),
+            "swc_id": swc_id,
+            "line_numbers": line_numbers,
+            "confidence": str(finding.get("confidence", "Medium")),
+            "tool": finding.get("tool", getattr(self, "tool_name", self.__class__.__name__)),
+            "file_path": str(finding.get("file_path", "")),
+            # Extras that do not break consumers but preserve fidelity
+            "original_severity": severity_raw,
+            # Enhanced vulnerability information
+            "vulnerability_details": vuln_info,
+            "suggested_fixes": fixes,
+            "recommendations": [fix["description"] for fix in fixes] if fixes else []
+        }
+
+        return standardized
+
+    def _map_severity(self, severity) -> str:
+        if severity is None:
+            return "Medium"
+        key = str(severity).strip().lower()
+        mapping = {
+            "critical": "High",
+            "high": "High",
+            "medium": "Medium",
+            "moderate": "Medium",
+            "low": "Low",
+            "info": "Low",
+            "informational": "Low",
+        }
+        return mapping.get(key, "Medium")
 
         
