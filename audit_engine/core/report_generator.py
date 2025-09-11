@@ -6,6 +6,19 @@ import json
 from typing import List, Dict, Any
 
 class AuditReportGenerator:
+    def _get_summary_statistics(self, report: Dict[str, Any]) -> Dict[str, Any]:
+        summary = {}
+        static_findings = report.get("static_analysis", [])
+        dynamic_findings = report.get("dynamic_analysis", [])
+        all_findings = static_findings + dynamic_findings
+        summary["total_findings"] = len(all_findings)
+        # Severity breakdown
+        severity_count = {}
+        for finding in all_findings:
+            severity = finding.get("severity", "Unknown") if isinstance(finding, dict) else "Unknown"
+            severity_count[severity] = severity_count.get(severity, 0) + 1
+        summary["severity_breakdown"] = severity_count
+        return summary
     def __init__(self):
         self.static_results = []
         self.dynamic_results = []
@@ -31,6 +44,7 @@ class AuditReportGenerator:
             "dynamic_analysis": self.dynamic_results,
             "scores": self.scores,
         }
+        report["summary_statistics"] = self._get_summary_statistics(report)
         return report
 
     def export_report(self, output_format: str = "json") -> str:
@@ -50,6 +64,12 @@ class AuditReportGenerator:
             md += "## Metadata\n"
             for k, v in report["metadata"].items():
                 md += f"- **{k}**: {v}\n"
+        if report.get("summary_statistics"):
+            md += "\n## Summary Statistics\n"
+            md += f"- Total Findings: {report['summary_statistics'].get('total_findings', 0)}\n"
+            md += "- Severity Breakdown:\n"
+            for sev, count in report['summary_statistics'].get('severity_breakdown', {}).items():
+                md += f"  - {sev}: {count}\n"
         md += "\n## Static Analysis Findings\n"
         for finding in report["static_analysis"]:
             md += f"- {finding}\n"
@@ -69,6 +89,13 @@ class AuditReportGenerator:
             for k, v in report["metadata"].items():
                 html.append(f"<li><strong>{k}</strong>: {v}</li>")
             html.append("</ul>")
+        if report.get("summary_statistics"):
+            html.append("<h2>Summary Statistics</h2><ul>")
+            html.append(f"<li>Total Findings: {report['summary_statistics'].get('total_findings', 0)}</li>")
+            html.append("<li>Severity Breakdown:<ul>")
+            for sev, count in report['summary_statistics'].get('severity_breakdown', {}).items():
+                html.append(f"<li>{sev}: {count}</li>")
+            html.append("</ul></li></ul>")
         html.append("<h2>Static Analysis Findings</h2><ul>")
         for finding in report["static_analysis"]:
             html.append(f"<li>{finding}</li>")
