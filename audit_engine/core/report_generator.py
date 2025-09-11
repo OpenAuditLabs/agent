@@ -24,4 +24,4 @@ class AuditReportGenerator:
     def set_metadata(self, metadata: Dict[str, Any]):
         self.metadata = metadata
 
-
+    def generate_report(self) -> Dict[str, Any]:
