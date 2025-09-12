@@ -6,6 +6,15 @@ import json
 from typing import List, Dict, Any
 
 class AuditReportGenerator:
+    def save_report(self, file_path: str, output_format: str = "json"):
+        """
+        Save the report to disk in the specified format (json, markdown, html).
+        """
+        content = self.export_report(output_format)
+        mode = "w"
+        encoding = "utf-8"
+        with open(file_path, mode, encoding=encoding) as f:
+            f.write(content)
     def filter_findings(self, severity: str = None, finding_type: str = None) -> Dict[str, Any]:
         """
         Returns filtered findings from static and dynamic analysis by severity and/or type.
