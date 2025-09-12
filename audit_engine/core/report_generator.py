@@ -50,6 +50,15 @@ class AuditReportGenerator:
         self.auditor_name = auditor_name
         self.contract_name = contract_name
         self.recommendations = []
+        self.changelog = []
+    def add_changelog_entry(self, entry: dict):
+        """
+        Add a changelog/history entry. Example entry: {"timestamp": ..., "auditor": ..., "action": ..., "details": ...}
+        """
+        self.changelog.append(entry)
+
+    def add_changelog_entries(self, entries: list):
+        self.changelog.extend(entries)
     def add_recommendation(self, recommendation: str):
         self.recommendations.append(recommendation)
 
@@ -86,6 +95,7 @@ class AuditReportGenerator:
             "dynamic_analysis": self.dynamic_results,
             "scores": self.scores,
             "recommendations": self.recommendations,
+            "changelog": self.changelog,
         }
         report["summary_statistics"] = self._get_summary_statistics(report)
         return report
@@ -120,6 +130,14 @@ class AuditReportGenerator:
             md += "\n## Recommendations / Remediation Steps\n"
             for rec in report["recommendations"]:
                 md += f"- {rec}\n"
+        if report.get("changelog"):
+            md += "\n## Audit Changelog / History\n"
+            for entry in report["changelog"]:
+                ts = entry.get("timestamp", "")
+                auditor = entry.get("auditor", "")
+                action = entry.get("action", "")
+                details = entry.get("details", "")
+                md += f"- [{ts}] {auditor}: {action} - {details}\n"
         md += "\n## Static Analysis Findings\n"
         for finding in report["static_analysis"]:
             md += f"- {finding}\n"
@@ -153,6 +171,15 @@ class AuditReportGenerator:
             html.append("<h2>Recommendations / Remediation Steps</h2><ul>")
             for rec in report["recommendations"]:
                 html.append(f"<li>{rec}</li>")
+            html.append("</ul>")
+        if report.get("changelog"):
+            html.append("<h2>Audit Changelog / History</h2><ul>")
+            for entry in report["changelog"]:
+                ts = entry.get("timestamp", "")
+                auditor = entry.get("auditor", "")
+                action = entry.get("action", "")
+                details = entry.get("details", "")
+                html.append(f"<li>[{ts}] {auditor}: {action} - {details}</li>")
             html.append("</ul>")
         html.append("<h2>Static Analysis Findings</h2><ul>")
         for finding in report["static_analysis"]:
