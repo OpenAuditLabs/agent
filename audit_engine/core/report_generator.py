@@ -19,11 +19,19 @@ class AuditReportGenerator:
             severity_count[severity] = severity_count.get(severity, 0) + 1
         summary["severity_breakdown"] = severity_count
         return summary
-    def __init__(self):
+    import datetime
+
+    def __init__(self, auditor_name: str = None, contract_name: str = None):
         self.static_results = []
         self.dynamic_results = []
         self.scores = []
         self.metadata = {}
+        self.audit_timestamp = self._get_current_timestamp()
+        self.auditor_name = auditor_name
+        self.contract_name = contract_name
+
+    def _get_current_timestamp(self):
+        return self.datetime.datetime.now().isoformat()
 
     def add_static_results(self, results: List[Dict[str, Any]]):
         self.static_results.extend(results)
@@ -36,10 +44,18 @@ class AuditReportGenerator:
 
     def set_metadata(self, metadata: Dict[str, Any]):
         self.metadata = metadata
+        # Optionally update auditor and contract name from metadata
+        if 'auditor_name' in metadata:
+            self.auditor_name = metadata['auditor_name']
+        if 'contract_name' in metadata:
+            self.contract_name = metadata['contract_name']
 
     def generate_report(self) -> Dict[str, Any]:
         report = {
             "metadata": self.metadata,
+            "audit_timestamp": self.audit_timestamp,
+            "auditor_name": self.auditor_name,
+            "contract_name": self.contract_name,
             "static_analysis": self.static_results,
             "dynamic_analysis": self.dynamic_results,
             "scores": self.scores,
@@ -60,6 +76,9 @@ class AuditReportGenerator:
 
     def _to_markdown(self, report: Dict[str, Any]) -> str:
         md = "# Audit Report\n"
+        md += f"- **Timestamp**: {report.get('audit_timestamp', '')}\n"
+        md += f"- **Auditor Name**: {report.get('auditor_name', '')}\n"
+        md += f"- **Contract Name**: {report.get('contract_name', '')}\n"
         if report.get("metadata"):
             md += "## Metadata\n"
             for k, v in report["metadata"].items():
@@ -84,6 +103,9 @@ class AuditReportGenerator:
     def _to_html(self, report: Dict[str, Any]) -> str:
         html = ["<html><head><title>Audit Report</title></head><body>"]
         html.append("<h1>Audit Report</h1>")
+        html.append(f"<p><strong>Timestamp:</strong> {report.get('audit_timestamp', '')}</p>")
+        html.append(f"<p><strong>Auditor Name:</strong> {report.get('auditor_name', '')}</p>")
+        html.append(f"<p><strong>Contract Name:</strong> {report.get('contract_name', '')}</p>")
         if report.get("metadata"):
             html.append("<h2>Metadata</h2><ul>")
             for k, v in report["metadata"].items():
