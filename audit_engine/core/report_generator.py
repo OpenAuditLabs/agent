@@ -25,4 +25,10 @@ class AuditReportGenerator:
         self.metadata = metadata
 
     def generate_report(self) -> Dict[str, Any]:
-        
+        report = {
+            "metadata": self.metadata,
+            "static_analysis": self.static_results,
+            "dynamic_analysis": self.dynamic_results,
+            "scores": self.scores,
+        }
+        return report
