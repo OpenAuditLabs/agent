@@ -285,8 +285,16 @@ class AuditEngine:
             }
             try:
                 for future in as_completed(future_to_adapter, timeout=request.max_analysis_time):
-                    adapter_findings = future.result()
-                    findings.extend(adapter_findings)
+                    try:
+                        adapter_findings = future.result()
+                        findings.extend(adapter_findings)
+                    except Exception as e:
+                        adapter = future_to_adapter[future]
+                        errors.append(ToolError(
+                            tool_name=adapter.__class__.__name__,
+                            error_type=type(e).__name__,
+                            error_message=str(e)
+                        ))
             except TimeoutError:
                 # Cancel outstanding tasks and record errors
                 for f, adapter in future_to_adapter.items():
@@ -307,15 +315,14 @@ class AuditEngine:
         self.logger.info(f"Static analysis completed: {len(findings)} findings, {len(errors)} errors")
         return findings, errors
     
-    def _run_static_adapter(self, adapter: StaticAdapter, contract_path: str) -> List[Finding]:
+    def _run_static_adapter(self, adapter: StaticAdapter, contract_path: str, timeout: Optional[int] = None) -> List[Finding]:
         """Run individual static analysis adapter"""
-        def _run_static_adapter(self, adapter: StaticAdapter, contract_path: str, timeout: Optional[int] = None) -> List[Finding]:
-            try:
-                raw_results = adapter.run(contract_path, timeout=timeout)
-                return self._normalize_static_findings(adapter, raw_results)
-            except Exception as e:
-                self.logger.exception(f"Static adapter {adapter.__class__.__name__} failed on {contract_path}")
-                raise
+        try:
+            raw_results = adapter.run(contract_path, timeout=timeout)
+            return self._normalize_static_findings(adapter, raw_results)
+        except Exception:
+            self.logger.exception(f"Static adapter {adapter.__class__.__name__} failed on {contract_path}")
+            raise
     
     def _normalize_static_findings(self, adapter: StaticAdapter, raw_results: List[Any]) -> List[Finding]:
         """Normalize static analysis results to Finding schema"""
@@ -468,4 +475,4 @@ class AuditEngine:
         """Phase 7: Collect reinforcement learning feedback (placeholder)"""
         # TODO: Implement RL feedback collection
         self.logger.debug("RL feedback collection not yet implemented")
-        return adapters
+        return None
