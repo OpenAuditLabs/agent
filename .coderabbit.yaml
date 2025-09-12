@@ -1,0 +1,19 @@
+# .coderabbit.yaml
+# Place this file in the root of your repository.
+
+# This optional schema line enables autocompletion and validation in editors like VS Code.
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+reviews:
+  auto_review:
+    # Enables automatic reviews when a pull request is created.
+    enabled: true
+
+    # This is the key setting to review pull requests against any base branch.
+    # The '.*' is a regular expression that matches any branch name.
+    base_branches:
+      - '.*'
+
+    # Optional: By default, draft pull requests are not reviewed.
+    # Set to true if you want Coderabbit to review drafts as well.
+    drafts: false
