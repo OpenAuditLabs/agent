@@ -6,6 +6,26 @@ import json
 from typing import List, Dict, Any
 
 class AuditReportGenerator:
+    def filter_findings(self, severity: str = None, finding_type: str = None) -> Dict[str, Any]:
+        """
+        Returns filtered findings from static and dynamic analysis by severity and/or type.
+        """
+        def _filter(findings):
+            filtered = []
+            for finding in findings:
+                if not isinstance(finding, dict):
+                    continue
+                if severity and finding.get("severity") != severity:
+                    continue
+                if finding_type and finding.get("type") != finding_type:
+                    continue
+                filtered.append(finding)
+            return filtered
+
+        return {
+            "static_analysis": _filter(self.static_results),
+            "dynamic_analysis": _filter(self.dynamic_results)
+        }
     def _get_summary_statistics(self, report: Dict[str, Any]) -> Dict[str, Any]:
         summary = {}
         static_findings = report.get("static_analysis", [])
