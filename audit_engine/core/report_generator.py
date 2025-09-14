@@ -49,6 +49,12 @@ class AuditReportGenerator:
         self.audit_timestamp = self._get_current_timestamp()
         self.auditor_name = auditor_name
         self.contract_name = contract_name
+        self.recommendations = []
+    def add_recommendation(self, recommendation: str):
+        self.recommendations.append(recommendation)
+
+    def add_recommendations(self, recommendations: list):
+        self.recommendations.extend(recommendations)
 
     def _get_current_timestamp(self):
         return self.datetime.datetime.now().isoformat()
@@ -79,6 +85,7 @@ class AuditReportGenerator:
             "static_analysis": self.static_results,
             "dynamic_analysis": self.dynamic_results,
             "scores": self.scores,
+            "recommendations": self.recommendations,
         }
         report["summary_statistics"] = self._get_summary_statistics(report)
         return report
@@ -109,6 +116,10 @@ class AuditReportGenerator:
             md += "- Severity Breakdown:\n"
             for sev, count in report['summary_statistics'].get('severity_breakdown', {}).items():
                 md += f"  - {sev}: {count}\n"
+        if report.get("recommendations"):
+            md += "\n## Recommendations / Remediation Steps\n"
+            for rec in report["recommendations"]:
+                md += f"- {rec}\n"
         md += "\n## Static Analysis Findings\n"
         for finding in report["static_analysis"]:
             md += f"- {finding}\n"
@@ -138,6 +149,11 @@ class AuditReportGenerator:
             for sev, count in report['summary_statistics'].get('severity_breakdown', {}).items():
                 html.append(f"<li>{sev}: {count}</li>")
             html.append("</ul></li></ul>")
+        if report.get("recommendations"):
+            html.append("<h2>Recommendations / Remediation Steps</h2><ul>")
+            for rec in report["recommendations"]:
+                html.append(f"<li>{rec}</li>")
+            html.append("</ul>")
         html.append("<h2>Static Analysis Findings</h2><ul>")
         for finding in report["static_analysis"]:
             html.append(f"<li>{finding}</li>")
