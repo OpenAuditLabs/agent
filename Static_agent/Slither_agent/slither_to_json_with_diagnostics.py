@@ -208,3 +208,67 @@ def parse_slither_cli_output(stdout, stderr, contract_path):
                     current_finding['reference'] = line.replace('Reference:', '').strip()
     
     return findings
+
+
+
+report = {
+    "request_id": str(uuid.uuid4()),
+    "contract_paths": [CONTRACT],
+    "findings": [],
+    "diagnostics": [],
+    "total_findings": 0,
+    "start_time": None,
+    "end_time": None,
+    "duration_seconds": None,
+    "tool": "slither-python-api"
+}
+
+start_ts = time.time()
+report["start_time"] = now_iso()
+
+# === PRE-VALIDATION: Fix syntax issues before Slither analysis ===
+if AUTO_FIX_SYNTAX and PRE_VALIDATION_AVAILABLE:
+    validation_result = validate_contract_before_slither(CONTRACT)
+    report["diagnostics"].append(validation_result)
+else:
+    report["diagnostics"].append({
+        "stage": "pre_validation_skipped",
+        "ok": True, 
+        "note": "Pre-validation disabled or not available"
+    })
+
+# Setup logger
+logger = logging.getLogger("slither_logger")
+logger.setLevel(logging.WARNING)
+
+# Try Python API first (best-effort)
+try:
+    from slither import Slither
+    from slither.detectors import all_detectors
+    import slither as slither_pkg
+    report["diagnostics"].append({"stage": "python_import", "ok": True, "note": "Imported slither package."})
+
+    kwargs = {}
+    if SOLC_PATH:
+        kwargs['solc'] = SOLC_PATH
+
+    try:
+        sl = Slither(os.path.abspath(CONTRACT), **kwargs)
+        report["diagnostics"].append({"stage": "instantiate_slither", "ok": True, "note": "Slither instance created."})
+    except Exception as e:
+        report["diagnostics"].append({"stage": "instantiate_slither", "ok": False, "error": str(e)})
+        sl = None
+
+    detector_classes = []
+    try:
+        # gather classes from module
+        for name in dir(all_detectors):
+            try:
+                obj = getattr(all_detectors, name)
+            except Exception:
+                continue
+            if isinstance(obj, type):
+                detector_classes.append(obj)
+        report["diagnostics"].append({"stage":"collect_detectors", "ok": True, "detector_count": len(detector_classes)})
+    except Exception as e:
+        report["diagnostics"].append({"stage":"collect_detectors", "ok": False, "error": str(e)})
