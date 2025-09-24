@@ -82,3 +82,54 @@ class PreSlitherValidator:
         fixes.extend(pragma_fixes)
         
         return content, fixes
+    
+
+        def _fix_abstract_contracts(self, content: str) -> Tuple[str, List[str]]:
+        """Fix contracts that should be abstract"""
+        fixes = []
+        
+        # Find contracts with unimplemented functions
+        contract_pattern = r'contract\s+(\w+)([^{]*)\{([^}]*(?:\{[^}]*\}[^}]*)*)\}'
+        
+        def fix_contract(match):
+            contract_name = match.group(1)
+            inheritance = match.group(2)
+            body = match.group(3)
+            
+            # Check for unimplemented functions (ending with semicolon)
+            if re.search(r'function\s+\w+[^{]*;', body):
+                fixes.append(f"Made contract '{contract_name}' abstract")
+                return f'abstract contract {contract_name}{inheritance}{{{body}}}'
+            
+            return match.group(0)
+        
+        content = re.sub(contract_pattern, fix_contract, content, flags=re.DOTALL)
+        return content, fixes
+    
+    def _fix_virtual_functions(self, content: str) -> Tuple[str, List[str]]:
+        """Add virtual keyword to unimplemented functions"""
+        fixes = []
+        
+        # Pattern for unimplemented functions
+        pattern = r'function\s+(\w+)\s*\(([^)]*)\)\s*([^{;]*);'
+        
+        def add_virtual(match):
+            func_name = match.group(1)
+            params = match.group(2)
+            modifiers = match.group(3).strip()
+            
+            if 'virtual' not in modifiers:
+                if modifiers:
+                    new_func = f"function {func_name}({params}) {modifiers} virtual;"
+                else:
+                    new_func = f"function {func_name}({params}) public virtual;"
+                
+                fixes.append(f"Added 'virtual' to function '{func_name}'")
+                return new_func
+            
+            return match.group(0)
+        
+        content = re.sub(pattern, add_virtual, content)
+
+        return content, fixes
+    
