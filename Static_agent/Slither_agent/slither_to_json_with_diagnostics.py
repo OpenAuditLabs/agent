@@ -272,3 +272,89 @@ try:
         report["diagnostics"].append({"stage":"collect_detectors", "ok": True, "detector_count": len(detector_classes)})
     except Exception as e:
         report["diagnostics"].append({"stage":"collect_detectors", "ok": False, "error": str(e)})
+        # Run detectors if available
+    findings = []
+    detector_exceptions = []
+    if sl and detector_classes:
+        for dclass in detector_classes:
+            dname = getattr(dclass, "__name__", str(dclass))
+            try:
+                # Try different instantiation patterns based on Slither's actual API
+                try:
+                    # Modern Slither API: detector(compilation_unit, slither, logger)
+                    if hasattr(sl, 'compilation_units') and len(sl.compilation_units) > 0:
+                        detector = dclass(sl.compilation_units[0], sl, logger)
+                    else:
+                        # Fallback: try with just slither instance
+                        detector = dclass(sl)
+                except TypeError as te:
+                    try:
+                        # Try legacy pattern: detector(slither, logger)
+                        detector = dclass(sl, logger)
+                    except TypeError:
+                        try:
+                            # Try with compilation unit from slither.contracts
+                            if hasattr(sl, 'contracts') and len(sl.contracts) > 0:
+                                compilation_unit = sl.contracts[0].compilation_unit
+                                detector = dclass(compilation_unit, sl, logger)
+                            else:
+                                # Last resort: instantiate with no args and set attributes
+                                detector = dclass()
+                                if hasattr(detector, 'slither'):
+                                    detector.slither = sl
+                                if hasattr(detector, 'logger'):
+                                    detector.logger = logger
+                        except TypeError:
+                            raise te  # Re-raise the original error
+                            
+            except Exception as e:
+                detector_exceptions.append({
+                    "detector": dname,
+                    "phase": "instantiate",
+                    "error": f"Could not instantiate detector: {str(e)}"
+                })
+                continue
+
+            try:
+                results = detector.detect()
+            except Exception as e:
+                detector_exceptions.append({"detector": dname, "phase": "detect", "error": str(e)})
+                continue
+
+            if not results:
+                continue
+
+            for r in results:
+                try:
+                    check = getattr(r, "check", None) or getattr(r, "name", None) or (r.get("check") if isinstance(r, dict) else None)
+                    impact = getattr(r, "impact", None) or getattr(r, "severity", None) or (r.get("impact") if isinstance(r, dict) else None) or "Unknown"
+                    desc = getattr(r, "description", None) or (r.get("description") if isinstance(r, dict) else None) or ""
+                    elems = getattr(r, "elements", None) or (r.get("elements") if isinstance(r, dict) else None)
+                    if elems is None:
+                        nodes = getattr(r, "nodes", None) or (r.get("nodes") if isinstance(r, dict) else None)
+                        elems = [str(n) for n in nodes] if nodes else [str(r)]
+                except Exception:
+                    check = str(r); impact = "Unknown"; desc = ""; elems = [str(r)]
+
+                findings.append({
+                    "finding_id": str(uuid.uuid4()),
+                    "swc_id": None,
+                    "severity": impact,
+                    "tool_name": "slither",
+                    "tool_version": getattr(slither_pkg, "__version__", None) or "unknown",
+                    "file_path": CONTRACT,
+                    "function_name": None,
+                    "description": desc,
+                    "elements": elems,
+                    "detector": dname,
+                    "timestamp": now_iso()
+                })
+
+    else:
+        report["diagnostics"].append({"stage": "skip_detectors", "ok": False, "note": "Slither instance or detectors not available."})
+
+    if detector_exceptions:
+        report["diagnostics"].append({"stage": "detector_exceptions", "ok": False, "exceptions": detector_exceptions})
+
+    report["findings"] = findings
+    report["total_findings"] = len(findings)
