@@ -149,3 +149,98 @@ class SoliditySyntaxFixer:
             })
         
         return content
+    
+    def fix_file(self, file_path: str, create_backup: bool = True) -> Dict:
+        """Fix a single Solidity file"""
+        result = {
+            "file": file_path,
+            "success": False,
+            "fixes_applied": [],
+            "compilation_before": False,
+            "compilation_after": False,
+            "backup_created": False,
+            "error": None
+        }
+        
+        try:
+            # Read original file
+            with open(file_path, 'r', encoding='utf-8') as f:
+                original_content = f.read()
+            
+            # Check compilation before fixes
+            compile_before, error_before = self.check_compilation(file_path)
+            result["compilation_before"] = compile_before
+            
+            # Apply fixes
+            fixed_content = self.detect_and_fix_syntax_issues(original_content, file_path)
+            
+            # If no changes needed
+            if fixed_content == original_content:
+                result["success"] = True
+                result["fixes_applied"] = ["No fixes needed - file is already valid"]
+                return result
+            
+            # Create backup if requested
+            if create_backup:
+                backup_path = f"{file_path}.backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+                shutil.copy2(file_path, backup_path)
+                result["backup_created"] = backup_path
+            
+            # Write fixed content
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(fixed_content)
+            
+            # Check compilation after fixes
+            compile_after, error_after = self.check_compilation(file_path)
+            result["compilation_after"] = compile_after
+            
+            # Get applied fixes for this file
+            file_fixes = [fix for fix in self.fixes_applied if fix["file"] == file_path]
+            if file_fixes:
+                result["fixes_applied"] = file_fixes[0]["fixes"]
+            
+            result["success"] = True
+            
+        except Exception as e:
+            result["error"] = str(e)
+        
+        return result
+    
+    def fix_directory(self, directory: str, create_backup: bool = True) -> Dict:
+        """Fix all Solidity files in a directory"""
+        results = {
+            "directory": directory,
+            "files_processed": [],
+            "summary": {
+                "total_files": 0,
+                "files_fixed": 0,
+                "compilation_improved": 0,
+                "errors": 0
+            },
+            "timestamp": datetime.now().isoformat()
+        }
+        
+        # Find all .sol files
+        sol_files = []
+        for root, dirs, files in os.walk(directory):
+            for file in files:
+                if file.endswith('.sol'):
+                    sol_files.append(os.path.join(root, file))
+        
+        results["summary"]["total_files"] = len(sol_files)
+        
+        # Process each file
+        for file_path in sol_files:
+            file_result = self.fix_file(file_path, create_backup)
+            results["files_processed"].append(file_result)
+            
+            if file_result["success"] and file_result["fixes_applied"] and file_result["fixes_applied"] != ["No fixes needed - file is already valid"]:
+                results["summary"]["files_fixed"] += 1
+            
+            if not file_result["compilation_before"] and file_result["compilation_after"]:
+                results["summary"]["compilation_improved"] += 1
+                
+            if file_result.get("error"):
+                results["summary"]["errors"] += 1
+        
+        return results    
