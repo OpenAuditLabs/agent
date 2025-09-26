@@ -358,3 +358,103 @@ try:
 
     report["findings"] = findings
     report["total_findings"] = len(findings)
+
+except Exception as e:
+    # Python API import failed
+    report["diagnostics"].append({"stage": "python_api_import", "ok": False, "error": str(e)})
+
+# === Fallback: CLI and Docker if Python API yields no findings ===
+if report["total_findings"] == 0:
+    report["diagnostics"].append({
+        "stage": "fallback_attempt",
+        "ok": True,
+        "note": "No findings from Python API — trying CLI and Docker fallbacks."
+    })
+    import subprocess
+    import shutil
+
+    slither_bin = shutil.which("slither")
+    if slither_bin:
+        try:
+            cmd = ["slither", CONTRACT, "--detect", DETECTORS_CLI]
+            p = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+            
+            # Parse CLI output for findings
+            cli_findings = parse_slither_cli_output(p.stdout, p.stderr, CONTRACT)
+            report["findings"].extend(cli_findings)
+            report["total_findings"] = len(report["findings"])
+            
+            report["diagnostics"].append({
+                "stage": "cli_slither",
+                "ok": True,
+                "returncode": p.returncode,
+                "stdout": p.stdout[:2000],
+                "stderr": p.stderr[:2000],
+                "findings_extracted": len(cli_findings)
+            })
+        except Exception as e:
+            report["diagnostics"].append({
+                "stage": "cli_slither",
+                "ok": False,
+                "error": str(e)
+            })
+    else:
+        report["diagnostics"].append({
+            "stage": "cli_slither",
+            "ok": False,
+            "note": "slither binary not found in PATH."
+        })
+
+    docker_bin = shutil.which("docker")
+    if report["total_findings"] == 0 and docker_bin:
+        try:
+            cwd = os.getcwd()
+            cmd = [
+                "docker", "run", "--rm",
+                "-v", f"{cwd}:/tmp", "-w", "/tmp",
+                DOCKER_IMAGE, "slither", CONTRACT,
+                "--detect", DETECTORS_CLI
+            ]
+            p = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            
+            # Parse Docker output for findings
+            docker_findings = parse_slither_cli_output(p.stdout, p.stderr, CONTRACT)
+            report["findings"].extend(docker_findings)
+            report["total_findings"] = len(report["findings"])
+            
+            report["diagnostics"].append({
+                "stage": "docker_slither",
+                "ok": True,
+                "returncode": p.returncode,
+                "stdout": p.stdout[:2000],
+                "stderr": p.stderr[:2000],
+                "findings_extracted": len(docker_findings)
+            })
+        except Exception as e:
+            report["diagnostics"].append({
+                "stage": "docker_slither",
+                "ok": False,
+                "error": str(e)
+            })
+    elif not docker_bin:
+        report["diagnostics"].append({
+            "stage": "docker_slither",
+            "ok": False,
+            "note": "docker not found in PATH."
+        })
+
+end_ts = time.time()
+report["end_time"] = now_iso()
+report["duration_seconds"] = round(end_ts - start_ts, 3)
+
+# final output
+print(json.dumps(report, indent=2))
+
+
+# Run Command------------>
+#.\slither_env\Scripts\python.exe .\slither_to_json_with_diagnostics.py .\VulnerableBank.sol > final_output.json 2>&1
+
+# .\slither_env\Scripts\slither.exe .\delcall.sol --detect all
+
+#Final Command
+#.\slither_env\Scripts\python.exe .\slither_to_json_with_diagnostics.py .\test2.sol > test2_fixed_results.json    
