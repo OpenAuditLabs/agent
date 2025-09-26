@@ -243,4 +243,78 @@ class SoliditySyntaxFixer:
             if file_result.get("error"):
                 results["summary"]["errors"] += 1
         
-        return results    
+        return results
+
+        def generate_report(self, results: Dict, output_file: str = None):
+        """Generate a detailed report of fixes applied"""
+        if output_file:
+            with open(output_file, 'w') as f:
+                json.dump(results, f, indent=2)
+        
+        # Print summary to console
+        print("\n" + "="*60)
+        print("🔧 SOLIDITY SYNTAX FIXER REPORT")
+        print("="*60)
+        
+        if "directory" in results:
+            print(f"📁 Directory: {results['directory']}")
+            summary = results["summary"]
+            print(f"📊 Files Processed: {summary['total_files']}")
+            print(f"🛠️  Files Fixed: {summary['files_fixed']}")
+            print(f"✅ Compilation Improved: {summary['compilation_improved']}")
+            print(f"❌ Errors: {summary['errors']}")
+            
+            print("\n📋 DETAILED RESULTS:")
+            for file_result in results["files_processed"]:
+                self._print_file_result(file_result)
+        else:
+            # Single file result
+            self._print_file_result(results)
+    
+    def _print_file_result(self, file_result: Dict):
+        """Print results for a single file"""
+        file_name = os.path.basename(file_result["file"])
+        print(f"\n📄 {file_name}")
+        print("-" * 40)
+        
+        if file_result["error"]:
+            print(f"❌ Error: {file_result['error']}")
+            return
+        
+        print(f"🔍 Compilation Before: {'✅' if file_result['compilation_before'] else '❌'}")
+        print(f"🔍 Compilation After:  {'✅' if file_result['compilation_after'] else '❌'}")
+        
+        if file_result.get("backup_created"):
+            print(f"💾 Backup Created: {os.path.basename(file_result['backup_created'])}")
+        
+        if file_result["fixes_applied"]:
+            print("🛠️  Fixes Applied:")
+            for fix in file_result["fixes_applied"]:
+                print(f"   • {fix}")
+
+def main():
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Solidity Syntax Fixer")
+    parser.add_argument("path", help="Path to Solidity file or directory")
+    parser.add_argument("--no-backup", action="store_true", help="Don't create backup files")
+    parser.add_argument("--report", help="Save detailed report to JSON file")
+    parser.add_argument("--solc-path", help="Path to solc compiler")
+    
+    args = parser.parse_args()
+    
+    fixer = SoliditySyntaxFixer(args.solc_path)
+    
+    if os.path.isfile(args.path):
+        # Single file
+        result = fixer.fix_file(args.path, not args.no_backup)
+        fixer.generate_report(result, args.report)
+    elif os.path.isdir(args.path):
+        # Directory
+        result = fixer.fix_directory(args.path, not args.no_backup)
+        fixer.generate_report(result, args.report)
+    else:
+        print(f"❌ Error: Path '{args.path}' not found")
+
+if __name__ == "__main__":
+    main()    
