@@ -26,3 +26,13 @@ async def root():
 async def health():
     """Health check endpoint."""
     return {"status": "healthy"}
+
+@app.get("/ready")
+async def ready():
+    """Readiness check endpoint."""
+    return {"status": "ready"}
+
+@app.get("/metrics")
+async def metrics():
+    """Metrics endpoint."""
+    return {"metrics": "Not implemented yet"}
