@@ -40,7 +40,11 @@ class ScoringEngine:
         base = score_map.get(sev_key, 5.0)
         confidence = float(getattr(finding, "confidence", 0.5) or 0.5)
         return round(base * (0.6 + 0.4 * confidence), 2)
-
+    
+# Singleton instance for module-level access
+scoring_engine = ScoringEngine()
+def calculate_score(finding: Any) -> float:
+    return scoring_engine.calculate_score(finding)
 
 
 
