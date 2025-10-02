@@ -1,439 +1,374 @@
-# 🤖 OpenAuditLabs Agent
+# OAL Agent - Smart Contract Security Analysis System
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=flat&logo=docker&logoColor=white)](https://www.docker.com/)
+[![License: AGPL v3](https://img.shield3. **Configure environment**
 
-**AI-Powered Smart Contract Security Analysis Engine**
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
 
-The OpenAuditLabs Agent is an advanced multi-agent system that automatically detects security vulnerabilities in smart contracts using artificial intelligence. Built with CrewAI framework, it orchestrates specialized AI agents to perform comprehensive security analysis with 95%+ accuracy.
+**Key environment variables:**
+
+- `API_HOST` / `API_PORT`: API server configuration
+- `DATABASE_URL`: Database connection string
+- `QUEUE_URL`: Redis connection string
+- `LLM_PROVIDER`: LLM provider (openai, anthropic, etc.)
+- `LLM_API_KEY`: API key for LLM provider
+- `LOG_LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR)
+
+4. **Install pre-commit hooks**nse-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+   [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+   [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+A multi-agent system for comprehensive smart contract security analysis using static analysis, dynamic testing, and machine learning.
+
+## ⚠️ Project Status
+
+**🚧 Under Active Development** - This project is currently in early development. APIs and features are subject to change.
+
+## ✨ Features
+
+- 🤖 **Multi-Agent Architecture**: Specialized agents for different analysis types
+- 🔍 **Static Analysis**: Integration with Slither and other static analyzers
+- 🧪 **Dynamic Analysis**: Symbolic execution and fuzzing capabilities
+- 🧠 **ML-Powered Detection**: Machine learning models for vulnerability detection
+- 🔌 **REST API**: Easy integration with existing workflows
+- 📊 **Comprehensive Reporting**: Detailed vulnerability reports with severity classification
+- 🔐 **Sandboxed Execution**: Safe contract analysis in isolated environments
+- 📈 **Telemetry & Monitoring**: Built-in logging, metrics, and tracing
+
+## 🏗️ Project Structure
+
+```
+agent/
+├── .github/workflows/     # CI/CD workflows
+├── .vscode/              # VS Code settings
+├── scripts/              # Utility scripts (lint, test, format)
+├── docs/                 # Documentation
+│   ├── architecture.md   # System architecture
+│   ├── agents.md        # Agent documentation
+│   ├── api.md           # API documentation
+│   ├── pipelines.md     # Pipeline documentation
+│   └── research/        # Research papers and notes
+├── models/              # ML models
+│   ├── transformers/    # Transformer models
+│   └── gnn/            # Graph Neural Network models
+├── data/               # Data storage
+│   ├── contracts/      # Smart contract samples
+│   └── datasets/       # Training datasets
+├── tests/              # Test suites
+│   ├── unit/          # Unit tests
+│   ├── integration/   # Integration tests
+│   ├── e2e/           # End-to-end tests
+│   ├── load/          # Load tests
+│   └── fixtures/      # Test fixtures
+├── src/oal_agent/     # Main source code
+│   ├── app/           # FastAPI application
+│   ├── core/          # Core orchestration
+│   ├── agents/        # Analysis agents
+│   ├── tools/         # External tool integrations
+│   ├── services/      # Background services
+│   ├── llm/           # LLM integration
+│   ├── security/      # Security components
+│   ├── telemetry/     # Logging & metrics
+│   ├── utils/         # Utilities
+│   └── cli.py         # Command-line interface
+└── Configuration files (pyproject.toml, requirements.txt, etc.)
+```
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Python 3.11+
-- Docker & Docker Compose
-- PostgreSQL 15+
-- Redis 7+
+- Python 3.9+ (3.11 recommended)
+- Redis (for job queue management)
+- PostgreSQL or SQLite (for result storage)
+- Solidity compiler (solc) for contract analysis
+- Optional: Docker for containerized deployment
 
 ### Installation
 
-```bash
-# Clone the repository
-git clone https://github.com/OpenAuditLabs/agent.git
-cd agent
+1. **Clone the repository**
 
-# Install dependencies
-pip install -r requirements.txt
+   ```bash
+   git clone https://github.com/OpenAuditLabs/agent.git
+   cd agent
+   ```
 
-# Setup environment variables
-cp .env.example .env
+2. **Set up Python environment**
 
-# Start services
-docker-compose up -d
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   pip install -r requirements.txt
+   pip install -r requirements-dev.txt
+   ```
 
-# Run database migrations
-alembic upgrade head
+3. **Configure environment**
 
-# Start the agent
-python -m uvicorn main:app --reload
-```
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
 
-### Docker Setup
+   **Key environment variables:**
 
-```bash
-# Build and run with Docker
-docker-compose up --build
+   - `API_HOST` / `API_PORT`: API server configuration
+   - `DATABASE_URL`: Database connection string
+   - `QUEUE_URL`: Redis connection string
+   - `LLM_PROVIDER`: LLM provider (openai, anthropic, etc.)
+   - `LLM_API_KEY`: API key for LLM provider
+   - `LOG_LEVEL`: Logging level (DEBUG, INFO, WARNING, ERROR)
 
-# API will be available at http://localhost:8000
-```
+4. **Install pre-commit hooks**
+   ```bash
+   pre-commit install
+   ```
 
-## 🧠 Architecture
+For detailed setup instructions, see the [Setup Guide](docs/setup.md).
 
-The Agent system employs a hierarchical multi-agent architecture powered by CrewAI:
+### Running the Application
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Coordinator Agent                        │
-│                 (Workflow Orchestration)                    │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-        ┌─────────────────┼─────────────────┐
-        │                 │                 │
-┌───────▼──────┐ ┌────────▼────────┐ ┌─────▼─────┐
-│Static Analysis│ │Dynamic Analysis │ │ML Classifier│
-│    Agent      │ │     Agent       │ │   Agent     │
-│   (Slither)   │ │   (Mythril)     │ │(Transformers)│
-└───────────────┘ └─────────────────┘ └───────────┘
-        │                 │                 │
-        └─────────────────┼─────────────────┘
-                          │
-                ┌─────────▼─────────┐
-                │Report Generation  │
-                │      Agent        │
-                └───────────────────┘
-```
-
-## 📁 Project Structure
-
-```
-agent/
-├── src/
-│   ├── agents/              # CrewAI agent implementations
-│   │   ├── coordinator.py   # Main orchestration agent
-│   │   ├── static_agent.py  # Slither integration
-│   │   ├── dynamic_agent.py # Mythril integration
-│   │   └── ml_agent.py      # ML classification
-│   ├── api/                 # FastAPI endpoints
-│   │   ├── routes/
-│   │   └── models/
-│   ├── core/                # Core analysis engine
-│   │   ├── pipeline.py      # Analysis pipeline
-│   │   └── orchestrator.py  # Agent orchestration
-│   ├── models/              # ML models & schemas
-│   │   ├── transformers/    # Transformer models
-│   │   └── gnn/            # Graph Neural Networks
-│   ├── tools/               # External tool integrations
-│   │   ├── slither.py      # Static analysis
-│   │   └── mythril.py      # Symbolic execution
-│   └── utils/               # Utility functions
-├── tests/                   # Test suites
-├── data/                    # Sample contracts & datasets
-├── docker/                  # Docker configurations
-├── docs/                    # Documentation
-└── notebooks/               # Research notebooks
-```
-
-## 🔧 Usage
-
-### REST API
-
-Start the FastAPI server:
+**Start the API server:**
 
 ```bash
-uvicorn main:app --host 0.0.0.0 --port 8000
+# Using module notation
+python -m src.oal_agent.cli serve
+
+# Or directly
+python src/oal_agent/cli.py serve
+
+# With custom host/port
+python src/oal_agent/cli.py serve --host 0.0.0.0 --port 8080
 ```
 
-### Analyze a Smart Contract
+**Analyze a contract:**
 
 ```bash
-curl -X POST "http://localhost:8000/analyze/contract" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "contract_code": "contract Simple { function transfer() public {} }",
-    "language": "solidity",
-    "analysis_type": "comprehensive"
-  }'
+python src/oal_agent/cli.py analyze path/to/contract.sol
 ```
 
-### Python SDK
+**Access the API:**
+
+- API Documentation: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
+
+### API Usage Example
 
 ```python
-from openauditlabs_agent import AnalysisClient
+import httpx
 
-# Initialize client
-client = AnalysisClient(api_url="http://localhost:8000")
+# Submit a contract for analysis
+async with httpx.AsyncClient() as client:
+    response = await client.post(
+        "http://localhost:8000/api/v1/analysis/",
+        json={
+            "contract_code": "pragma solidity ^0.8.0; contract Example { ... }",
+            "pipeline": "standard"
+        }
+    )
+    job = response.json()
+    job_id = job["job_id"]
 
-# Analyze contract
-result = client.analyze_contract(
-    contract_code=contract_source,
-    language="solidity"
-)
+    # Check job status
+    status_response = await client.get(f"http://localhost:8000/api/v1/analysis/{job_id}")
+    print(status_response.json())
 
-# Get results
-vulnerabilities = result.get_vulnerabilities()
-for vuln in vulnerabilities:
-    print(f"Severity: {vuln.severity}, Type: {vuln.type}")
+    # Get results when complete
+    results_response = await client.get(f"http://localhost:8000/api/v1/analysis/{job_id}/results")
+    print(results_response.json())
 ```
 
-## 🎯 Key Features
+## 🧪 Testing
 
-### 🔍 Multi-Modal Analysis
-- **Static Analysis**: Slither integration with 90+ detectors
-- **Dynamic Analysis**: Mythril symbolic execution with PoC generation
-- **ML Classification**: Transformer and GNN models for pattern recognition
-- **Ensemble Methods**: Combined analysis for enhanced accuracy
-
-### 🌐 Multi-Language Support
-- **Solidity** (.sol) - Complete support
-- **Vyper** (.vy) - Full analysis pipeline
-- **Rust** (Substrate/Ink!) - Advanced detection
-- **Move** (Aptos/Sui) - Experimental support
-
-### 🚀 Performance
-- **Processing Speed**: 1000+ LoC analyzed in <5 minutes
-- **Accuracy**: 95%+ vulnerability detection rate
-- **Scalability**: 500+ concurrent analyses
-- **Uptime**: 99.9% availability with auto-scaling
-
-### 📊 Vulnerability Detection
-- **50+ Vulnerability Types**: Complete SWC coverage
-- **CVSS Scoring**: Automated severity assessment
-- **Proof of Concept**: Executable exploit generation
-- **Remediation**: Actionable fix suggestions
-
-## 🛠️ Configuration
-
-### Environment Variables
+**Run all tests:**
 
 ```bash
-# Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/openauditlabs
-REDIS_URL=redis://localhost:6379
-
-# API Configuration
-API_HOST=0.0.0.0
-API_PORT=8000
-SECRET_KEY=your-secret-key
-
-# Agent Configuration
-CREWAI_API_KEY=your-crewai-key
-OPENAI_API_KEY=your-openai-key
-
-# Tool Configuration
-SLITHER_VERSION=0.10.0
-MYTHRIL_VERSION=0.24.2
-
-# ML Models
-MODEL_CACHE_DIR=./models
-TRANSFORMER_MODEL=microsoft/codebert-base
-GNN_MODEL_PATH=./models/gnn_classifier.pt
+bash scripts/test.sh
 ```
 
-### Agent Configuration
-
-```python
-# agents/config.py
-AGENT_CONFIG = {
-    "coordinator": {
-        "model": "gpt-4",
-        "temperature": 0.1,
-        "max_tokens": 2000
-    },
-    "static_agent": {
-        "slither_detectors": ["all"],
-        "timeout": 300,
-        "gas_analysis": True
-    },
-    "dynamic_agent": {
-        "mythril_timeout": 600,
-        "max_depth": 3,
-        "create_poc": True
-    },
-    "ml_agent": {
-        "confidence_threshold": 0.8,
-        "ensemble_voting": "soft",
-        "model_batch_size": 32
-    }
-}
-```
-
-## 🧪 Development
-
-### Setup Development Environment
+**Run specific test suites:**
 
 ```bash
-# Install development dependencies
-pip install -r requirements-dev.txt
+pytest tests/unit/ -v
+pytest tests/integration/ -v
+pytest tests/e2e/ -v
+```
 
-# Setup pre-commit hooks
-pre-commit install
+**Run with coverage:**
 
-# Run tests
-pytest tests/ -v
+```bash
+pytest tests/ --cov=src/oal_agent --cov-report=html
+```
 
-# Code formatting
-black src/
-isort src/
+## 🔧 Development
 
-# Type checking
+**Format code:**
+
+```bash
+bash scripts/format.sh
+# Or manually:
+black src/ tests/
+isort src/ tests/
+```
+
+**Run linters:**
+
+```bash
+bash scripts/lint.sh
+# Includes: black, isort, flake8, mypy
+```
+
+**Check code quality:**
+
+```bash
+# Run all checks
+pre-commit run --all-files
+
+# Run specific checks
+black --check src/ tests/
+flake8 src/ tests/
 mypy src/
 ```
 
-### Running Tests
+## 📦 Project Components
 
-```bash
-# Unit tests
-pytest tests/unit/
+### Core Components
 
-# Integration tests
-pytest tests/integration/
+- **Orchestrator**: Manages the overall analysis workflow
+- **Pipeline**: Defines analysis sequences
+- **Config**: Centralized configuration management
 
-# End-to-end tests
-pytest tests/e2e/
+### Agents
 
-# Load tests
-pytest tests/load/ --load-test
-```
+- **Coordinator Agent**: Routes tasks to specialized agents
+- **Static Agent**: Static code analysis using Slither, etc.
+- **Dynamic Agent**: Symbolic execution and fuzzing
+- **ML Agent**: Machine learning-based vulnerability detection
 
-### Adding New Agents
+### Tools Integration
 
-1. Create agent class in `src/agents/`
-2. Implement required methods:
-   - `analyze()`: Main analysis logic
-   - `get_tools()`: Return required tools
-   - `get_config()`: Return agent configuration
-3. Register in `src/core/orchestrator.py`
-4. Add tests in `tests/agents/`
+- **Slither**: Static analysis
+- **Mythril**: Symbolic execution
+- **Sandbox**: Safe contract execution environment
 
-Example:
+### Services
 
-```python
-from crewai import Agent
-from typing import Dict, List
+- **Queue Service**: Job queue management
+- **Results Sink**: Collects and stores results
+- **Storage Service**: Persistent data storage
 
-class CustomAgent(Agent):
-    def __init__(self, config: Dict):
-        super().__init__(
-            role="Custom Analyzer",
-            goal="Detect specific vulnerability patterns",
-            backstory="Specialized security expert",
-            tools=self.get_tools(),
-            **config
-        )
-    
-    def analyze(self, contract_code: str) -> List[Dict]:
-        # Implement custom analysis logic
-        return []
-```
+### LLM Integration
+
+- **Provider**: LLM API integration
+- **Prompts**: Specialized prompts for analysis
+- **Guards**: Safety and validation guardrails
 
 ## 🔐 Security
 
-### Input Validation
-- All contract inputs are sanitized and validated
-- File size limits enforced (max 10MB)
-- Rate limiting on API endpoints
-- Input encoding detection and normalization
+- Input validation for all user inputs
+- Sandboxed execution environment
+- Security policies and permissions
+- See [SECURITY.md](SECURITY.md) for details
 
-### Data Protection
-- Contract source code encrypted at rest (AES-256)
-- Analysis results stored with access controls
-- Audit logs for all operations
-- Automatic data retention policies
+## 📖 Documentation
 
-### Authentication
-- JWT-based API authentication
-- Role-based access control (RBAC)
-- API key management for integrations
-- Session management and timeout
+- [Setup Guide](docs/setup.md) - Detailed installation and configuration
+- [Architecture](docs/architecture.md) - System design and components
+- [Agents](docs/agents.md) - Agent types and responsibilities
+- [API](docs/api.md) - REST API documentation
+- [Pipelines](docs/pipelines.md) - Analysis pipeline configurations
+- [Research Papers](docs/research/) - Research documentation and papers
 
-## 📈 Monitoring
+## ❓ Troubleshooting
 
-### Metrics
-- Analysis throughput and latency
-- Vulnerability detection accuracy
-- Agent performance metrics
-- Resource utilization
+### Common Issues
 
-### Health Checks
+**Import errors after installation:**
+
 ```bash
-# System health
-curl http://localhost:8000/health
-
-# Agent status
-curl http://localhost:8000/agents/status
-
-# Database connectivity
-curl http://localhost:8000/health/db
+# Make sure you're in the virtual environment
+source .venv/bin/activate
+# Reinstall dependencies
+pip install -r requirements.txt
 ```
 
-### Logging
-- Structured JSON logging
-- Correlation IDs for request tracking
-- Error aggregation and alerting
-- Performance monitoring
+**Redis connection errors:**
+
+```bash
+# Check if Redis is running
+redis-cli ping
+# Start Redis if needed
+redis-server
+```
+
+**Permission errors on scripts:**
+
+```bash
+# Make scripts executable
+chmod +x scripts/*.sh
+```
+
+**Module not found errors:**
+
+```bash
+# Add src to PYTHONPATH
+export PYTHONPATH="${PYTHONPATH}:${PWD}/src"
+```
+
+For more help, see [GitHub Issues](https://github.com/OpenAuditLabs/agent/issues) or contact the team.
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ### Development Workflow
+
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+3. Make your changes
+4. Run tests and linters (`bash scripts/test.sh && bash scripts/lint.sh`)
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
 
-### Code Standards
-- Follow PEP 8 style guide
-- Add type hints to all functions
-- Write comprehensive tests
-- Update documentation
-- Ensure all checks pass
+## 📊 Roadmap
 
-## 📚 Documentation
+- [ ] Complete core agent implementations
+- [ ] Add support for more static analysis tools
+- [ ] Implement ML model training pipeline
+- [ ] Add support for multiple blockchain platforms
+- [ ] Create web dashboard for analysis results
+- [ ] Implement real-time analysis streaming
+- [ ] Add plugin system for custom analyzers
 
-- [API Documentation](https://docs.openauditlabs.com/agent/api)
-- [Agent Development Guide](docs/agents.md)
-- [ML Model Training](docs/ml-training.md)
-- [Deployment Guide](docs/deployment.md)
-- [Troubleshooting](docs/troubleshooting.md)
+## 🐛 Bug Reports & Feature Requests
 
-## 🚀 Deployment
+Please use the [GitHub Issues](https://github.com/OpenAuditLabs/agent/issues) to report bugs or request features.
 
-### Docker Production
+## 💬 Community & Support
 
-```bash
-# Build production image
-docker build -t openauditlabs/agent:latest .
-
-# Run with docker-compose
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-### Kubernetes
-
-```bash
-# Deploy to Kubernetes
-kubectl apply -f k8s/
-
-# Check deployment
-kubectl get pods -n openauditlabs
-```
-
-### IDE Plugins
-- VS Code extension available
-- Vim/Neovim integration
-- JetBrains plugin support
-- Sublime Text package
-
-## 📊 Performance Benchmarks
-
-| Metric | Value |
-|--------|-------|
-| Analysis Speed | < 5 minutes per 1000 LoC |
-| Accuracy | 95%+ vulnerability detection |
-| False Positives | < 5% |
-| Throughput | 500+ analyses/day |
-| Uptime | 99.9% |
-| Memory Usage | < 2GB per analysis |
-
-## 🆘 Support
-
-- **Documentation**: [docs.openauditlabs.com](https://docs.openauditlabs.com)
-- **Issues**: [GitHub Issues](https://github.com/OpenAuditLabs/agent/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/OpenAuditLabs/agent/discussions)
-- **Email**: support@openauditlabs.com
-- **Discord**: [OpenAuditLabs Community](https://discord.gg/openauditlabs)
+- **GitHub Discussions**: [Join the conversation](https://github.com/OpenAuditLabs/agent/discussions)
+- **Issues**: [Report bugs or request features](https://github.com/OpenAuditLabs/agent/issues)
+- **Security**: See [SECURITY.md](SECURITY.md) for reporting security vulnerabilities
 
 ## 📄 License
 
-This project is licensed under the GNU Affero General Public License v3 (AGPLv3) - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
+
+Key points:
+
+- ✅ You can use, modify, and distribute this software
+- ✅ You must disclose source code of any modifications
+- ✅ Network use counts as distribution (you must share your modifications)
+- ✅ You must license derivative works under AGPL-3.0
 
 ## 🙏 Acknowledgments
 
-- [CrewAI](https://crewai.com/) for multi-agent orchestration
-- [Slither](https://github.com/crytic/slither) for static analysis
-- [Mythril](https://github.com/ConsenSys/mythril) for symbolic execution
-- [OpenZeppelin](https://openzeppelin.com/) for smart contract security standards
-- [Smart Contract Weakness Classification](https://swcregistry.io/) for vulnerability taxonomy
+- [OpenAuditLabs](https://github.com/OpenAuditLabs) team and contributors
+- Open source security tools community ([Slither](https://github.com/crytic/slither), [Mythril](https://github.com/ConsenSys/mythril), etc.)
+- Smart contract security researchers and auditors worldwide
 
 ---
 
-<div align="center">
-<strong>🛡️ Securing the Future of Smart Contracts with AI 🛡️</strong>
-
-[Website](https://openauditlabs.com) • [Documentation](https://docs.openauditlabs.com) • [Blog](https://blog.openauditlabs.com) • [Twitter](https://twitter.com/openauditlabs)
-</div>
+**Made with ❤️ by OpenAuditLabs**
