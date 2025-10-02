@@ -57,10 +57,31 @@ Thumbs.db
 *.bak
 *.tmp
 
-# Project specific
-*.log
-*.db
-*.sqlite3
-*.coverage
-htmlcov/
+# Testing
 .pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Data files (keep .gitkeep files)
+data/datasets/*.csv
+data/datasets/*.json
+data/datasets/*.parquet
+!data/datasets/.gitkeep
+!data/contracts/.gitkeep
+
+# Model files (large models, keep .gitkeep files)
+models/**/*.pt
+models/**/*.pth
+models/**/*.h5
+models/**/*.onnx
+models/**/*.pkl
+!models/**/.gitkeep
+
+# Redis
+dump.rdb
+
+# Temporary files
+tmp/
+temp/
