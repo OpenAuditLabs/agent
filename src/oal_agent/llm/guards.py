@@ -20,15 +20,12 @@ class LLMGuards:
         Returns:
             True if the prompt is valid, False otherwise.
         \"\"\"
-        # 1. Excessive prompt length
-        MAX_PROMPT_LENGTH = 4096  # Example limit, adjust as needed
+
+        MAX_PROMPT_LENGTH = 4096
         if len(prompt) > MAX_PROMPT_LENGTH:
             print(f"Input validation failed: Prompt exceeds maximum length of {MAX_PROMPT_LENGTH} characters.")
             return False
 
-        # 2. Malicious payloads (basic regex checks)
-        # These are basic examples; a real-world system would need more comprehensive patterns
-        # and potentially a dedicated security library.
         malicious_patterns = [
             # SQL Injection
             r"('|%27)\s*(OR|AND)\s*(\d+=\d+|'[^']+'='[^']+')",
@@ -52,16 +49,12 @@ class LLMGuards:
                 print(f"Input validation failed: Malicious pattern detected: {pattern}")
                 return False
 
-        # 3. Harmful or offensive language / Ethical guidelines violation
-        # This is a placeholder. For robust detection, integrate with a pre-trained NLP model
-        # (e.g., from Hugging Face for toxicity detection) or a content moderation API.
-        # Simple keyword matching is highly prone to false positives and is not exhaustive.
         harmful_keywords = [
             r"hate\s+speech",
             r"violence\s+promotion",
             r"illegal\s+activity",
-            r"offensive\s+term_x", # Placeholder for actual offensive terms
-            r"offensive\s+term_y", # Placeholder for actual offensive terms
+            r"offensive\s+term_x",
+            r"offensive\s+term_y",
         ]
 
         for keyword in harmful_keywords:
@@ -69,7 +62,6 @@ class LLMGuards:
                 print(f"Input validation failed: Harmful/offensive language detected: {keyword}")
                 return False
 
-        # If all checks pass
         return True
 
     async def validate_output(self, response: str) -> bool:
