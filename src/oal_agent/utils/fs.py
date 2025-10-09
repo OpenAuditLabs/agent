@@ -3,6 +3,8 @@
 import os
 from pathlib import Path
 
+from oal_agent.utils.fs_utils import read_file_content
+
 
 def ensure_dir(path: str):
     """Ensure directory exists."""
@@ -11,8 +13,7 @@ def ensure_dir(path: str):
 
 def read_file(path: str) -> str:
     """Read file contents."""
-    with open(path, 'r') as f:
-        return f.read()
+    return read_file_content(Path(path), default_value="")
 
 
 def write_file(path: str, content: str):
