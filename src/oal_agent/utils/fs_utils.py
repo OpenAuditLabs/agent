@@ -16,7 +16,7 @@ def read_file_content(file_path: Path, default_value: Any = None) -> Any:
         The content of the file, or the default_value if an error occurs.
     """
     try:
-        return file_path.read_text()
-    except Exception as e:
+        return file_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as e:
         logger.debug(f"Error reading file {file_path}: {e}")
         return default_value
