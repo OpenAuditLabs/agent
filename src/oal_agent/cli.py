@@ -19,16 +19,10 @@ from .core.config import Settings, settings
 def cli(config: str | None):
     """OAL Agent CLI."""
     if config:
-        # Normalize path: expand user (~) and get absolute path
-        config_path = os.path.abspath(os.path.expanduser(config))
-        if not os.path.exists(config_path):
-            click.echo(f"Error: Configuration file not found at '{config_path}'", err=True)
-            raise click.Exit(code=1)
-        
         # Re-initialize settings with the custom config file
         global settings
-        settings = Settings(_env_file=config_path)
-        click.echo(f"Using configuration from '{config_path}'")
+        settings = Settings(_env_file=config)
+        click.echo(f"Using configuration from '{config}'")
     pass
 
 
