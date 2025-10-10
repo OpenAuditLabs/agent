@@ -1,6 +1,6 @@
 """Results schemas."""
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -20,3 +20,11 @@ class AnalysisResult(BaseModel):
     status: str
     findings: List[Finding]
     metadata: Dict[str, Any]
+
+
+class PaginatedItemsResponse(BaseModel):
+    """Schema for paginated list of items."""
+    items: List[Any]
+    total: int
+    limit: int
+    offset: int
