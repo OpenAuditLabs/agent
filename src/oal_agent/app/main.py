@@ -3,8 +3,11 @@
 
 """Main FastAPI application."""
 
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 
+from oal_agent.telemetry.logging import logger
 from .routers import analysis
 
 app = FastAPI(
@@ -12,6 +15,17 @@ app = FastAPI(
     description="Smart Contract Security Analysis System",
     version="0.1.0"
 )
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """
+    Handles all unhandled exceptions, logs them, and returns a consistent JSON error response.
+    """
+    logger.exception("Unhandled exception occurred: %s", exc)
+    return JSONResponse(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        content={"message": "An internal server error occurred", "code": "internal_error"},
+    )
 
 app.include_router(analysis.router, prefix="/api/v1")
 
