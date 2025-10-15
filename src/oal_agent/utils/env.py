@@ -20,12 +20,14 @@ def _get_env_value(
 ) -> Optional[bool]: ...
 @overload
 def _get_env_value(
-    key: str, default: Optional[T] = None, cast_to: Type[T] = str
-) -> Optional[T]: ...
+    key: str,
+    default: Optional[Union[str, int, bool]] = None,
+    cast_to: Union[Type[str], Type[int], Type[bool]] = str,
+) -> Optional[Union[str, int, bool]]: ...
 def _get_env_value(
     key: str,
     default: Optional[Union[str, int, bool]] = None,
-    cast_to: Type[Union[str, int, bool]] = str,
+    cast_to: Union[Type[str], Type[int], Type[bool]] = str,
 ) -> Optional[Union[str, int, bool]]:
     """
     Internal helper to get an environment variable, apply a default, and cast its type.
@@ -54,8 +56,10 @@ def _get_env_value(
 
 
 def get_env(
-    key: str, default: Optional[T] = None, cast_to: Type[T] = str
-) -> Optional[T]:
+    key: str,
+    default: Optional[Union[str, int, bool]] = None,
+    cast_to: Union[Type[str], Type[int], Type[bool]] = str,
+) -> Optional[Union[str, int, bool]]:
     """
     Get an environment variable with an optional default value and type casting.
 
@@ -70,7 +74,9 @@ def get_env(
     return _get_env_value(key, default=default, cast_to=cast_to)
 
 
-def require_env(key: str, cast_to: Type[T] = str) -> T:
+def require_env(
+    key: str, cast_to: Union[Type[str], Type[int], Type[bool]] = str
+) -> Union[str, int, bool]:
     """
     Get a required environment variable, raising an error if it's not set.
     Supports optional type casting.
