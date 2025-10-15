@@ -1,12 +1,32 @@
 """Environment utilities."""
 
 import os
-from typing import TypeVar, Type, Union, Optional
+from typing import TypeVar, Type, Union, Optional, overload
 
 T = TypeVar("T", str, int, bool)
 
 
-def _get_env_value(key: str, default: Optional[T] = None, cast_to: Type[T] = str) -> Optional[T]:
+@overload
+def _get_env_value(
+    key: str, default: Optional[str] = None, cast_to: Type[str] = str
+) -> Optional[str]: ...
+@overload
+def _get_env_value(
+    key: str, default: Optional[int] = None, cast_to: Type[int] = int
+) -> Optional[int]: ...
+@overload
+def _get_env_value(
+    key: str, default: Optional[bool] = None, cast_to: Type[bool] = bool
+) -> Optional[bool]: ...
+@overload
+def _get_env_value(
+    key: str, default: Optional[T] = None, cast_to: Type[T] = str
+) -> Optional[T]: ...
+def _get_env_value(
+    key: str,
+    default: Optional[Union[str, int, bool]] = None,
+    cast_to: Type[Union[str, int, bool]] = str,
+) -> Optional[Union[str, int, bool]]:
     """
     Internal helper to get an environment variable, apply a default, and cast its type.
     """
@@ -23,7 +43,9 @@ def _get_env_value(key: str, default: Optional[T] = None, cast_to: Type[T] = str
         try:
             return int(value)
         except ValueError:
-            raise ValueError(f"Environment variable {key} expected to be an integer, but got '{value}'")
+            raise ValueError(
+                f"Environment variable {key} expected to be an integer, but got '{value}'"
+            )
     elif cast_to is bool:
         # Treat 'true', '1', 'yes' as True (case-insensitive), anything else as False
         return value.lower() in ("true", "1", "yes")
@@ -31,7 +53,9 @@ def _get_env_value(key: str, default: Optional[T] = None, cast_to: Type[T] = str
         raise TypeError(f"Unsupported cast_to type: {cast_to}")
 
 
-def get_env(key: str, default: Optional[T] = None, cast_to: Type[T] = str) -> Optional[T]:
+def get_env(
+    key: str, default: Optional[T] = None, cast_to: Type[T] = str
+) -> Optional[T]:
     """
     Get an environment variable with an optional default value and type casting.
 
