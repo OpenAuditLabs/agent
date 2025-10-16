@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 class Settings(BaseSettings):
     """Application settings."""
 
-    def __init__(self, _env_file: str | None = None, **kwargs):
+    def __init__(self, _env_file: str | None = None, **kwargs: dict):
         super().__init__(_env_file=_env_file, **kwargs)
 
     # API Settings
