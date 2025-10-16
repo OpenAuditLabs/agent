@@ -18,6 +18,7 @@ class Settings(BaseSettings):
 
     # Queue
     queue_url: str = "redis://localhost:6379"
+    queue_max_size: int = 100
 
     # LLM
     llm_provider: str = "openai"
