@@ -1,12 +1,12 @@
 """Pipeline definitions."""
 
-from typing import Callable, List
+from typing import Any, Callable, List
 
 
 class Pipeline:
     """Analysis pipeline."""
 
-    def __init__(self, name: str, steps: List[Callable[[dict, ...], None]]):
+    def __init__(self, name: str, steps: List[Callable[..., Any]]):
         """
         Initializes a pipeline.
 
@@ -15,9 +15,9 @@ class Pipeline:
             steps: A list of callable functions representing the pipeline steps.
         """
         self.name: str = name
-        self.steps: List[Callable[[dict, ...], None]] = steps
+        self.steps: List[Callable[..., Any]] = steps
 
-    async def execute(self, context: dict[str, any]) -> None:
+    async def execute(self, context: dict[str, Any]) -> None:
         """Execute the pipeline.
 
         Args:
