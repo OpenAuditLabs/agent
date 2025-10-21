@@ -1,5 +1,17 @@
 """Sandbox tool for safe contract execution."""
 
+import asyncio
+
+
+async def execute_external_command(command: str, *args: str) -> str:
+    """
+    Executes an external command in a sandboxed environment.
+    TODO: Implement actual sandboxed execution.
+    """
+    full_command = [command] + list(args)
+    # Placeholder for actual execution
+    return f"Executed: {' '.join(full_command)}"
+
 
 class SandboxTool:
     """Provides sandboxed environment for contract execution."""
