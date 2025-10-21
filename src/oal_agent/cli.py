@@ -3,8 +3,6 @@
 
 """Command-line interface."""
 
-import os
-
 import click
 
 from .core.config import Settings, settings
