@@ -1,10 +1,13 @@
 """Mythril tool integration."""
 
 import asyncio
+import logging
 import os
 import tempfile
 
 from oal_agent.tools.sandbox import execute_external_command
+
+logger = logging.getLogger(__name__)
 
 
 class MythrilTool:
@@ -43,5 +46,5 @@ class MythrilTool:
                     os.unlink(temp_path)
                 except OSError as e:
                     # Log the error if cleanup fails, but do not swallow the original exception
-                    print(f"Error cleaning up temporary file {temp_path}: {e}")
+                    logger.warning("Error cleaning up temporary file %s: %s", temp_path, e)
 
