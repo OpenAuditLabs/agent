@@ -13,7 +13,7 @@ def mythril_tool():
 
 
 @pytest.mark.asyncio
-async def test_analyze_uses_temp_file_and_cleans_up(mythril_tool, tmp_path):
+async def test_analyze_uses_temp_file_and_cleans_up(mythril_tool):
     contract_code = "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }"
 
     with patch("oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock) as mock_execute:
@@ -43,15 +43,13 @@ async def test_analyze_returns_result_despite_cleanup_error(mythril_tool, tmp_pa
         with patch("os.unlink") as mock_unlink:
             mock_unlink.side_effect = OSError("Cleanup failed")
 
-            result = await mythril_tool.analyze(contract_code)
-
-            assert result == mock_result
-            mock_unlink.assert_called_once()
-            # Ensure the logger.warning was called
             with patch("oal_agent.tools.mythril.logger") as mock_logger:
-                await mythril_tool.analyze(contract_code)
-                mock_logger.warning.assert_called_once()
+                result = await mythril_tool.analyze(contract_code)
 
+                assert result == mock_result
+                mock_unlink.assert_called_once()
+                # Ensure the logger.warning was called
+                mock_logger.warning.assert_called_once()
 
 @pytest.mark.asyncio
 async def test_analyze_temp_file_content(mythril_tool, tmp_path):

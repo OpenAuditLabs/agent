@@ -1,4 +1,3 @@
-import pytest
 from pathlib import Path
 from src.oal_agent.utils.fs_utils import read_file_content
 

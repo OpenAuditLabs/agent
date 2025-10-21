@@ -1,4 +1,3 @@
-import pytest
 from src.oal_agent.security.policies import SecurityPolicy
 
 def test_unknown_policy_action():

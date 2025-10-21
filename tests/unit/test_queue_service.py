@@ -1,5 +1,4 @@
 import pytest
-import asyncio
 from src.oal_agent.services.queue import QueueService, QueueFullError
 from src.oal_agent.core.config import settings
 

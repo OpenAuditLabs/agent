@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     logger = logging.getLogger(name)

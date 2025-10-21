@@ -11,15 +11,14 @@ class LLMGuards:
         pass
 
     async def validate_input(self, prompt: str) -> bool:
-        \"\"\"
-        Validate input prompt for safety, appropriateness, and well-formedness.
+        """Validate input prompt for safety, appropriateness, and well-formedness.
 
         Args:
             prompt: The input string to validate.
 
         Returns:
             True if the prompt is valid, False otherwise.
-        \"\"\"
+        """
 
         MAX_PROMPT_LENGTH = 4096
         if len(prompt) > MAX_PROMPT_LENGTH:

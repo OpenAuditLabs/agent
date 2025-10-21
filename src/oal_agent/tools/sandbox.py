@@ -1,6 +1,6 @@
 """Sandbox tool for safe contract execution."""
 
-import asyncio
+
 
 
 async def execute_external_command(command: str, *args: str) -> str:
