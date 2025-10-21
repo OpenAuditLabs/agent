@@ -1,13 +1,20 @@
 """Configuration management."""
 
+from typing import Any, Union
 from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
     """Application settings."""
 
-    def __init__(self, _env_file: str | None = None, **kwargs: dict):
-        super().__init__(_env_file=_env_file, **kwargs)
+    def __init__(self, _env_file: Union[str, None] = None):
+        """
+        Initializes the Settings object.
+
+        Args:
+            _env_file: Optional path to an environment file.
+        """
+        super().__init__(_env_file=_env_file)
 
     # API Settings
     api_host: str = "0.0.0.0"
