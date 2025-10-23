@@ -6,8 +6,12 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
-from oal_agent.telemetry.logging import logger
+from oal_agent.telemetry.logging import get_logger, setup_logging
 from .routers import analysis
+
+setup_logging()
+
+logger = get_logger(__name__)
 
 app = FastAPI(
     title="OAL Agent API",
