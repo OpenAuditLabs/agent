@@ -25,7 +25,7 @@ class Validator:
     @staticmethod
     def validate_contract_code(code: str) -> bool:
         """Validate contract code."""
-        sanitized_code = Validator._sanitize_string_input(code)
+        sanitized_code = Validator._trim_whitespace(code)
         # TODO: Implement more comprehensive validation for contract code
         return bool(sanitized_code)  # Basic check: not empty after sanitization
 
