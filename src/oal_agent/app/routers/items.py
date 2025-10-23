@@ -1,7 +1,6 @@
-from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException
 
-from fastapi import APIRouter, HTTPException, Query
-
+from oal_agent.app.schemas.jobs import PaginationParams
 from oal_agent.app.schemas.results import PaginatedItemsResponse
 
 router = APIRouter()
@@ -14,14 +13,12 @@ router = APIRouter()
     response_model=PaginatedItemsResponse,
 )
 async def get_all_items(
-    limit: Optional[int] = Query(10, ge=1, le=100),
-    offset: Optional[int] = Query(0, ge=0),
+    pagination: PaginationParams = Depends(),
 ):
     """Retrieve a paginated list of all items.
 
     Args:
-        limit (int): Maximum number of items to return. Defaults to 10, max 100.
-        offset (int): Number of items to skip. Defaults to 0.
+        pagination (PaginationParams): Pagination parameters including limit and offset.
 
     Returns:
         PaginatedItemsResponse: A paginated list of items.
@@ -34,10 +31,15 @@ async def get_all_items(
         total_items = len(all_items)
 
         # Apply pagination
-        paginated_items = all_items[offset : offset + limit]
+        paginated_items = all_items[
+            pagination.offset : pagination.offset + pagination.limit
+        ]
 
         return PaginatedItemsResponse(
-            items=paginated_items, total=total_items, limit=limit, offset=offset
+            items=paginated_items,
+            total=total_items,
+            limit=pagination.limit,
+            offset=pagination.offset,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve items: {e}")

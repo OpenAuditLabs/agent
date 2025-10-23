@@ -58,3 +58,4 @@ disallow_untyped_defs = false
 [tool.flake8]
 max-line-length = 88
 exclude = [".venv", ".git", "__pycache__", "build", "dist"]
+ignore = ["E203"]
