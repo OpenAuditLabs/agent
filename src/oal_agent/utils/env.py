@@ -9,21 +9,29 @@ T = TypeVar("T", str, int, bool)
 @overload
 def _get_env_value(
     key: str, default: Optional[str] = None, cast_to: Type[str] = str
-) -> Optional[str]: ...
+): ...
+
+
 @overload
 def _get_env_value(
     key: str, default: Optional[int] = None, cast_to: Type[int] = int
-) -> Optional[int]: ...
+): ...
+
+
 @overload
 def _get_env_value(
     key: str, default: Optional[bool] = None, cast_to: Type[bool] = bool
-) -> Optional[bool]: ...
+): ...
+
+
 @overload
 def _get_env_value(
     key: str,
     default: Optional[Union[str, int, bool]] = None,
     cast_to: Union[Type[str], Type[int], Type[bool]] = str,
-) -> Optional[Union[str, int, bool]]: ...
+): ...
+
+
 def _get_env_value(
     key: str,
     default: Optional[Union[str, int, bool]] = None,
@@ -46,7 +54,8 @@ def _get_env_value(
             return int(value)
         except ValueError:
             raise ValueError(
-                f"Environment variable {key} expected to be an integer, but got '{value}'"
+                f"Environment variable {key} expected to be an integer, "
+                f"but got '{value}'"
             )
     elif cast_to is bool:
         # Treat 'true', '1', 'yes' as True (case-insensitive), anything else as False
