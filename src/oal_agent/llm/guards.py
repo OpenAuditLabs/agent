@@ -22,7 +22,9 @@ class LLMGuards:
 
         MAX_PROMPT_LENGTH = 4096
         if len(prompt) > MAX_PROMPT_LENGTH:
-            print(f"Input validation failed: Prompt exceeds maximum length of {MAX_PROMPT_LENGTH} characters.")
+            print(
+                f"Input validation failed: Prompt exceeds maximum length of {MAX_PROMPT_LENGTH} characters."
+            )
             return False
 
         malicious_patterns = [
@@ -58,7 +60,9 @@ class LLMGuards:
 
         for keyword in harmful_keywords:
             if re.search(keyword, prompt, re.IGNORECASE):
-                print(f"Input validation failed: Harmful/offensive language detected: {keyword}")
+                print(
+                    f"Input validation failed: Harmful/offensive language detected: {keyword}"
+                )
                 return False
 
         return True

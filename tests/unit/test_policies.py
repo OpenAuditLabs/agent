@@ -1,8 +1,10 @@
 from src.oal_agent.security.policies import SecurityPolicy
 
+
 def test_unknown_policy_action():
     policy = SecurityPolicy()
     assert not policy.check_permission("unknown_action", "some_resource")
+
 
 def test_allowed_policy_action():
     policy = SecurityPolicy()

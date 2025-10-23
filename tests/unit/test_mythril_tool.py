@@ -1,6 +1,6 @@
 import os
 import tempfile
-from unittest.mock import AsyncMock, patch, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -14,9 +14,13 @@ def mythril_tool():
 
 @pytest.mark.asyncio
 async def test_analyze_uses_temp_file_and_cleans_up(mythril_tool):
-    contract_code = "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }"
+    contract_code = (
+        "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }"
+    )
 
-    with patch("oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock) as mock_execute:
+    with patch(
+        "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
+    ) as mock_execute:
         mock_execute.return_value = "Mythril analysis result"
 
         result = await mythril_tool.analyze(contract_code)
@@ -35,10 +39,14 @@ async def test_analyze_uses_temp_file_and_cleans_up(mythril_tool):
 
 @pytest.mark.asyncio
 async def test_analyze_returns_result_despite_cleanup_error(mythril_tool, tmp_path):
-    contract_code = "pragma solidity ^0.8.0; contract MyContract { function bar() public {} }"
+    contract_code = (
+        "pragma solidity ^0.8.0; contract MyContract { function bar() public {} }"
+    )
     mock_result = "Analysis result despite cleanup error"
 
-    with patch("oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock) as mock_execute:
+    with patch(
+        "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
+    ) as mock_execute:
         mock_execute.return_value = mock_result
         with patch("os.unlink") as mock_unlink:
             mock_unlink.side_effect = OSError("Cleanup failed")
@@ -50,6 +58,7 @@ async def test_analyze_returns_result_despite_cleanup_error(mythril_tool, tmp_pa
                 mock_unlink.assert_called_once()
                 # Ensure the logger.warning was called
                 mock_logger.warning.assert_called_once()
+
 
 @pytest.mark.asyncio
 async def test_analyze_temp_file_content(mythril_tool, tmp_path):
@@ -73,19 +82,28 @@ async def test_analyze_temp_file_content(mythril_tool, tmp_path):
         f = original_named_temp_file(*args, **kwargs)
         return f
 
-    with patch("oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock, side_effect=mock_execute_external_command):
+    with patch(
+        "oal_agent.tools.mythril.execute_external_command",
+        new_callable=AsyncMock,
+        side_effect=mock_execute_external_command,
+    ):
         with patch("tempfile.NamedTemporaryFile", side_effect=mock_named_temp_file):
             result = await mythril_tool.analyze(contract_code)
 
             assert result == "Content verified result"
             assert temp_file_path is not None
-            assert not os.path.exists(temp_file_path), "Temporary file was not cleaned up after content check"
+            assert not os.path.exists(
+                temp_file_path
+            ), "Temporary file was not cleaned up after content check"
+
 
 @pytest.mark.asyncio
 async def test_analyze_propagates_mythril_errors(mythril_tool):
     contract_code = "invalid solidity code"
 
-    with patch("oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock) as mock_execute:
+    with patch(
+        "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
+    ) as mock_execute:
         mock_execute.side_effect = RuntimeError("Mythril command failed")
 
         with pytest.raises(RuntimeError, match="Mythril analysis failed"):
@@ -96,7 +114,9 @@ async def test_analyze_propagates_mythril_errors(mythril_tool):
 
 @pytest.mark.asyncio
 async def test_analyze_file_creation_error(mythril_tool):
-    contract_code = "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }"
+    contract_code = (
+        "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }"
+    )
 
     with patch("tempfile.NamedTemporaryFile") as mock_named_temp_file:
         mock_named_temp_file.side_effect = IOError("Disk full")
@@ -109,7 +129,9 @@ async def test_analyze_file_creation_error(mythril_tool):
 
 @pytest.mark.asyncio
 async def test_analyze_file_write_error(mythril_tool):
-    contract_code = "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }"
+    contract_code = (
+        "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }"
+    )
 
     with patch("asyncio.to_thread") as mock_to_thread:
         mock_to_thread.side_effect = IOError("Write error")
@@ -122,7 +144,9 @@ async def test_analyze_file_write_error(mythril_tool):
 
 @pytest.mark.asyncio
 async def test_analyze_file_permission_error(mythril_tool):
-    contract_code = "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }"
+    contract_code = (
+        "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }"
+    )
 
     with patch("os.chmod") as mock_chmod:
         mock_chmod.side_effect = OSError("Permission denied")
@@ -133,12 +157,15 @@ async def test_analyze_file_permission_error(mythril_tool):
         mock_chmod.assert_called_once()
 
 
-
 @pytest.mark.asyncio
 async def test_analyze_file_permissions_set(mythril_tool, tmp_path):
-    contract_code = "pragma solidity ^0.8.0; contract MyContract { function baz() public {} }"
+    contract_code = (
+        "pragma solidity ^0.8.0; contract MyContract { function baz() public {} }"
+    )
 
-    with patch("oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock) as mock_execute:
+    with patch(
+        "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
+    ) as mock_execute:
         with patch("os.chmod") as mock_chmod:
             mock_execute.return_value = "Permission check result"
 
@@ -163,7 +190,9 @@ async def test_analyze_file_permissions_set(mythril_tool, tmp_path):
 
 @pytest.mark.asyncio
 async def test_analyze_temp_file_closed_before_command(mythril_tool, tmp_path):
-    contract_code = "pragma solidity ^0.8.0; contract MyContract { function qux() public {} }"
+    contract_code = (
+        "pragma solidity ^0.8.0; contract MyContract { function qux() public {} }"
+    )
 
     mock_close = Mock()
 
@@ -187,7 +216,9 @@ async def test_analyze_temp_file_closed_before_command(mythril_tool, tmp_path):
         def __exit__(self, exc_type, exc_val, exc_tb):
             pass
 
-    with patch("oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock) as mock_execute:
+    with patch(
+        "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
+    ) as mock_execute:
         with patch("tempfile.NamedTemporaryFile", side_effect=MockNamedTemporaryFile):
 
             mock_execute.return_value = "Closed file check result"
@@ -226,11 +257,17 @@ async def test_analyze_no_temp_file_leak_on_error(mythril_tool, tmp_path):
         def __exit__(self, exc_type, exc_val, exc_tb):
             pass
 
-    with patch("tempfile.NamedTemporaryFile", side_effect=MockNamedTemporaryFileWithError):
-        with patch("oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock) as mock_execute:
+    with patch(
+        "tempfile.NamedTemporaryFile", side_effect=MockNamedTemporaryFileWithError
+    ):
+        with patch(
+            "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
+        ) as mock_execute:
 
             with pytest.raises(RuntimeError, match="Mythril analysis failed"):
                 await mythril_tool.analyze(contract_code)
 
             mock_execute.assert_not_called()
-            assert not os.path.exists(temp_file_path), "Temporary file was not cleaned up on error"
+            assert not os.path.exists(
+                temp_file_path
+            ), "Temporary file was not cleaned up on error"
