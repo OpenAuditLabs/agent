@@ -19,15 +19,15 @@ def setup_logging():
     This function is idempotent and should be called once at application startup.
     """
     root = logging.getLogger()
-    if getattr(setup_logging, '_configured', False):
+    if getattr(setup_logging, "_configured", False):
         # Optionally update level if already configured
-        root.setLevel(os.getenv('LOG_LEVEL', 'INFO').upper())
+        root.setLevel(os.getenv("LOG_LEVEL", "INFO").upper())
         return
 
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
-        os.getenv('LOG_FORMAT', DEFAULT_LOG_FORMAT),
-        datefmt=os.getenv('DATE_FORMAT', DEFAULT_DATE_FORMAT)
+        os.getenv("LOG_FORMAT", DEFAULT_LOG_FORMAT),
+        datefmt=os.getenv("DATE_FORMAT", DEFAULT_DATE_FORMAT),
     )
     handler.setFormatter(formatter)
 
@@ -38,7 +38,7 @@ def setup_logging():
             root.removeHandler(h)
 
     root.addHandler(handler)
-    root.setLevel(os.getenv('LOG_LEVEL', 'INFO').upper())
+    root.setLevel(os.getenv("LOG_LEVEL", "INFO").upper())
     setup_logging._configured = True
 
 

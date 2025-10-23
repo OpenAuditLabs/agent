@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 class Finding(BaseModel):
     """Security finding schema."""
+
     severity: str
     title: str
     description: str
@@ -16,6 +17,7 @@ class Finding(BaseModel):
 
 class AnalysisResult(BaseModel):
     """Analysis result schema."""
+
     job_id: str
     status: str
     findings: List[Finding]
@@ -24,6 +26,7 @@ class AnalysisResult(BaseModel):
 
 class PaginatedItemsResponse(BaseModel):
     """Schema for paginated list of items."""
+
     items: List[Any]
     total: int
     limit: int

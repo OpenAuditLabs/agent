@@ -1,7 +1,7 @@
 """Environment utilities."""
 
 import os
-from typing import TypeVar, Type, Union, Optional, overload
+from typing import Optional, Type, TypeVar, Union, overload
 
 T = TypeVar("T", str, int, bool)
 

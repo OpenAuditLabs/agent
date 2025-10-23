@@ -1,8 +1,6 @@
 """Sandbox tool for safe contract execution."""
 
 
-
-
 async def execute_external_command(command: str, *args: str) -> str:
     """
     Executes an external command in a sandboxed environment.

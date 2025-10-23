@@ -1,6 +1,7 @@
 """Configuration management."""
 
-from typing import Any, Union
+from typing import Union
+
 from pydantic_settings import BaseSettings
 
 
@@ -33,6 +34,7 @@ class Settings(BaseSettings):
 
     class Config:
         """Pydantic config."""
+
         env_file = ".env"
 
 

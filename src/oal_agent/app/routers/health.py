@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException
 
 router = APIRouter()
 
+
 @router.get("/", summary="Health check", response_description="Health check successful")
 async def health_check():
     """Perform a health check.

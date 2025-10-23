@@ -23,7 +23,9 @@ class MythrilTool:
         temp_path = None
         try:
             # Create a temporary file for the Solidity contract
-            temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.sol', delete=False)
+            temp_file = tempfile.NamedTemporaryFile(
+                mode="w", suffix=".sol", delete=False
+            )
             temp_path = temp_file.name
 
             # Write contract_code into the temporary file
@@ -46,5 +48,6 @@ class MythrilTool:
                     os.unlink(temp_path)
                 except OSError as e:
                     # Log the error if cleanup fails, but do not swallow the original exception
-                    logger.warning("Error cleaning up temporary file %s: %s", temp_path, e)
-
+                    logger.warning(
+                        "Error cleaning up temporary file %s: %s", temp_path, e
+                    )

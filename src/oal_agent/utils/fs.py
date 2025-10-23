@@ -19,5 +19,5 @@ def read_file(path: str) -> str:
 def write_file(path: str, content: str):
     """Write content to file."""
     ensure_dir(os.path.dirname(path))
-    with open(path, 'w') as f:
+    with open(path, "w") as f:
         f.write(content)

@@ -1,6 +1,8 @@
 import pytest
-from src.oal_agent.services.queue import QueueService, QueueFullError
+
 from src.oal_agent.core.config import settings
+from src.oal_agent.services.queue import QueueFullError, QueueService
+
 
 @pytest.mark.asyncio
 async def test_enqueue_dequeue():
@@ -17,6 +19,7 @@ async def test_enqueue_dequeue():
     assert job["job_id"] == "job2"
     assert job["job_data"] == {"data": "test2"}
 
+
 @pytest.mark.asyncio
 async def test_queue_full_error():
     """Test that QueueFullError is raised when queue is full."""
@@ -25,6 +28,7 @@ async def test_queue_full_error():
 
     with pytest.raises(QueueFullError):
         await queue_service.enqueue("job2", {"data": "test2"})
+
 
 @pytest.mark.asyncio
 async def test_queue_max_size_from_config():
@@ -38,6 +42,6 @@ async def test_queue_max_size_from_config():
 
     with pytest.raises(QueueFullError):
         await queue_service.enqueue("job2", {"data": "test2"})
-    
+
     # Restore original setting
     settings.queue_max_size = original_max_size
