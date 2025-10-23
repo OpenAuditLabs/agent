@@ -4,20 +4,40 @@ import logging
 import os
 import sys
 
+DEFAULT_LOG_FORMAT = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+DEFAULT_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
+
+
+def get_logger(name: str) -> logging.Logger:
+    """
+    Returns a module-scoped logger with a consistent format.
+    """
+    logger = logging.getLogger(name)
+    if not logger.handlers:
+        # Prevent adding multiple handlers if the logger is retrieved multiple times
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter(
+            os.getenv("LOG_FORMAT", DEFAULT_LOG_FORMAT),
+            datefmt=DEFAULT_DATE_FORMAT,
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        logger.setLevel(os.getenv("LOG_LEVEL", "INFO").upper())
+    return logger
+
 
 def setup_logging(level: str = "INFO"):
-    """Setup logging configuration."""
-    log_format = os.getenv(
-        "LOG_FORMAT", "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
-    )
+    """
+    Configures the root logger with a basic setup.
+    This is primarily for compatibility or simple scripts.
+    For module-specific logging, use `get_logger(__name__)`.
+    """
     logging.basicConfig(
         level=getattr(logging, level.upper()),
-        format=log_format,
-        datefmt="%Y-%m-%dT%H:%M:%S%z",
-        handlers=[
-            logging.StreamHandler(sys.stdout)
-        ]
+        format=os.getenv("LOG_FORMAT", DEFAULT_LOG_FORMAT),
+        datefmt=DEFAULT_DATE_FORMAT,
+        handlers=[logging.StreamHandler(sys.stdout)],
     )
 
 
-logger = logging.getLogger("oal_agent")
+logger = get_logger("oal_agent")
