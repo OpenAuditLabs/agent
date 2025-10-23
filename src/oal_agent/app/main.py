@@ -3,6 +3,8 @@
 
 """Main FastAPI application."""
 
+import sys
+
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
@@ -15,7 +17,7 @@ setup_logging()
 
 logger = get_logger(__name__)
 
-queue_service = QueueService(queue_url="in-memory-queue")
+queue_service = QueueService()
 
 app = FastAPI(
     title="OAL Agent API",
@@ -27,13 +29,21 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting up...")
-    await queue_service.start()
+    try:
+        await queue_service.start()
+    except Exception as e:
+        logger.exception("Failed to start queue service during startup: %s", e)
+        sys.exit(1)  # Exit to prevent running with a partially-initialized app
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Shutting down...")
-    await queue_service.stop()
+    try:
+        await queue_service.stop()
+    except Exception as e:
+        logger.exception("Failed to stop queue service during shutdown: %s", e)
+        # Do not re-raise to allow remaining shutdown tasks to run
 
 
 @app.exception_handler(Exception)

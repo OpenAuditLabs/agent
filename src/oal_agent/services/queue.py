@@ -35,11 +35,22 @@ class QueueService:
 
     async def _worker(self):
         """Background worker to process jobs."""
-        while True:
-            job = await self.queue.get()
-            logger.debug("Processing job: %s", job["job_id"])
-            # Process the job here. For now, just acknowledge it.
-            self.queue.task_done()
+        job = None  # Initialize job to None
+        try:
+            while True:
+                job = await self.queue.get()
+                try:
+                    logger.debug("Processing job: %s", job["job_id"])
+                    # Process the job here. For now, just acknowledge it.
+                finally:
+                    if (
+                        job
+                    ):  # Ensure task_done is only called if a job was actually obtained
+                        self.queue.task_done()
+                job = None  # Reset job after task_done
+        except asyncio.CancelledError:
+            logger.info("Worker cancelled, exiting gracefully")
+            raise
 
     async def start(self):
         """Start the queue worker."""
@@ -50,4 +61,13 @@ class QueueService:
         if self.worker_task:
             self.worker_task.cancel()
             await asyncio.gather(self.worker_task, return_exceptions=True)
+
+        # Drain remaining items in the queue
+        while not self.queue.empty():
+            try:
+                job = self.queue.get_nowait()
+                logger.debug("Draining unacknowledged job: %s", job["job_id"])
+                self.queue.task_done()
+            except asyncio.QueueEmpty:
+                break
         await self.queue.join()  # Wait until all jobs are processed

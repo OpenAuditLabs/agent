@@ -4,7 +4,10 @@ from typing import Any, Union
 
 logger = logging.getLogger(__name__)
 
+
 def get_project_root() -> Path:
+    """Get the project root directory."""
+    raise NotImplementedError("get_project_root is not yet implemented")
 
 
 def safe_path_join(*parts: Union[str, Path]) -> Path:

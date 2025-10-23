@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+source .venv/bin/activate
+
 echo "Running black..."
 black --check src/ tests/
 

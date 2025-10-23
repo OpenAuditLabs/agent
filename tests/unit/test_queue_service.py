@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from src.oal_agent.core.config import settings
@@ -45,3 +47,29 @@ async def test_queue_max_size_from_config():
 
     # Restore original setting
     settings.queue_max_size = original_max_size
+
+
+@pytest.mark.asyncio
+async def test_stop_with_cancellation_and_draining():
+    """Test that stop() gracefully cancels worker, drains queue, and calls task_done."""
+    queue_service = QueueService(queue_url="test_url", max_size=5)
+    await queue_service.start()
+
+    # Enqueue some jobs
+    for i in range(3):
+        await queue_service.enqueue(f"job{i}", {"data": f"test{i}"})
+
+    # Allow worker to pick up some jobs (but not necessarily process all)
+    await asyncio.sleep(0.01)
+
+    # Stop the queue service
+    await queue_service.stop()
+
+    # Assert that the queue is empty and all tasks are done
+    assert queue_service.queue.empty()
+    assert queue_service.queue.qsize() == 0
+
+    # Verify that the worker task is cancelled and finished
+    assert queue_service.worker_task.done()
+    with pytest.raises(asyncio.CancelledError):
+        await queue_service.worker_task
