@@ -32,6 +32,15 @@ class Validator:
     @staticmethod
     def validate_address(address: str) -> bool:
         """Validate contract address."""
-        sanitized_address = Validator._sanitize_string_input(address)
-        # TODO: Implement more comprehensive validation for addresses (e.g., regex, checksum)
-        return bool(sanitized_address) and len(sanitized_address) == 42 and sanitized_address.startswith("0x") # Basic check for Ethereum address format
+        sanitized_address = Validator._trim_whitespace(address)
+        # Basic checks: non-empty, exact length, starts with '0x'
+        if not sanitized_address or len(sanitized_address) != 42:
+            return False
+        if not sanitized_address.startswith("0x"):
+            return False
+        # Verify all characters after '0x' are valid hex digits
+        try:
+            int(sanitized_address[2:], 16)
+            return True
+        except ValueError:
+            return False
