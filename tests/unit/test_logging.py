@@ -101,34 +101,38 @@ def test_log_format_from_env_var(caplog):
     """Test that LOG_FORMAT environment variable is respected."""
     custom_format = "CUSTOM: %(message)s"
     with patch.dict(os.environ, {'LOG_FORMAT': custom_format}):
-        root_logger = logging.getLogger()
-        # Remove LogCaptureHandlers to ensure our StreamHandler is the primary one
-        for handler in root_logger.handlers[:]:
-            if isinstance(handler, logging.Handler) and handler.__class__.__name__ == 'LogCaptureHandler':
+        with patch.object(sys, 'stdout', new_callable=StringIO) as mock_stdout:
+            # Ensure root logger has no extra handlers from previous tests
+            root_logger = logging.getLogger()
+            for handler in root_logger.handlers[:]:
                 root_logger.removeHandler(handler)
 
-        setup_logging()
-        module_logger = get_logger("format_test")
-        with caplog.at_level(logging.INFO):
+            setup_logging()
+            module_logger = get_logger("format_test")
+
+            # Emit a log and assert the StreamHandler output
             module_logger.info("Formatted message")
-            assert "Formatted message" in caplog.text
-            assert "CUSTOM:" in caplog.text # Check for custom prefix
+            output = mock_stdout.getvalue()
+            assert "Formatted message" in output
+            assert "CUSTOM:" in output
 
 
 def test_date_format_from_env_var(caplog):
     """Test that DATE_FORMAT environment variable is respected."""
     custom_date_format = "%H:%M:%S"
     with patch.dict(os.environ, {'DATE_FORMAT': custom_date_format}):
-        root_logger = logging.getLogger()
-        # Remove LogCaptureHandlers to ensure our StreamHandler is the primary one
-        for handler in root_logger.handlers[:]:
-            if isinstance(handler, logging.Handler) and handler.__class__.__name__ == 'LogCaptureHandler':
+        with patch.object(sys, 'stdout', new_callable=StringIO) as mock_stdout:
+            # Ensure root logger has no extra handlers from previous tests
+            root_logger = logging.getLogger()
+            for handler in root_logger.handlers[:]:
                 root_logger.removeHandler(handler)
 
-        setup_logging()
-        module_logger = get_logger("date_format_test")
-        with caplog.at_level(logging.INFO):
+            setup_logging()
+            module_logger = get_logger("date_format_test")
+
+            # Emit a log and assert the StreamHandler output
             module_logger.info("Date message")
-            assert "Date message" in caplog.text
-            assert ":" in caplog.text  # Check for time separators
-            assert "T" not in caplog.text # Ensure default ISO format 'T' is not present
+            output = mock_stdout.getvalue()
+            assert "Date message" in output
+            assert ":" in output  # Check for time separators
+            assert "T" not in output # Ensure default ISO format 'T' is not present

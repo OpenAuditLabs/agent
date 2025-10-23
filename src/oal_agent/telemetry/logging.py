@@ -27,7 +27,7 @@ def setup_logging():
     handler = logging.StreamHandler(sys.stdout)
     formatter = logging.Formatter(
         os.getenv('LOG_FORMAT', DEFAULT_LOG_FORMAT),
-        datefmt=DEFAULT_DATE_FORMAT
+        datefmt=os.getenv('DATE_FORMAT', DEFAULT_DATE_FORMAT)
     )
     handler.setFormatter(formatter)
 
