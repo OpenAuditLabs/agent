@@ -1,15 +1,25 @@
 """Input validation."""
 
+from typing import Optional
+
 
 class Validator:
     """Validates inputs for security."""
 
     @staticmethod
-    def _sanitize_string_input(input_string: str) -> str:
+    def _trim_whitespace(input_string: Optional[str]) -> str:
+        """Trim leading/trailing whitespace from input.
+
+        Args:
+            input_string: The string to trim
+
+        Returns:
+            Trimmed string, or empty string if input is None
         """
-        A basic string sanitization helper.
-        Removes leading/trailing whitespace.
-        """
+        if input_string is None:
+            return ""
+        if not isinstance(input_string, str):
+            raise TypeError(f"Expected str, got {type(input_string).__name__}")
         return input_string.strip()
 
     @staticmethod
