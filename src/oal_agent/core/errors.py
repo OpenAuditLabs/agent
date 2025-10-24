@@ -23,3 +23,9 @@ class ConfigurationError(OALAgentError):
     """Configuration error."""
 
     pass
+
+
+class LLMTimeoutError(OALAgentError):
+    """LLM timeout error."""
+
+    pass

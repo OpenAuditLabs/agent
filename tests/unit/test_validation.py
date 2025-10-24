@@ -3,10 +3,10 @@ from src.oal_agent.security.validation import Validator
 
 class TestValidator:
     def test_sanitize_string_input(self):
-        assert Validator._sanitize_string_input("  hello world  ") == "hello world"
-        assert Validator._sanitize_string_input("hello\nworld") == "hello\nworld"
-        assert Validator._sanitize_string_input("  ") == ""
-        assert Validator._sanitize_string_input("") == ""
+        assert Validator._trim_whitespace("  hello world  ") == "hello world"
+        assert Validator._trim_whitespace("hello\nworld") == "hello\nworld"
+        assert Validator._trim_whitespace("  ") == ""
+        assert Validator._trim_whitespace("") == ""
 
     def test_validate_contract_code(self):
         assert Validator.validate_contract_code("  some_code  ") is True
