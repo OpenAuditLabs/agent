@@ -17,6 +17,8 @@ class Settings(BaseSettings):
         """
         super().__init__(_env_file=_env_file)
 
+
+
     # API Settings
     api_host: str = "0.0.0.0"
     api_port: int = 8000
