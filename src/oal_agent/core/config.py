@@ -17,8 +17,7 @@ class Settings(BaseSettings):
         """
         super().__init__(_env_file=_env_file)
 
-    # Application Version
-    version: str = "0.1.0"
+
 
     # API Settings
     api_host: str = "0.0.0.0"
