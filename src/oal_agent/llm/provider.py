@@ -1,6 +1,9 @@
 """LLM provider interface."""
 
 from abc import ABC, abstractmethod
+import asyncio
+
+from oal_agent.core.errors import LLMTimeoutError
 
 
 class LLMProvider(ABC):
@@ -55,7 +58,12 @@ class OpenAIProvider(LLMProvider):
         Raises:
             NotImplementedError: If the OpenAI API integration is not yet implemented.
         """
-        # TODO: Implement OpenAI integration using self.api_key and the prompt.
-        # Example: response = await openai.Completion.acreate(prompt=prompt, **kwargs)
-        # return response.choices[0].text.strip()
-        raise NotImplementedError("OpenAI integration is not yet implemented.")
+        try:
+            # TODO: Implement OpenAI integration using self.api_key and the prompt.
+            # Example: response = await openai.Completion.acreate(prompt=prompt, **kwargs)
+            # return response.choices[0].text.strip()
+            # Placeholder for actual OpenAI API call with a 30-second timeout
+            await asyncio.wait_for(asyncio.sleep(0.1), timeout=30)  # Simulate API call
+            return "Generated text from OpenAI"
+        except asyncio.TimeoutError as e:
+            raise LLMTimeoutError("OpenAI API call timed out.") from e
