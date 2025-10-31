@@ -53,7 +53,9 @@ def serve(host: str, port: int):
 
 
 @cli.command(help="Analyze a smart contract file.")
-@click.argument("contract_file", type=click.Path(exists=True, dir_okay=False, resolve_path=True))
+@click.argument(
+    "contract_file", type=click.Path(exists=True, dir_okay=False, resolve_path=True)
+)
 def analyze(contract_file: str):
     """Analyze a smart contract file.
 

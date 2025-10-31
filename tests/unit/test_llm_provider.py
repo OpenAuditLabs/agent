@@ -1,9 +1,10 @@
 import asyncio
-import pytest
-from unittest.mock import patch, AsyncMock
+from unittest.mock import AsyncMock, patch
 
-from oal_agent.llm.provider import OpenAIProvider
+import pytest
+
 from oal_agent.core.errors import LLMTimeoutError
+from oal_agent.llm.provider import OpenAIProvider
 
 
 @pytest.mark.asyncio
@@ -11,8 +12,8 @@ async def test_openai_provider_timeout():
     """Test that OpenAIProvider raises LLMTimeoutError on timeout."""
     provider = OpenAIProvider(api_key="test_key")
 
-    with patch('asyncio.wait_for', side_effect=asyncio.TimeoutError) as mock_wait_for:
-        with patch('asyncio.sleep', new_callable=AsyncMock) as mock_sleep:
+    with patch("asyncio.wait_for", side_effect=asyncio.TimeoutError) as mock_wait_for:
+        with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
             with pytest.raises(LLMTimeoutError):
                 await provider.generate(prompt="test prompt")
             mock_wait_for.assert_called_once()

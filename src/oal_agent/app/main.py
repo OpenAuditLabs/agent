@@ -9,7 +9,6 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from oal_agent import __version__
-
 from oal_agent.services.queue import QueueService
 from oal_agent.telemetry.logging import get_logger, setup_logging
 
@@ -24,7 +23,7 @@ queue_service = QueueService()
 app = FastAPI(
     title="OAL Agent API",
     description="Smart Contract Security Analysis System",
-        version=__version__,
+    version=__version__,
 )
 
 

@@ -1,7 +1,7 @@
 """LLM provider interface."""
 
-from abc import ABC, abstractmethod
 import asyncio
+from abc import ABC, abstractmethod
 
 from oal_agent.core.errors import LLMTimeoutError
 
