@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from oal_agent import __version__
+from oal_agent.core.config import settings
 from oal_agent.services.queue import QueueService
 from oal_agent.telemetry.logging import get_logger, setup_logging
 
@@ -18,7 +19,7 @@ setup_logging()
 
 logger = get_logger(__name__)
 
-queue_service = QueueService()
+queue_service = QueueService(queue_url=settings.queue_url)
 
 app = FastAPI(
     title="OAL Agent API",
@@ -74,7 +75,7 @@ async def root():
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "healthy"}
+    return {"message": "OK"}
 
 
 @app.get("/ready")
