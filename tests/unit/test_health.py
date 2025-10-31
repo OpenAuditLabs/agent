@@ -1,36 +1,13 @@
 import pytest
-from fastapi import FastAPI
 from fastapi.testclient import TestClient
-
-# Create a minimal FastAPI app for testing the health endpoint
-app = FastAPI()
-
-@app.get("/health")
-async def health():
-    """Health check endpoint."""
-    return {"status": "healthy"}
-
-@app.get("/")
-async def root():
-    """Root endpoint."""
-    return {"message": "OAL Agent API"}
-
-@app.get("/ready")
-async def ready():
-    """Readiness check endpoint."""
-    return {"status": "ready"}
-
-@app.get("/metrics")
-async def metrics():
-    """Metrics endpoint."""
-    return {"metrics": "Not implemented yet"}
+from src.oal_agent.app.main import app
 
 client = TestClient(app)
 
 def test_health_check():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "healthy"}
+    assert response.json() == {"message": "OK"}
 
 def test_root_endpoint():
     response = client.get("/")
