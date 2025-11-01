@@ -2,6 +2,7 @@
 set -e
 
 echo "Running unit tests..."
+source .venv/bin/activate
 pytest tests/unit/ -v --cov=src/oal_agent --cov-report=term-missing
 
 echo "Running integration tests..."
