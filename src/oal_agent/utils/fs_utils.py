@@ -6,8 +6,14 @@ logger = logging.getLogger(__name__)
 
 
 def get_project_root() -> Path:
-    """Get the project root directory."""
-    raise NotImplementedError("get_project_root is not yet implemented")
+    """Get the project root directory by searching for 'pyproject.toml'."""
+    current_path = Path.cwd()
+    while current_path != current_path.parent:
+        if (current_path / "pyproject.toml").exists():
+            return current_path
+        current_path = current_path.parent
+    # Fallback if pyproject.toml is not found
+    return Path.cwd()
 
 
 def safe_path_join(*parts: Union[str, Path]) -> Path:
@@ -22,27 +28,15 @@ def safe_path_join(*parts: Union[str, Path]) -> Path:
     Returns:
         A Path object representing the joined path.
     """
-    if not parts:
-        return Path(".")
-
-    # Filter out empty strings and convert all parts to Path objects
-    path_objects = [Path(p) for p in parts if p is not None and str(p) != ""]
-
-    if not path_objects:
-        return Path(".")
-
-    # Start with the first valid path object
-    joined_path = path_objects[0]
-
-    # Iterate through the rest of the path objects and join them
-    for i in range(1, len(path_objects)):
-        part = path_objects[i]
-        if part.is_absolute():
-            # If an absolute path is encountered, it resets the base for subsequent joins
-            joined_path = part
+    joined_path = Path(".")
+    for part in parts:
+        if part is None or str(part) == "":
+            continue
+        current_part = Path(part)
+        if current_part.is_absolute():
+            joined_path = current_part
         else:
-            joined_path = joined_path / part
-
+            joined_path = joined_path / current_part
     return joined_path
 
 

@@ -1,6 +1,7 @@
 import os
-import pytest
 from typing import Type
+
+import pytest
 
 from src.oal_agent.utils.env import get_env, require_env, validate_env_variables
 
@@ -61,7 +62,9 @@ class TestEnvUtils:
         assert require_env("REQUIRED_STR") == "some_value"
 
     def test_require_env_str_missing(self):
-        with pytest.raises(ValueError, match="Required environment variable REQUIRED_STR is not set"):
+        with pytest.raises(
+            ValueError, match="Required environment variable REQUIRED_STR is not set"
+        ):
             require_env("REQUIRED_STR")
 
     def test_require_env_int_success(self):
@@ -90,7 +93,9 @@ class TestEnvUtils:
             "VAR1": str,
             "VAR2": int,
         }
-        with pytest.raises(ValueError, match="Required environment variable VAR1 is not set"):
+        with pytest.raises(
+            ValueError, match="Required environment variable VAR1 is not set"
+        ):
             validate_env_variables(required_vars)
 
     def test_validate_env_variables_missing_int(self):
@@ -99,7 +104,9 @@ class TestEnvUtils:
             "VAR1": str,
             "VAR2": int,
         }
-        with pytest.raises(ValueError, match="Required environment variable VAR2 is not set"):
+        with pytest.raises(
+            ValueError, match="Required environment variable VAR2 is not set"
+        ):
             validate_env_variables(required_vars)
 
     def test_validate_env_variables_invalid_int(self):
@@ -109,5 +116,7 @@ class TestEnvUtils:
             "VAR1": str,
             "VAR2": int,
         }
-        with pytest.raises(ValueError, match="Environment variable VAR2 expected to be an integer"):
+        with pytest.raises(
+            ValueError, match="Environment variable VAR2 expected to be an integer"
+        ):
             validate_env_variables(required_vars)
