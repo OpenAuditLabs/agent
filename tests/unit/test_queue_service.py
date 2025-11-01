@@ -1,9 +1,11 @@
 import asyncio
+from unittest import mock
 
 import pytest
 
 from src.oal_agent.core.config import settings
 from src.oal_agent.services.queue import QueueFullError, QueueService
+from src.oal_agent.telemetry.metrics import metrics
 
 
 @pytest.mark.asyncio
@@ -73,3 +75,40 @@ async def test_stop_with_cancellation_and_draining():
     assert queue_service.worker_task.done()
     with pytest.raises(asyncio.CancelledError):
         await queue_service.worker_task
+
+
+@pytest.mark.asyncio
+async def test_queue_processing_time_metric():
+    """Test that queue processing time metric is recorded."""
+    with mock.patch("src.oal_agent.services.queue.metrics") as mock_metrics:
+        queue_service = QueueService(queue_url="test_url", max_size=1)
+        await queue_service.start()
+
+        await queue_service.enqueue("job1", {"data": "test1"})
+        await queue_service.queue.join()  # Wait for the job to be processed
+
+        await queue_service.stop()
+
+        mock_metrics.gauge.assert_called_once()
+        assert mock_metrics.gauge.call_args[0][0] == "queue_processing_time_seconds"
+        assert mock_metrics.gauge.call_args[0][1] > 0
+
+
+@pytest.mark.asyncio
+async def test_queue_processing_error_metric():
+    """Test that queue processing error metric is recorded."""
+    with mock.patch("src.oal_agent.services.queue.metrics") as mock_metrics:
+        queue_service = QueueService(queue_url="test_url", max_size=1)
+
+        # Mock the internal processing to raise an exception
+        def mock_process_job(*args, **kwargs):
+            raise ValueError("Simulated processing error")
+
+        # Patch the logger.debug call within the _worker to simulate an error
+        with mock.patch("src.oal_agent.services.queue.logger.debug", side_effect=mock_process_job):
+            await queue_service.start()
+            await queue_service.enqueue("job1", {"data": "test1"})
+            await queue_service.queue.join()  # Wait for the job to be processed
+            await queue_service.stop()
+
+        mock_metrics.increment.assert_called_once_with("queue_processing_errors_total")
