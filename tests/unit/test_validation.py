@@ -1,5 +1,3 @@
-import pytest
-
 from src.oal_agent.security.validation import Validator
 
 
