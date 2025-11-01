@@ -1,10 +1,8 @@
 """Orchestrator for coordinating analysis tasks."""
 
-
 import logging
 
 from oal_agent.core.errors import OrchestrationError
-
 
 logger = logging.getLogger(__name__)
 

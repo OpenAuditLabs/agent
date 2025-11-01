@@ -8,7 +8,9 @@ T = TypeVar("T", str, int, bool)
 
 @overload
 def _get_env_value(
-    key: str, default: Optional[str] = None, cast_to: Type[str] = str
+    key: str,
+    default: Optional[str] = None,
+    cast_to: Type[str] = str,
 ): ...
 
 
@@ -55,7 +57,8 @@ def _get_env_value(
         except ValueError:
             raise ValueError(
                 f"Environment variable {key} expected to be an integer, "
-                f"but got '{value}'"
+                "but got "
+                f"'{value}'"
             )
     elif cast_to is bool:
         # Treat 'true', '1', 'yes' as True (case-insensitive), anything else as False
@@ -67,7 +70,11 @@ def _get_env_value(
 def get_env(
     key: str,
     default: Optional[Union[str, int, bool]] = None,
-    cast_to: Union[Type[str], Type[int], Type[bool]] = str,
+    cast_to: Union[
+        Type[str],
+        Type[int],
+        Type[bool],
+    ] = str,
 ) -> Optional[Union[str, int, bool]]:
     """
     Get an environment variable with an optional default value and type casting.
@@ -84,7 +91,12 @@ def get_env(
 
 
 def require_env(
-    key: str, cast_to: Union[Type[str], Type[int], Type[bool]] = str
+    key: str,
+    cast_to: Union[
+        Type[str],
+        Type[int],
+        Type[bool],
+    ] = str,
 ) -> Union[str, int, bool]:
     """
     Get a required environment variable, raising an error if it's not set.
@@ -98,9 +110,31 @@ def require_env(
         The value of the environment variable, cast to the specified type.
 
     Raises:
-        ValueError: If the required environment variable is not set or cannot be cast.
+        ValueError: If the required environment variable is not set or
+                    cannot be cast.
     """
     value = _get_env_value(key, cast_to=cast_to)
     if value is None:
         raise ValueError(f"Required environment variable {key} is not set")
     return value
+
+
+def validate_env_variables(
+    required_vars: dict[
+        str,
+        Union[Type[str], Type[int], Type[bool]],
+    ],
+) -> None:
+    """
+    Validates a dictionary of required environment variables and their types.
+
+    Args:
+        required_vars: A dictionary where keys are environment variable
+                       names and values are their expected types (str, int, or bool).
+
+    Raises:
+        ValueError: If any required environment variable is not set or
+                    cannot be cast.
+    """
+    for key, cast_to in required_vars.items():
+        require_env(key, cast_to=cast_to)
