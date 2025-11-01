@@ -29,3 +29,9 @@ class LLMTimeoutError(OALAgentError):
     """LLM timeout error."""
 
     pass
+
+
+class OrchestrationError(OALAgentError):
+    """Error during orchestration."""
+
+    pass
