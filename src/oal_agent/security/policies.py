@@ -34,13 +34,17 @@ class SecurityPolicy:
             return False
 
         if not os.path.exists(contract_path) or not os.path.isfile(contract_path):
-            self.logger.error("contract_path does not exist or is not a file: %s", contract_path)
+            self.logger.error(
+                "contract_path does not exist or is not a file: %s", contract_path
+            )
             return False
 
         try:
             analysis_results = await self.slither_tool.analyze(contract_path)
         except Exception as e:
-            self.logger.error("Static analysis failed for %s: %s", contract_path, e, exc_info=True)
+            self.logger.error(
+                "Static analysis failed for %s: %s", contract_path, e, exc_info=True
+            )
             return False
 
         # For now, assuming if analysis_results is not empty, then misconfigurations were found.

@@ -49,7 +49,9 @@ class QueueService:
                     metrics.increment("queue_processing_errors_total")
                     logger.exception("Error processing job: %s", job["job_id"])
                 finally:
-                    if job:  # Ensure task_done is only called if a job was actually obtained
+                    if (
+                        job
+                    ):  # Ensure task_done is only called if a job was actually obtained
                         self.queue.task_done()
                         processing_time = time.time() - start_time
                         metrics.gauge("queue_processing_time_seconds", processing_time)

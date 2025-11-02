@@ -78,7 +78,8 @@ def status(job_id: str):
     api_url = f"http://{settings.api_host}:{settings.api_port}/analysis/{job_id}"
     click.echo(f"Fetching status for job ID: {job_id} from {api_url}...")
     try:
-        response = requests.get(api_url)
+        # Use a timeout to avoid the CLI hanging indefinitely. Adjust default as needed or make configurable.
+        response = requests.get(api_url, timeout=15)
         response.raise_for_status()  # Raise an exception for HTTP errors (4xx or 5xx)
         job_response = JobResponse.model_validate(response.json())
         click.echo(f"Job ID: {job_response.job_id}")
@@ -96,8 +97,6 @@ def status(job_id: str):
         click.echo(f"Error: The request timed out: {e}")
     except requests.exceptions.RequestException as e:
         click.echo(f"An unexpected error occurred: {e}")
-    except Exception as e:
-        click.echo(f"An error occurred while processing the job status: {e}")
 
 
 if __name__ == "__main__":

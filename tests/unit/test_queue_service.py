@@ -5,7 +5,6 @@ import pytest
 
 from src.oal_agent.core.config import settings
 from src.oal_agent.services.queue import QueueFullError, QueueService
-from src.oal_agent.telemetry.metrics import metrics
 
 
 @pytest.mark.asyncio
@@ -105,7 +104,9 @@ async def test_queue_processing_error_metric():
             raise ValueError("Simulated processing error")
 
         # Patch the logger.debug call within the _worker to simulate an error
-        with mock.patch("src.oal_agent.services.queue.logger.debug", side_effect=mock_process_job):
+        with mock.patch(
+            "src.oal_agent.services.queue.logger.debug", side_effect=mock_process_job
+        ):
             await queue_service.start()
             await queue_service.enqueue("job1", {"data": "test1"})
             await queue_service.queue.join()  # Wait for the job to be processed
