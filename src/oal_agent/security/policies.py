@@ -1,7 +1,7 @@
 """Security policies."""
 
-import os
 import logging
+import os
 
 from oal_agent.tools.slither import SlitherTool
 

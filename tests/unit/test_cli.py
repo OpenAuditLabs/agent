@@ -1,13 +1,16 @@
-import pytest
-from click.testing import CliRunner
-import requests
 from unittest.mock import patch
 
+import pytest
+import requests
+from click.testing import CliRunner
+
 from src.oal_agent.cli import cli
+
 
 @pytest.fixture
 def runner():
     return CliRunner()
+
 
 def test_status_command_timeout(runner):
     """
@@ -18,4 +21,6 @@ def test_status_command_timeout(runner):
         result = runner.invoke(cli, ["status", "test_job_id"])
 
         assert "Error: The request timed out: Connection timed out." in result.output
-        assert result.exit_code == 0 # CLI commands usually exit with 0 even on handled errors
+        assert (
+            result.exit_code == 0
+        )  # CLI commands usually exit with 0 even on handled errors

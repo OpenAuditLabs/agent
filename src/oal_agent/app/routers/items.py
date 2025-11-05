@@ -1,22 +1,10 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
 
+from oal_agent.app.schemas.items import ItemCreate, ItemUpdate
 from oal_agent.app.schemas.jobs import PaginationParams
 from oal_agent.app.schemas.results import PaginatedItemsResponse
 
 router = APIRouter()
-
-
-class ItemCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-
-
-class ItemUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
 
 
 @router.get(
@@ -80,7 +68,7 @@ async def create_item(item: ItemCreate):
     return {"id": new_item_id, **item.model_dump()}
 
 
-@router.put(
+@router.patch(
     "/{item_id}",
     summary="Update an existing item",
     response_description="The updated item",
