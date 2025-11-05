@@ -87,9 +87,4 @@ async def update_item(item_id: int, item: ItemUpdate):
     # In a real application, this would fetch the item, update it,
     # save it back to the database, and return the updated item.
     # For demonstration, we'll just return the item_id and the updated data.
-    if not item.model_dump(exclude_unset=True):
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="No fields provided for update.",
-        )
     return {"id": item_id, **item.model_dump(exclude_unset=True)}
