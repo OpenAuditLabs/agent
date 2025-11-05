@@ -1,5 +1,7 @@
-import pytest
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from src.oal_agent.security.policies import SecurityPolicy
 
 
@@ -35,4 +37,6 @@ async def test_check_static_analysis_misconfigurations():
                 "path/to/another_contract.sol"
             )
             assert result_not_found is False
-            policy.slither_tool.analyze.assert_called_with("path/to/another_contract.sol")
+            policy.slither_tool.analyze.assert_called_with(
+                "path/to/another_contract.sol"
+            )

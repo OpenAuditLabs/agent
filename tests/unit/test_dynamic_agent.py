@@ -1,5 +1,7 @@
 import pytest
+
 from src.oal_agent.agents.dynamic_agent import DynamicAgent
+
 
 class TestDynamicAgent:
     """

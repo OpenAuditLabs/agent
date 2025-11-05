@@ -3,11 +3,13 @@ from fastapi.testclient import TestClient
 
 from src.oal_agent.app.main import app
 
+
 @pytest.fixture(scope="module")
 def client():
     """Provides a TestClient for the FastAPI application."""
     with TestClient(app) as c:
         yield c
+
 
 def test_submit_analysis_success(client):
     """
@@ -17,12 +19,17 @@ def test_submit_analysis_success(client):
         "contract_code": "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }",
         "contract_address": "0x1234567890123456789012345678901234567890",
         "chain_id": 1,
-        "pipeline": "static"
+        "pipeline": "static",
     }
     response = client.post("/api/v1/analysis/", json=job_request_payload)
 
     assert response.status_code == 200
-    assert response.json() == {"job_id": "placeholder", "status": "queued", "message": None}
+    assert response.json() == {
+        "job_id": "placeholder",
+        "status": "queued",
+        "message": None,
+    }
+
 
 def test_get_job_status_not_found(client):
     """
@@ -34,6 +41,7 @@ def test_get_job_status_not_found(client):
     assert response.status_code == 404
     assert response.json() == {"detail": "Job not found"}
 
+
 def test_get_job_results_not_found(client):
     """
     Test retrieving the results of a non-existent analysis job.
@@ -43,6 +51,7 @@ def test_get_job_results_not_found(client):
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Results not found"}
+
 
 # TODO: Add tests for successful job status and results retrieval once the
 #       corresponding logic is implemented in the analysis router.
