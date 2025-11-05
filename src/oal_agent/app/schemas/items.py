@@ -1,7 +1,5 @@
 from typing import Optional
 
-from typing import Optional
-
 from pydantic import BaseModel, Field, model_validator
 
 
@@ -18,8 +16,10 @@ class ItemUpdate(BaseModel):
         None, description="The new detailed description of the item"
     )
 
-    @model_validator(mode='after')
-    def check_at_least_one_field(self) -> 'ItemUpdate':
+    @model_validator(mode="after")
+    def check_at_least_one_field(self) -> "ItemUpdate":
         if self.name is None and self.description is None:
-            raise ValueError("At least one of 'name' or 'description' must be provided.")
+            raise ValueError(
+                "At least one of 'name' or 'description' must be provided."
+            )
         return self

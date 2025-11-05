@@ -20,7 +20,10 @@ def test_update_item_no_fields_provided(client):
     response = client.patch(f"/api/v1/items/{item_id}", json={})
 
     assert response.status_code == 422
-    assert "At least one of 'name' or 'description' must be provided." in response.json()["detail"][0]["msg"]
+    assert (
+        "At least one of 'name' or 'description' must be provided."
+        in response.json()["detail"][0]["msg"]
+    )
 
 
 def test_update_item_with_name(client):
@@ -56,4 +59,8 @@ def test_update_item_with_both_fields(client):
     response = client.patch(f"/api/v1/items/{item_id}", json=update_payload)
 
     assert response.status_code == 200
-    assert response.json() == {"id": item_id, "name": "New Name", "description": "New Description"}
+    assert response.json() == {
+        "id": item_id,
+        "name": "New Name",
+        "description": "New Description",
+    }
