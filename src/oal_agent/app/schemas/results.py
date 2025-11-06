@@ -25,10 +25,15 @@ class Finding(BaseModel):
     recommendation: str
 
 
+from typing import Any, ClassVar, Dict, List
+
+from pydantic import BaseModel, Field
+
+
 class AnalysisResult(BaseModel):
     """Analysis result schema."""
 
-    job_id: str = Field(..., min_length=1, pattern=r"^[a-f0-9]{24}$")
+    job_id: str = Field(..., min_length=1, pattern=r"^[a-zA-Z0-9_-]{1,128}$")
     status: AnalysisStatus
     findings: List[Finding]
     metadata: Dict[str, Any]
@@ -36,7 +41,7 @@ class AnalysisResult(BaseModel):
     class Config:
         """Pydantic model configuration."""
 
-        json_schema_extra = {
+        json_schema_extra: ClassVar[Dict[str, Any]] = {
             "example": {
                 "job_id": "654a1b2c3d4e5f6a7b8c9d0e",
                 "status": "completed",
