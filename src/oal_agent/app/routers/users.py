@@ -24,7 +24,11 @@ async def get_all_users(
         offset (int): Number of users to skip. Defaults to 0, min 0.
 
     Returns:
-        A dictionary with a placeholder message, including the applied limit and offset.
+        dict: (WIP) A dictionary containing:
+            - "users" (list[dict]): A list of user objects, each with 'id', 'name', and 'email'.
+            - "total_count" (int): The total number of users available.
+            - "limit" (int): The maximum number of users requested.
+            - "offset" (int): The number of users skipped.
     """
     try:
         # TODO: Integrate with a user store/service/DB for real paginated retrieval.
