@@ -1,7 +1,7 @@
 """Results schemas."""
 
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, ClassVar, Dict, List
 
 from pydantic import BaseModel, Field
 
@@ -24,10 +24,6 @@ class Finding(BaseModel):
     location: Dict[str, Any]
     recommendation: str
 
-
-from typing import Any, ClassVar, Dict, List
-
-from pydantic import BaseModel, Field
 
 
 class AnalysisResult(BaseModel):
