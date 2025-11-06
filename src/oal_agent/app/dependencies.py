@@ -9,13 +9,13 @@ from oal_agent.telemetry.logging import logger
 def get_db() -> Generator:
     """Database dependency."""
     # TODO: Implement database session
-    pass
+    yield None
 
 
 def get_queue() -> Generator:
     """Queue dependency."""
     # TODO: Implement queue connection
-    pass
+    yield None
 
 
 async def get_request_duration() -> AsyncGenerator[None, None]:

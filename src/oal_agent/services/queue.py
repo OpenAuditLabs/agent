@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from typing import Any, Dict, Optional
 
 from oal_agent.telemetry.logging import get_logger
 from oal_agent.telemetry.metrics import metrics
@@ -21,7 +22,7 @@ class QueueService:
     def __init__(self, queue_url: str, max_size: int = 0):
         """Initialize queue service."""
         self.queue_url = queue_url
-        self.queue = asyncio.Queue(maxsize=max_size)
+        self.queue: asyncio.Queue[Dict[str, Any]] = asyncio.Queue(maxsize=max_size)
         self.worker_task = None
 
     async def enqueue(self, job_id: str, job_data: dict):
@@ -37,7 +38,7 @@ class QueueService:
 
     async def _worker(self):
         """Background worker to process jobs."""
-        job = None  # Initialize job to None
+        job: Optional[Dict[str, Any]] = None  # Initialize job to None
         try:
             while True:
                 job = await self.queue.get()

@@ -33,7 +33,7 @@ async def get_all_items(
 
         # Apply pagination
         paginated_items = all_items[
-            pagination.offset:pagination.offset + pagination.limit
+            pagination.offset : pagination.offset + pagination.limit
         ]
 
         return PaginatedItemsResponse(

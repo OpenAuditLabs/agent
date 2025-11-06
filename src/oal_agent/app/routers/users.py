@@ -1,3 +1,5 @@
+from typing import Any, Dict, List
+
 from fastapi import APIRouter, HTTPException, Query
 
 router = APIRouter()
@@ -34,7 +36,9 @@ async def get_all_users(
         # TODO: Integrate with a user store/service/DB for real paginated retrieval.
         # This PR should be marked as DRAFT until this is implemented.
         # For now, returning a placeholder to avoid misleading success.
-        users = []  # Replace with actual user data from the service
+        users: List[Dict[str, Any]] = (
+            []
+        )  # Replace with actual user data from the service
         total_count = 0  # Replace with actual total count from the service
 
         return {
