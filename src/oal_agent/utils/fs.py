@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+from typing import cast
 
 from oal_agent.utils.fs_utils import read_file_content
 
@@ -13,7 +14,7 @@ def ensure_dir(path: str):
 
 def read_file(path: str) -> str:
     """Read file contents."""
-    return read_file_content(Path(path), default_value="")
+    return cast(str, read_file_content(Path(path), default_value=""))
 
 
 def write_file(path: str, content: str):

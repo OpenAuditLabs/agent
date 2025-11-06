@@ -11,6 +11,8 @@ Usage Example:
     oal-agent analyze my_contract.sol
 """
 
+from typing import Optional
+
 import click
 import requests
 
@@ -29,7 +31,7 @@ from .core.config import Settings, settings
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
     help="Path to configuration file (e.g., ~/.oal_agent.env or config.env)",
 )
-def cli(config: str | None):
+def cli(config: Optional[str]):
     """OAL Agent CLI."""
     if config:
         # Re-initialize settings with the custom config file
