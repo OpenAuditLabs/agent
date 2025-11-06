@@ -45,4 +45,6 @@ async def get_all_users(
         }
     except Exception as e:
         # TODO: Catch more specific exceptions from the user service/DB.
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve users: {e}") from e
+        raise HTTPException(
+            status_code=500, detail=f"Failed to retrieve users: {e}"
+        ) from e
