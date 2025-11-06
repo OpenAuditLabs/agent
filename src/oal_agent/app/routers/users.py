@@ -27,8 +27,18 @@ async def get_all_users(
         A dictionary with a placeholder message, including the applied limit and offset.
     """
     try:
-        # Placeholder for actual user retrieval logic
-        message = f"List of users with limit {limit}" f" and offset {offset}"
-        return {"message": message}
+        # TODO: Integrate with a user store/service/DB for real paginated retrieval.
+        # This PR should be marked as DRAFT until this is implemented.
+        # For now, returning a placeholder to avoid misleading success.
+        users = []  # Replace with actual user data from the service
+        total_count = 0  # Replace with actual total count from the service
+
+        return {
+            "users": users,
+            "total_count": total_count,
+            "limit": limit,
+            "offset": offset,
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to retrieve users: {e}")
+        # TODO: Catch more specific exceptions from the user service/DB.
+        raise HTTPException(status_code=500, detail=f"Failed to retrieve users: {e}") from e
