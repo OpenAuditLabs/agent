@@ -1,7 +1,7 @@
 """FastAPI dependencies."""
 
 import time
-from typing import Generator
+from typing import AsyncGenerator, Generator
 
 from oal_agent.telemetry.logging import logger
 
@@ -18,10 +18,10 @@ def get_queue() -> Generator:
     pass
 
 
-async def get_request_duration() -> Generator[float, None, None]:
+async def get_request_duration() -> AsyncGenerator[None, None]:
     """
     Dependency that records the duration of a request.
-    Yields the duration in seconds.
+    Yields control (None) and logs the request duration as a side effect.
     """
     start_time = time.monotonic()
     try:
