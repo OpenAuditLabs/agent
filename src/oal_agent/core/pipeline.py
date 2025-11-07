@@ -1,6 +1,6 @@
 """Pipeline definitions."""
 
-from typing import Any, Callable, List
+from typing import Any, Awaitable, Callable, List
 
 from oal_agent.telemetry.logging import logger
 from oal_agent.utils.timing import timestamp
@@ -9,7 +9,7 @@ from oal_agent.utils.timing import timestamp
 class Pipeline:
     """Analysis pipeline."""
 
-    def __init__(self, name: str, steps: List[Callable[..., Any]]):
+    def __init__(self, name: str, steps: List[Callable[[dict[str, Any]], Awaitable[Any]]]):
         """
         Initializes a pipeline.
 
@@ -18,7 +18,7 @@ class Pipeline:
             steps: A list of callable functions representing the pipeline steps.
         """
         self.name: str = name
-        self.steps: List[Callable[..., Any]] = steps
+        self.steps: List[Callable[[dict[str, Any]], Awaitable[Any]]] = steps
 
     async def execute(self, context: dict[str, Any]) -> None:
         """Execute the pipeline.
