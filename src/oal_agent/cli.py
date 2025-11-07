@@ -11,6 +11,7 @@ Usage Example:
     oal-agent analyze my_contract.sol
 """
 
+import os
 from typing import Optional
 
 import click
@@ -34,9 +35,10 @@ from .core.config import Settings, settings
 def cli(config: Optional[str]):
     """OAL Agent CLI."""
     if config:
+        os.environ["PYDANTIC_SETTINGS_FILE"] = config
         # Re-initialize settings with the custom config file
         global settings
-        settings = Settings(_env_file=config)
+        settings = Settings()
         click.echo(f"Using configuration from '{config}'")
     pass
 

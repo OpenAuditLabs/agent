@@ -1,6 +1,6 @@
 """Configuration management."""
 
-from typing import Dict, Optional
+from typing import Dict
 
 from pydantic_settings import BaseSettings
 
@@ -19,7 +19,9 @@ class Settings(BaseSettings):
         llm_api_key: The API key for the LLM provider. Defaults to an empty string.
     """
 
-    api_host: str = "0.0.0.0"
+    api_host: str = (
+        "127.0.0.1"  # Bind to 0.0.0.0 for external access, e.g., via environment variable or config file
+    )
     api_port: int = 8000
 
     database_url: str = "sqlite:///./oal_agent.db"
@@ -50,4 +52,4 @@ class Settings(BaseSettings):
         env_file = ".env"
 
 
-settings = Settings()
+settings = Settings()  # type: ignore
