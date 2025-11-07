@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     Application settings.
 
     Attributes:
-        api_host: The host for the API server. Defaults to "0.0.0.0".
+        api_host: The host for the API server. Defaults to "127.0.0.1".
         api_port: The port for the API server. Defaults to 8000.
         database_url: The URL for the database connection. Defaults to "sqlite:///./oal_agent.db".
         queue_url: The URL for the message queue. Defaults to "redis://localhost:6379".
@@ -44,7 +44,7 @@ class Settings(BaseSettings):
         Returns:
             A Settings instance configured with the provided values.
         """
-        return cls(**env_vars)
+        return cls(**env_vars)  # type: ignore[arg-type]
 
     class Config:
         """Pydantic config."""
