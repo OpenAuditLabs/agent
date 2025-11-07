@@ -11,6 +11,7 @@ Usage Example:
     oal-agent analyze my_contract.sol
 """
 
+from pathlib import Path
 from typing import Optional
 
 import click
@@ -34,9 +35,8 @@ from .core.config import Settings, settings
 def cli(config: Optional[str]):
     """OAL Agent CLI."""
     if config:
-        # Re-initialize settings with the custom config file
         global settings
-        settings = Settings(_env_file=config)
+        settings = Settings(_env_file=Path(config))
         click.echo(f"Using configuration from '{config}'")
     pass
 

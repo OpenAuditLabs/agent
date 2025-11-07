@@ -25,7 +25,6 @@ class Finding(BaseModel):
     recommendation: str
 
 
-
 class AnalysisResult(BaseModel):
     """Analysis result schema."""
 

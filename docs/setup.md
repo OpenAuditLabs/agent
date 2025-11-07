@@ -93,7 +93,7 @@ nano .env  # or your preferred editor
 
 ```bash
 # API Configuration
-API_HOST=0.0.0.0
+API_HOST=127.0.0.1 # Default to localhost for security. Bind to 0.0.0.0 for external access (e.g., in production or Docker deployments).
 API_PORT=8000
 
 # Database
