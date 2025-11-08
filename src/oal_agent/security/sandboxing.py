@@ -32,6 +32,9 @@ class Sandbox:
             timeout: The maximum time in seconds the code is allowed to run.
             cpu_time_limit: The maximum CPU time in seconds the code is allowed to use.
             memory_limit: The maximum memory in bytes the code is allowed to use.
+
+        Returns:
+            A tuple containing the stdout and stderr of the executed code.
         """
         if sys.platform == "win32":
             if cpu_time_limit is not None or memory_limit is not None:
@@ -60,8 +63,8 @@ if HAS_RESOURCE:
     cpu_limit_str = os.getenv("OAL_CPU_TIME_LIMIT")
     if cpu_limit_str:
         cpu_limit = int(cpu_limit_str)
-        if cpu_limit < 0:
-            print(f"Error: Invalid CPU time limit in child process: {{cpu_limit}} is negative", file=sys.stderr)
+        if cpu_limit <= 0:
+            print(f"Error: Invalid CPU time limit in child process: {{cpu_limit}} must be positive", file=sys.stderr)
             sys.exit(1)
         try:
             resource.setrlimit(resource.RLIMIT_CPU, (cpu_limit, cpu_limit))
@@ -72,8 +75,8 @@ if HAS_RESOURCE:
     mem_limit_str = os.getenv("OAL_MEMORY_LIMIT")
     if mem_limit_str:
         mem_limit = int(mem_limit_str)
-        if mem_limit < 0:
-            print(f"Error: Invalid memory limit in child process: {{mem_limit}} is negative", file=sys.stderr)
+        if mem_limit <= 0:
+            print(f"Error: Invalid memory limit in child process: {{mem_limit}} must be positive", file=sys.stderr)
             sys.exit(1)
         try:
             resource.setrlimit(resource.RLIMIT_AS, (mem_limit, mem_limit))
@@ -81,7 +84,7 @@ if HAS_RESOURCE:
             print(f"Error: Could not set memory limit in child process: {{e}}", file=sys.stderr)
             sys.exit(1)
 
-exec({repr(code)})
+exec({code!r})
 """
 
         process = subprocess.Popen(

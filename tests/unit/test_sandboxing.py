@@ -14,7 +14,7 @@ def test_sandbox_resource_limits():
     cpu_time_limit = 1
     memory_limit = 1024 * 1024  # 1 MB
 
-    stdout, stderr = sandbox.run(code, cpu_time_limit=cpu_time_limit, memory_limit=memory_limit)
+    _, stderr = sandbox.run(code, cpu_time_limit=cpu_time_limit, memory_limit=memory_limit)
     assert stderr == ""
 
 
@@ -25,7 +25,7 @@ def test_sandbox_invalid_cpu_time_limit():
     code = "pass"
     cpu_time_limit = -1
 
-    stdout, stderr = sandbox.run(code, cpu_time_limit=cpu_time_limit)
+    _, stderr = sandbox.run(code, cpu_time_limit=cpu_time_limit)
     assert stderr == (
         "Error: Sandbox process exited with non-zero code 1.\n"
         "Stdout: \n"
@@ -40,7 +40,7 @@ def test_sandbox_invalid_memory_limit():
     code = "pass"
     memory_limit = -1
 
-    stdout, stderr = sandbox.run(code, memory_limit=memory_limit)
+    _, stderr = sandbox.run(code, memory_limit=memory_limit)
     assert stderr == (
         "Error: Sandbox process exited with non-zero code 1.\n"
         "Stdout: \n"
