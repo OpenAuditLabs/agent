@@ -88,20 +88,27 @@ class OpenAIProvider(LLMProvider):
                 # TODO: Implement OpenAI integration using self.api_key and the prompt.
                 # Example: response = await openai.Completion.acreate(prompt=prompt, **kwargs)
                 # return response.choices[0].text.strip()
-                result = await asyncio.wait_for(self._call_openai_api(prompt, **kwargs), timeout=timeout)
+                result = await asyncio.wait_for(
+                    self._call_openai_api(prompt, **kwargs), timeout=timeout
+                )
                 return result
             except asyncio.TimeoutError as e:
                 if attempt < retry_attempts - 1:
                     backoff_time = 2**attempt + random.uniform(0, 1)
-                    print(f"OpenAI API call timed out. Retrying in {backoff_time:.2f} seconds...")
+                    print(
+                        f"OpenAI API call timed out. Retrying in {backoff_time:.2f} seconds..."
+                    )
                     await asyncio.sleep(backoff_time)
                 else:
-                    raise LLMTimeoutError("OpenAI API call timed out after multiple retries.") from e
+                    raise LLMTimeoutError(
+                        "OpenAI API call timed out after multiple retries."
+                    ) from e
             except Exception as e:
                 if attempt < retry_attempts - 1:
                     backoff_time = 2**attempt + random.uniform(0, 1)
-                    print(f"OpenAI API call failed: {e}. Retrying in {backoff_time:.2f} seconds...")
+                    print(
+                        f"OpenAI API call failed: {e}. Retrying in {backoff_time:.2f} seconds..."
+                    )
                     await asyncio.sleep(backoff_time)
                 else:
                     raise
-        return ""

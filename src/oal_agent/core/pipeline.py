@@ -9,7 +9,9 @@ from oal_agent.utils.timing import timestamp
 class Pipeline:
     """Analysis pipeline."""
 
-    def __init__(self, name: str, steps: List[Callable[[dict[str, Any]], Awaitable[Any]]]):
+    def __init__(
+        self, name: str, steps: List[Callable[[dict[str, Any]], Awaitable[Any]]]
+    ):
         """
         Initializes a pipeline.
 

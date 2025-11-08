@@ -77,7 +77,9 @@ class LLMGuards:
             True if the attempts are valid, False otherwise.
         """
         if not isinstance(attempts, int) or not (1 <= attempts <= 5):
-            print(f"Input validation failed: Retry attempts must be an integer between 1 and 5. Got {attempts}.")
+            print(
+                f"Input validation failed: Retry attempts must be an integer between 1 and 5. Got {attempts}."
+            )
             return False
         return True
 
@@ -91,7 +93,9 @@ class LLMGuards:
             True if the timeout is valid, False otherwise.
         """
         if not isinstance(timeout, int) or not (10 <= timeout <= 120):
-            print(f"Input validation failed: Timeout must be an integer between 10 and 120 seconds. Got {timeout}.")
+            print(
+                f"Input validation failed: Timeout must be an integer between 10 and 120 seconds. Got {timeout}."
+            )
             return False
         return True
 
