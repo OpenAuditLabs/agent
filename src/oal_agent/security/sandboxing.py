@@ -40,8 +40,7 @@ class Sandbox:
                     "Warning: CPU time and memory limits are not supported on Windows.",
                     file=sys.stderr,
                 )
-            # TODO: Implement proper sandboxed execution for Windows.
-            return "", ""
+
 
         env = os.environ.copy()
         if cpu_time_limit is not None:
