@@ -103,5 +103,5 @@ class OpenAIProvider(LLMProvider):
                     print(f"OpenAI API call failed: {e}. Retrying in {backoff_time:.2f} seconds...")
                     await asyncio.sleep(backoff_time)
                 else:
-                    raise e
+                    raise
         return ""
