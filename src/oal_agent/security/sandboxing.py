@@ -1,7 +1,6 @@
 """Sandboxing utilities."""
 
 import sys
-import sys
 import subprocess
 import os
 
@@ -19,13 +18,13 @@ class Sandbox:
         """Initialize sandbox."""
         pass
 
-    async def run(
+    def run(
         self,
         code: str,
         timeout: int = 30,
         cpu_time_limit: int | None = None,
         memory_limit: int | None = None,
-    ):
+    ) -> tuple[str, str]:
         """Run code in sandbox with timeout and resource limits.
 
         Args:
@@ -91,5 +90,25 @@ exec({repr(code)})
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-        stdout, stderr = process.communicate(timeout=timeout)
-        return stdout.decode(), stderr.decode()
+        try:
+            stdout, stderr = process.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            stdout, stderr = process.communicate()
+            return (
+                "",
+                f"Error: Sandbox process timed out after {timeout} seconds.\n"
+                f"Stdout: {stdout.decode()}\nStderr: {stderr.decode()}",
+            )
+
+        stdout_decoded = stdout.decode()
+        stderr_decoded = stderr.decode()
+
+        if process.returncode != 0:
+            return (
+                "",
+                f"Error: Sandbox process exited with non-zero code {process.returncode}.\n"
+                f"Stdout: {stdout_decoded}\nStderr: {stderr_decoded}",
+            )
+
+        return stdout_decoded, stderr_decoded
