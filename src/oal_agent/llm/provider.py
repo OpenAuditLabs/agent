@@ -103,6 +103,8 @@ class OpenAIProvider(LLMProvider):
                     raise LLMTimeoutError(
                         "OpenAI API call timed out after multiple retries."
                     ) from e
+            except asyncio.CancelledError:
+                raise
             except Exception as e:
                 if attempt < retry_attempts - 1:
                     backoff_time = 2**attempt + random.uniform(0, 1)
