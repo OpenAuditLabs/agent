@@ -20,8 +20,6 @@ openai>=1.10.0
 langchain>=0.1.0
 
 # Security Tools
-slither-analyzer>=0.10.0
-mythril>=0.24.0
 
 # Utilities
 python-dotenv>=1.0.0
