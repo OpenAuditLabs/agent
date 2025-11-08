@@ -11,11 +11,12 @@ Usage Example:
     oal-agent analyze my_contract.sol
 """
 
-from pathlib import Path
+
 from typing import Optional
 
 import click
 import requests
+from dotenv import dotenv_values
 
 from .app.schemas.jobs import JobResponse
 from .core.config import Settings, settings
@@ -36,7 +37,11 @@ def cli(config: Optional[str]):
     """OAL Agent CLI."""
     if config:
         global settings
-        settings = Settings(_env_file=Path(config))
+        # Load environment variables from the specified config file
+        env_vars = dotenv_values(config)
+        # Filter out None values, as Settings.from_dict expects dict[str, str]
+        filtered_env_vars = {k: v for k, v in env_vars.items() if v is not None}
+        settings = Settings.from_dict(filtered_env_vars)
         click.echo(f"Using configuration from '{config}'")
     pass
 
