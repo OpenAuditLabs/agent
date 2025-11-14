@@ -10,9 +10,9 @@ class LLMGuards:
     def __init__(self, cache_max_size: int = 128):
         """Initialize guards."""
         self.cache_max_size = cache_max_size
-        self.validate_input = functools.lru_cache(maxsize=self.cache_max_size)(self.validate_input)
 
-    async def validate_input(self, prompt: str) -> bool:
+    @functools.lru_cache(maxsize=128)
+    def validate_input(self, prompt: str) -> bool:
         """Validate input prompt for safety, appropriateness, and well-formedness.
 
         Args:
