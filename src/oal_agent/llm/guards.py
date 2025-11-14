@@ -1,25 +1,19 @@
 """LLM guardrails."""
 
+import functools
 import re
 
 
 class LLMGuards:
     """Implements safety guardrails for LLM interactions."""
 
-    def __init__(self):
+    def __init__(self, cache_max_size: int = 128):
         """Initialize guards."""
-        pass
+        self.cache_max_size = cache_max_size
+        self._cached_validate_input_core = functools.lru_cache(maxsize=self.cache_max_size)(self._validate_input_core)
 
-    async def validate_input(self, prompt: str) -> bool:
-        """Validate input prompt for safety, appropriateness, and well-formedness.
-
-        Args:
-            prompt: The input string to validate.
-
-        Returns:
-            True if the prompt is valid, False otherwise.
-        """
-
+    def _validate_input_core(self, prompt: str) -> bool:
+        """Core validation logic for input prompt."""
         MAX_PROMPT_LENGTH = 4096
         if len(prompt) > MAX_PROMPT_LENGTH:
             print(
@@ -34,7 +28,7 @@ class LLMGuards:
             r"SLEEP\(",
             # Command Injection
             r"&&\s*\w+",
-            r"||\s*\w+",
+            r"\|\|\s*\w+",
             r";\s*\w+",
             r"`\s*\w+\s*`",
             r"\$\(",
@@ -43,6 +37,8 @@ class LLMGuards:
             r"subprocess\.run",
             r"eval\(",
             r"exec\(",
+            # Common shell commands
+            r"rm\s+-rf",
         ]
 
         for pattern in malicious_patterns:
@@ -53,6 +49,7 @@ class LLMGuards:
         harmful_keywords = [
             r"hate\s+speech",
             r"violence\s+promotion",
+            r"promoting\s+violence",
             r"illegal\s+activity",
             r"offensive\s+term_x",
             r"offensive\s+term_y",
@@ -66,6 +63,17 @@ class LLMGuards:
                 return False
 
         return True
+
+    def validate_input(self, prompt: str) -> bool:
+        """Validate input prompt for safety, appropriateness, and well-formedness.
+
+        Args:
+            prompt: The input string to validate.
+
+        Returns:
+            True if the prompt is valid, False otherwise.
+        """
+        return self._cached_validate_input_core(prompt)
 
     def validate_retry_attempts(self, attempts: int) -> bool:
         """Validate retry attempts for LLM calls.
