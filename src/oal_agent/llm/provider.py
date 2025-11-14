@@ -42,14 +42,15 @@ class OpenAIProvider(LLMProvider):
     This class handles the interaction with the OpenAI API to generate text.
     """
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, llm_guard_cache_max_size: int = 128):
         """Initializes the OpenAIProvider with the necessary API key.
 
         Args:
             api_key: The API key required to authenticate with the OpenAI service.
+            llm_guard_cache_max_size: The maximum size for the LRU cache used by LLMGuards.
         """
         self.api_key = api_key
-        self.guards = LLMGuards()
+        self.guards = LLMGuards(cache_max_size=llm_guard_cache_max_size)
 
     async def _call_openai_api(self, prompt: str, **kwargs) -> str:
         """Simulates the actual OpenAI API call.

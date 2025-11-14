@@ -1,14 +1,16 @@
 """LLM guardrails."""
 
+import functools
 import re
 
 
 class LLMGuards:
     """Implements safety guardrails for LLM interactions."""
 
-    def __init__(self):
+    def __init__(self, cache_max_size: int = 128):
         """Initialize guards."""
-        pass
+        self.cache_max_size = cache_max_size
+        self.validate_input = functools.lru_cache(maxsize=self.cache_max_size)(self.validate_input)
 
     async def validate_input(self, prompt: str) -> bool:
         """Validate input prompt for safety, appropriateness, and well-formedness.

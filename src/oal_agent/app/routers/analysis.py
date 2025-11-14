@@ -5,7 +5,8 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, status
 
-from oal_agent.app.schemas.jobs import AnalysisStatus, JobRequest, JobResponse
+from oal_agent.app.schemas.jobs import JobRequest, JobResponse
+from oal_agent.app.schemas.results import AnalysisStatus
 from oal_agent.app.schemas.results import AnalysisResult
 from oal_agent.services.results_sink import ResultsSink
 
