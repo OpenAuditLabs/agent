@@ -1,10 +1,18 @@
 """Analysis router."""
 
-from fastapi import APIRouter, HTTPException
+import logging
+import uuid
+from typing import Annotated
 
-from ..schemas.jobs import JobRequest, JobResponse
-from ..schemas.results import AnalysisResult, AnalysisStatus
-from ...services.results_sink import ResultsSink
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+
+from oal_agent.app.dependencies import get_queue_service, get_results_sink
+from oal_agent.app.schemas.jobs import AnalysisStatus, JobRequest, JobResponse
+from oal_agent.core.config import settings
+from oal_agent.services.queue import QueueService
+from oal_agent.services.results_sink import ResultsSink
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/analysis", tags=["analysis"])
 
@@ -15,7 +23,8 @@ results_sink = ResultsSink()
 async def submit_analysis(job: JobRequest):
     """Submit a smart contract for analysis."""
     # TODO: Implement actual job submission logic and use a real job_id
-    job_id = f"job_{hash(job.contract_code)}"  # Placeholder job_id
+    job_id = str(uuid.uuid4())
+    logger.info("Received analysis job: %s", job_id)
     initial_results = {
         "status": AnalysisStatus.QUEUED.value,  # Use enum value
         "contract_code": job.contract_code,
@@ -23,7 +32,7 @@ async def submit_analysis(job: JobRequest):
         "metadata": {"submitted_at": "2023-11-14T12:00:00Z"},  # Placeholder metadata
     }
     await results_sink.store(job_id, initial_results)
-    return JobResponse(job_id=job_id, status=AnalysisStatus.QUEUED)
+    return JobResponse(job_id=job_id, status=AnalysisStatus.QUEUED.value)
 
 
 @router.get("/{job_id}", response_model=JobResponse)
