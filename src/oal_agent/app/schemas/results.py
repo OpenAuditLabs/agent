@@ -9,10 +9,12 @@ from pydantic import BaseModel, Field
 class AnalysisStatus(str, Enum):
     """Enumeration for analysis job statuses."""
 
+    QUEUED = "queued"
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    UNKNOWN = "unknown"
 
 
 class Finding(BaseModel):
