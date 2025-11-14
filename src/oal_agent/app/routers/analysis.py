@@ -2,14 +2,11 @@
 
 import logging
 import uuid
-from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 
-from oal_agent.app.dependencies import get_queue_service, get_results_sink
 from oal_agent.app.schemas.jobs import AnalysisStatus, JobRequest, JobResponse
-from oal_agent.core.config import settings
-from oal_agent.services.queue import QueueService
+from oal_agent.app.schemas.results import AnalysisResult
 from oal_agent.services.results_sink import ResultsSink
 
 logger = logging.getLogger(__name__)
