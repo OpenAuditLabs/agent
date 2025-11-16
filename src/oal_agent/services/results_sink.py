@@ -1,9 +1,10 @@
 """Results sink service."""
 
-import json
 import asyncio
-import aiofiles
+import json
 from pathlib import Path
+
+import aiofiles
 
 
 class ResultsSink:
