@@ -1,0 +1,31 @@
+{
+  "description": "Analysis job response schema.",
+  "properties": {
+    "job_id": {
+      "title": "Job Id",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "message": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Message"
+    }
+  },
+  "required": [
+    "job_id",
+    "status"
+  ],
+  "title": "JobResponse",
+  "type": "object"
+}

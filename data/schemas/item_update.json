@@ -1,0 +1,33 @@
+{
+  "properties": {
+    "name": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The new name of the item",
+      "title": "Name"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "The new detailed description of the item",
+      "title": "Description"
+    }
+  },
+  "title": "ItemUpdate",
+  "type": "object",
+  "x-validation-note": "At least one of 'name' or 'description' must be provided."
+}
