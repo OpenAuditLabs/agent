@@ -96,18 +96,18 @@ class Sandbox:
             try:
                 resource.setrlimit(resource.RLIMIT_CPU, (cpu_limit, cpu_limit))
             except Exception as e:
-                print(f"Error: Could not set CPU time limit in child process: {e}", file=sys.stderr)
+                print(f"Error: Could not set CPU time limit in child process: {{e}}", file=sys.stderr)
                 sys.exit(1)
         mem_limit_str = os.getenv("OAL_MEMORY_LIMIT")
         if mem_limit_str:
             mem_limit = int(mem_limit_str)
             if mem_limit <= 0:
-                print(f"Error: Invalid memory limit in child process: {mem_limit} must be positive", file=sys.stderr)
+                print(f"Error: Invalid memory limit in child process: {{mem_limit}} must be positive", file=sys.stderr)
                 sys.exit(1)
             try:
                 resource.setrlimit(resource.RLIMIT_AS, (mem_limit, mem_limit))
             except Exception as e:
-                print(f"Error: Could not set memory limit in child process: {e}", file=sys.stderr)
+                print(f"Error: Could not set memory limit in child process: {{e}}", file=sys.stderr)
                 sys.exit(1)
     exec({code!r})
     """
