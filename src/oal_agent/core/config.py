@@ -52,6 +52,6 @@ class Settings(BaseSettings):
 settings = Settings()  # type: ignore
 
 def reset_settings():
-    """Resets the global settings object to its default values."""
+    """Resets the global settings object to its default values, primarily for test isolation."""
     global settings
     settings = Settings()

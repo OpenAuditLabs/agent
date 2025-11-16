@@ -45,13 +45,10 @@ def cli(config: Optional[str], profile: Optional[str]):
     all_env_vars = {}
 
     if config:
-        if not os.path.exists(config):
-            click.echo(f"Warning: Configuration file '{config}' not found.")
-        else:
-            config_env_vars = dotenv_values(config)
-            # Convert keys to lowercase for pydantic_settings
-            all_env_vars.update({k.lower(): v for k, v in config_env_vars.items() if v is not None})
-            click.echo(f"Using configuration from '{config}'")
+        config_env_vars = dotenv_values(config)
+        # Convert keys to lowercase for pydantic_settings
+        all_env_vars.update({k.lower(): v for k, v in config_env_vars.items() if v is not None})
+        click.echo(f"Using configuration from '{config}'")
 
     if profile:
         profile_config_path = f".env.{profile}"
@@ -60,17 +57,17 @@ def cli(config: Optional[str], profile: Optional[str]):
         else:
             profile_env_vars = dotenv_values(profile_config_path)
             # Convert keys to lowercase for pydantic_settings
+            # Profile settings take precedence over config settings
             all_env_vars.update({k.lower(): v for k, v in profile_env_vars.items() if v is not None})
             click.echo(f"Using profile-specific configuration from '{profile_config_path}'")
 
     if all_env_vars:
         settings = Settings.from_dict(all_env_vars)
-    pass
 
 
 @cli.command(help="Start the OAL Agent API server.")
-@click.option("--host", default=settings.api_host, help="API host")
-@click.option("--port", default=settings.api_port, help="API port")
+@click.option("--host", default=None, help="API host")
+@click.option("--port", default=None, help="API port")
 def serve(host: str, port: int):
     """Start the API server.
 
@@ -80,7 +77,7 @@ def serve(host: str, port: int):
 
     from .app.main import app
 
-    uvicorn.run(app, host=host, port=port)
+    uvicorn.run(app, host=host or settings.api_host, port=port or settings.api_port)
 
 
 @cli.command(help="Analyze a smart contract file.")
@@ -126,6 +123,14 @@ def status(job_id: str):
         click.echo(f"Error: The request timed out: {e}")
     except requests.exceptions.RequestException as e:
         click.echo(f"An unexpected error occurred: {e}")
+
+
+@cli.command(name="_debug_settings", hidden=True, help="Debug command to print current settings.")
+def _debug_settings():
+    """Debug command to print current settings for testing purposes."""
+    click.echo(f"API_PORT={settings.api_port}")
+    click.echo(f"LLM_PROVIDER={settings.llm_provider}")
+    click.echo(f"API_HOST={settings.api_host}")
 
 
 if __name__ == "__main__":
