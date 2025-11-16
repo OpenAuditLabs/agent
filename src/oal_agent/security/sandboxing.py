@@ -3,6 +3,7 @@
 import sys
 import subprocess
 import os
+import textwrap
 
 
 def sanitize_path(base_path: str, target_path: str) -> str:
@@ -77,40 +78,40 @@ class Sandbox:
             env["OAL_CPU_TIME_LIMIT"] = str(cpu_time_limit)
         if memory_limit is not None:
             env["OAL_MEMORY_LIMIT"] = str(memory_limit)
-        child_script = f"""
-    import sys
-    import os
-    try:
-        import resource
-        HAS_RESOURCE = True
-    except ImportError:
-        HAS_RESOURCE = False
-    
-    if HAS_RESOURCE:
-        cpu_limit_str = os.getenv("OAL_CPU_TIME_LIMIT")
-        if cpu_limit_str:
-            cpu_limit = int(cpu_limit_str)
-            if cpu_limit <= 0:
-                print(f"Error: Invalid CPU time limit in child process: {{cpu_limit}} must be positive", file=sys.stderr)
-                sys.exit(1)
-            try:
-                resource.setrlimit(resource.RLIMIT_CPU, (cpu_limit, cpu_limit))
-            except Exception as e:
-                print(f"Error: Could not set CPU time limit in child process: {{e}}", file=sys.stderr)
-                sys.exit(1)
-        mem_limit_str = os.getenv("OAL_MEMORY_LIMIT")
-        if mem_limit_str:
-            mem_limit = int(mem_limit_str)
-            if mem_limit <= 0:
-                print(f"Error: Invalid memory limit in child process: {{mem_limit}} must be positive", file=sys.stderr)
-                sys.exit(1)
-            try:
-                resource.setrlimit(resource.RLIMIT_AS, (mem_limit, mem_limit))
-            except Exception as e:
-                print(f"Error: Could not set memory limit in child process: {{e}}", file=sys.stderr)
-                sys.exit(1)
-    exec({code!r})
-    """
+        child_script = textwrap.dedent(f"""\
+import sys
+import os
+try:
+    import resource
+    HAS_RESOURCE = True
+except ImportError:
+    HAS_RESOURCE = False
+
+if HAS_RESOURCE:
+    cpu_limit_str = os.getenv("OAL_CPU_TIME_LIMIT")
+    if cpu_limit_str:
+        cpu_limit = int(cpu_limit_str)
+        if cpu_limit <= 0:
+            print(f"Error: Invalid CPU time limit in child process: {{cpu_limit}} must be positive", file=sys.stderr)
+            sys.exit(1)
+        try:
+            resource.setrlimit(resource.RLIMIT_CPU, (cpu_limit, cpu_limit))
+        except Exception as e:
+            print(f"Error: Could not set CPU time limit in child process: {{e}}", file=sys.stderr)
+            sys.exit(1)
+    mem_limit_str = os.getenv("OAL_MEMORY_LIMIT")
+    if mem_limit_str:
+        mem_limit = int(mem_limit_str)
+        if mem_limit <= 0:
+            print(f"Error: Invalid memory limit in child process: {{mem_limit}} must be positive", file=sys.stderr)
+            sys.exit(1)
+        try:
+            resource.setrlimit(resource.RLIMIT_AS, (mem_limit, mem_limit))
+        except Exception as e:
+            print(f"Error: Could not set memory limit in child process: {{e}}", file=sys.stderr)
+            sys.exit(1)
+exec({code!r})
+""")
 
         process = subprocess.Popen(
             [sys.executable, "-c", child_script],
