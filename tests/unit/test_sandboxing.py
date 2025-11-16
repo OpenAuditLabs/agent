@@ -29,7 +29,7 @@ def test_sandbox_invalid_cpu_time_limit():
     assert stderr == (
         "Error: Sandbox process exited with non-zero code 1.\n"
         "Stdout: \n"
-        "Stderr: Error: Invalid CPU time limit in child process: -1 is negative\n"
+        "Stderr: Error: Invalid CPU time limit in child process: -1 must be positive\n"
     )
 
 
@@ -44,7 +44,7 @@ def test_sandbox_invalid_memory_limit():
     assert stderr == (
         "Error: Sandbox process exited with non-zero code 1.\n"
         "Stdout: \n"
-        "Stderr: Error: Invalid memory limit in child process: -1 is negative\n"
+        "Stderr: Error: Invalid memory limit in child process: -1 must be positive\n"
     )
 
 

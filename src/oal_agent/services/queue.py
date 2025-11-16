@@ -29,6 +29,7 @@ class QueueService:
         """Add a job to the queue."""
         try:
             self.queue.put_nowait({"job_id": job_id, "job_data": job_data})
+            metrics.gauge("queue_depth", self.queue.qsize())
         except asyncio.QueueFull:
             raise QueueFullError("Queue is full, cannot enqueue job.")
 
@@ -41,6 +42,7 @@ class QueueService:
         job: Optional[Dict[str, Any]] = None  # Initialize job to None
         try:
             while True:
+                metrics.gauge("queue_depth", self.queue.qsize())
                 job = await self.queue.get()
                 start_time = time.time()
                 try:
@@ -54,6 +56,7 @@ class QueueService:
                         job
                     ):  # Ensure task_done is only called if a job was actually obtained
                         self.queue.task_done()
+                        metrics.gauge("queue_depth", self.queue.qsize())
                         processing_time = time.time() - start_time
                         metrics.gauge("queue_processing_time_seconds", processing_time)
                 job = None  # Reset job after task_done
@@ -77,6 +80,7 @@ class QueueService:
                 job = self.queue.get_nowait()
                 logger.debug("Draining unacknowledged job: %s", job["job_id"])
                 self.queue.task_done()
+                metrics.gauge("queue_depth", self.queue.qsize())
             except asyncio.QueueEmpty:
                 break
         await self.queue.join()  # Wait until all jobs are processed

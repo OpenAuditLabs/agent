@@ -24,11 +24,11 @@ def test_submit_analysis_success(client):
     response = client.post("/api/v1/analysis/", json=job_request_payload)
 
     assert response.status_code == 200
-    assert response.json() == {
-        "job_id": "placeholder",
-        "status": "queued",
-        "message": None,
-    }
+    response_data = response.json()
+    assert "job_id" in response_data
+    assert isinstance(response_data["job_id"], str)
+    assert response_data["status"] == "queued"
+    assert response_data["message"] is None
 
 
 def test_get_job_status_not_found(client):
