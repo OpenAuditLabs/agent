@@ -68,7 +68,7 @@ def cli(config: Optional[str], profile: Optional[str]):
 @cli.command(help="Start the OAL Agent API server.")
 @click.option("--host", default=None, help="API host")
 @click.option("--port", default=None, help="API port")
-def serve(host: str, port: int):
+def serve(host: Optional[str], port: Optional[int]):
     """Start the API server.
 
     This command launches the FastAPI application that powers the OAL Agent.
