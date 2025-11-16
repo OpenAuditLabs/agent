@@ -12,6 +12,7 @@ Usage Example:
 """
 
 
+import os
 from typing import Optional
 
 import click
@@ -33,16 +34,37 @@ from .core.config import Settings, settings
     type=click.Path(exists=True, dir_okay=False, resolve_path=True),
     help="Path to configuration file (e.g., ~/.oal_agent.env or config.env)",
 )
-def cli(config: Optional[str]):
+@click.option(
+    "--profile",
+    type=str,
+    help="Load profile-specific settings from .env.<profile_name> (e.g., 'dev' loads .env.dev)",
+)
+def cli(config: Optional[str], profile: Optional[str]):
     """OAL Agent CLI."""
+    global settings
+    all_env_vars = {}
+
     if config:
-        global settings
-        # Load environment variables from the specified config file
-        env_vars = dotenv_values(config)
-        # Filter out None values, as Settings.from_dict expects dict[str, str]
-        filtered_env_vars = {k: v for k, v in env_vars.items() if v is not None}
-        settings = Settings.from_dict(filtered_env_vars)
-        click.echo(f"Using configuration from '{config}'")
+        if not os.path.exists(config):
+            click.echo(f"Warning: Configuration file '{config}' not found.")
+        else:
+            config_env_vars = dotenv_values(config)
+            # Convert keys to lowercase for pydantic_settings
+            all_env_vars.update({k.lower(): v for k, v in config_env_vars.items() if v is not None})
+            click.echo(f"Using configuration from '{config}'")
+
+    if profile:
+        profile_config_path = f".env.{profile}"
+        if not os.path.exists(profile_config_path):
+            click.echo(f"Warning: Profile configuration file '{profile_config_path}' not found.")
+        else:
+            profile_env_vars = dotenv_values(profile_config_path)
+            # Convert keys to lowercase for pydantic_settings
+            all_env_vars.update({k.lower(): v for k, v in profile_env_vars.items() if v is not None})
+            click.echo(f"Using profile-specific configuration from '{profile_config_path}'")
+
+    if all_env_vars:
+        settings = Settings.from_dict(all_env_vars)
     pass
 
 

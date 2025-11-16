@@ -50,3 +50,8 @@ class Settings(BaseSettings):
 
 
 settings = Settings()  # type: ignore
+
+def reset_settings():
+    """Resets the global settings object to its default values."""
+    global settings
+    settings = Settings()
