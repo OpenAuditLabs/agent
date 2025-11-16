@@ -3,11 +3,10 @@
 import logging
 import uuid
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException
 
 from oal_agent.app.schemas.jobs import JobRequest, JobResponse
-from oal_agent.app.schemas.results import AnalysisStatus
-from oal_agent.app.schemas.results import AnalysisResult
+from oal_agent.app.schemas.results import AnalysisResult, AnalysisStatus
 from oal_agent.services.results_sink import ResultsSink
 
 logger = logging.getLogger(__name__)
@@ -40,7 +39,10 @@ async def get_job_status(job_id: str):
     results = await results_sink.retrieve(job_id)
     if not results:
         raise HTTPException(status_code=404, detail="Job not found")
-    return JobResponse(job_id=job_id, status=AnalysisStatus(results.get("status", AnalysisStatus.UNKNOWN.value)))
+    return JobResponse(
+        job_id=job_id,
+        status=AnalysisStatus(results.get("status", AnalysisStatus.UNKNOWN.value)),
+    )
 
 
 @router.get("/{job_id}/results", response_model=AnalysisResult)
@@ -49,7 +51,7 @@ async def get_job_results(job_id: str):
     results = await results_sink.retrieve(job_id)
     if not results:
         raise HTTPException(status_code=404, detail="Results not found")
-    
+
     # Ensure status is a valid AnalysisStatus enum member
     status = AnalysisStatus(results.get("status", AnalysisStatus.UNKNOWN.value))
 

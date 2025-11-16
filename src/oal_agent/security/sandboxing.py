@@ -3,12 +3,35 @@
 import sys
 import subprocess
 import os
+import textwrap
 
-try:
-    import resource
-    HAS_RESOURCE = True
-except ImportError:
-    HAS_RESOURCE = False
+
+def sanitize_path(base_path: str, target_path: str) -> str:
+    """Sanitize a path to prevent path traversal and symlink escapes.
+
+    Ensures that the target_path is strictly within the base_path after resolving
+    all symlinks.
+
+    Args:
+        base_path: The base directory to confine the target_path within.
+        target_path: The path to sanitize.
+
+    Returns:
+        The sanitized, absolute path.
+
+    Raises:
+        ValueError: If the sanitized path attempts to escape the base_path.
+    """
+    # Resolve to real paths to handle symlinks
+    real_base_path = os.path.realpath(base_path)
+    real_target_path = os.path.realpath(os.path.join(base_path, target_path))
+
+    # Ensure the target path is within the base path
+    common_path = os.path.commonpath([real_base_path, real_target_path])
+    if common_path != real_base_path:
+        raise ValueError(f"Path {target_path} attempts to escape base path {base_path}")
+
+    return real_target_path
 
 
 class Sandbox:
@@ -36,6 +59,13 @@ class Sandbox:
         Returns:
             A tuple containing the stdout and stderr of the executed code.
         """
+        try:
+            import resource
+
+            HAS_RESOURCE = True
+        except ImportError:
+            HAS_RESOURCE = False
+
         if sys.platform == "win32":
             if cpu_time_limit is not None or memory_limit is not None:
                 print(
@@ -43,14 +73,12 @@ class Sandbox:
                     file=sys.stderr,
                 )
 
-
         env = os.environ.copy()
         if cpu_time_limit is not None:
             env["OAL_CPU_TIME_LIMIT"] = str(cpu_time_limit)
         if memory_limit is not None:
             env["OAL_MEMORY_LIMIT"] = str(memory_limit)
-
-        child_script = f"""
+        child_script = textwrap.dedent(f"""\
 import sys
 import os
 try:
@@ -71,7 +99,6 @@ if HAS_RESOURCE:
         except Exception as e:
             print(f"Error: Could not set CPU time limit in child process: {{e}}", file=sys.stderr)
             sys.exit(1)
-
     mem_limit_str = os.getenv("OAL_MEMORY_LIMIT")
     if mem_limit_str:
         mem_limit = int(mem_limit_str)
@@ -83,9 +110,8 @@ if HAS_RESOURCE:
         except Exception as e:
             print(f"Error: Could not set memory limit in child process: {{e}}", file=sys.stderr)
             sys.exit(1)
-
 exec({code!r})
-"""
+""")
 
         process = subprocess.Popen(
             [sys.executable, "-c", child_script],

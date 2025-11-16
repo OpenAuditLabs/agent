@@ -90,7 +90,8 @@ async def test_queue_processing_time_metric():
 
         # Verify that queue_processing_time_seconds was called once with a positive value
         processing_time_calls = [
-            call for call in mock_metrics.gauge.call_args_list
+            call
+            for call in mock_metrics.gauge.call_args_list
             if call.args[0] == "queue_processing_time_seconds"
         ]
         assert len(processing_time_calls) == 1
@@ -98,11 +99,14 @@ async def test_queue_processing_time_metric():
 
         # Verify queue_depth calls
         queue_depth_calls = [
-            call for call in mock_metrics.gauge.call_args_list
+            call
+            for call in mock_metrics.gauge.call_args_list
             if call.args[0] == "queue_depth"
         ]
         # Expect calls for enqueue, before get, after task_done, and during stop
-        assert len(queue_depth_calls) >= 3  # At least enqueue, before get, after task_done
+        assert (
+            len(queue_depth_calls) >= 3
+        )  # At least enqueue, before get, after task_done
         assert queue_depth_calls[0].args[1] == 1  # Enqueue
         assert queue_depth_calls[-1].args[1] == 0  # After draining
 

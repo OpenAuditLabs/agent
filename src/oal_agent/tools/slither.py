@@ -24,7 +24,7 @@ class SlitherTool:
                 command,
                 capture_output=True,
                 text=True,
-                check=True  # Raise an exception for non-zero exit codes
+                check=True,  # Raise an exception for non-zero exit codes
             )
             return process.stdout
         except subprocess.CalledProcessError as e:
@@ -48,4 +48,3 @@ def parse_slither_output(json_output: str) -> list[dict]:
             }
             findings.append(finding)
     return findings
-
