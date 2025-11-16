@@ -28,5 +28,6 @@
     }
   },
   "title": "ItemUpdate",
-  "type": "object"
+  "type": "object",
+  "x-validation-note": "At least one of 'name' or 'description' must be provided."
 }

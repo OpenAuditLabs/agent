@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import json
 import sys
 from pathlib import Path
@@ -13,6 +14,8 @@ SCHEMA_DIR.mkdir(parents=True, exist_ok=True)
 
 def generate_schema(model, filename):
     schema = model.model_json_schema()
+    if model == ItemUpdate:
+        schema["x-validation-note"] = "At least one of 'name' or 'description' must be provided."
     with open(SCHEMA_DIR / filename, "w") as f:
         json.dump(schema, f, indent=2)
 
