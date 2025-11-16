@@ -1,0 +1,43 @@
+{
+  "description": "Analysis job request schema.",
+  "properties": {
+    "contract_code": {
+      "title": "Contract Code",
+      "type": "string"
+    },
+    "contract_address": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Contract Address"
+    },
+    "chain_id": {
+      "anyOf": [
+        {
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Chain Id"
+    },
+    "pipeline": {
+      "default": "standard",
+      "title": "Pipeline",
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract_code"
+  ],
+  "title": "JobRequest",
+  "type": "object"
+}

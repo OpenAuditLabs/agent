@@ -1,0 +1,22 @@
+{
+  "description": "Pagination parameters schema.",
+  "properties": {
+    "limit": {
+      "default": 10,
+      "description": "Maximum number of items to return. Defaults to 10, max 100.",
+      "maximum": 100,
+      "minimum": 1,
+      "title": "Limit",
+      "type": "integer"
+    },
+    "offset": {
+      "default": 0,
+      "description": "Number of items to skip. Defaults to 0.",
+      "minimum": 0,
+      "title": "Offset",
+      "type": "integer"
+    }
+  },
+  "title": "PaginationParams",
+  "type": "object"
+}

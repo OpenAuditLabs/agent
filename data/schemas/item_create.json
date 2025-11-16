@@ -1,0 +1,27 @@
+{
+  "properties": {
+    "name": {
+      "description": "The name of the item",
+      "title": "Name",
+      "type": "string"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "A detailed description of the item",
+      "title": "Description"
+    }
+  },
+  "required": [
+    "name"
+  ],
+  "title": "ItemCreate",
+  "type": "object"
+}
