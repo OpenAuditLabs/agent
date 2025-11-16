@@ -1,9 +1,10 @@
 """Sandboxing utilities."""
 
-import sys
-import subprocess
 import os
+import subprocess
+import sys
 import textwrap
+from typing import Optional
 
 
 def sanitize_path(base_path: str, target_path: str) -> str:
@@ -45,8 +46,8 @@ class Sandbox:
         self,
         code: str,
         timeout: int = 30,
-        cpu_time_limit: int | None = None,
-        memory_limit: int | None = None,
+        cpu_time_limit: Optional[int] = None,
+        memory_limit: Optional[int] = None,
     ) -> tuple[str, str]:
         """Run code in sandbox with timeout and resource limits.
 
@@ -59,13 +60,6 @@ class Sandbox:
         Returns:
             A tuple containing the stdout and stderr of the executed code.
         """
-        try:
-            import resource
-
-            HAS_RESOURCE = True
-        except ImportError:
-            HAS_RESOURCE = False
-
         if sys.platform == "win32":
             if cpu_time_limit is not None or memory_limit is not None:
                 print(
@@ -78,7 +72,8 @@ class Sandbox:
             env["OAL_CPU_TIME_LIMIT"] = str(cpu_time_limit)
         if memory_limit is not None:
             env["OAL_MEMORY_LIMIT"] = str(memory_limit)
-        child_script = textwrap.dedent(f"""\
+        child_script = textwrap.dedent(
+            f"""\
 import sys
 import os
 try:
@@ -111,7 +106,8 @@ if HAS_RESOURCE:
             print(f"Error: Could not set memory limit in child process: {{e}}", file=sys.stderr)
             sys.exit(1)
 exec({code!r})
-""")
+"""
+        )
 
         process = subprocess.Popen(
             [sys.executable, "-c", child_script],

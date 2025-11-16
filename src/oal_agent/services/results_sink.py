@@ -3,6 +3,7 @@
 import asyncio
 import json
 from pathlib import Path
+from typing import Any, Dict, cast
 
 import aiofiles
 
@@ -22,19 +23,19 @@ class ResultsSink:
         async with aiofiles.open(file_path, mode="w") as f:
             await f.write(json.dumps(results, indent=4))
 
-    async def retrieve(self, job_id: str) -> dict:
+    async def retrieve(self, job_id: str) -> Dict[str, Any]:
         """Retrieve analysis results asynchronously."""
         file_path = self.RESULTS_DIR / f"{job_id}.json"
         if not file_path.exists():
             return {}
         async with aiofiles.open(file_path, mode="r") as f:
             content = await f.read()
-            return json.loads(content)
+            return cast(Dict[str, Any], json.loads(content))
 
     def store_sync(self, job_id: str, results: dict):
         """Store analysis results synchronously."""
         asyncio.run(self.store(job_id, results))
 
-    def retrieve_sync(self, job_id: str) -> dict:
+    def retrieve_sync(self, job_id: str) -> Dict[str, Any]:
         """Retrieve analysis results synchronously."""
         return asyncio.run(self.retrieve(job_id))

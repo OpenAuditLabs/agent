@@ -109,6 +109,7 @@ agent/
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
+   # For profile-specific settings, create .env.<profile_name> files (e.g., .env.dev, .env.prod)
    ```
 
    **Key environment variables:**
@@ -140,6 +141,12 @@ python src/oal_agent/cli.py serve
 
 # With custom host/port
 python src/oal_agent/cli.py serve --host 0.0.0.0 --port 8080
+
+# With a specific configuration file
+python src/oal_agent/cli.py --config ~/.oal_agent.env serve
+
+# With a profile-specific configuration (e.g., .env.dev)
+python src/oal_agent/cli.py --profile dev serve
 ```
 
 **Analyze a contract:**

@@ -6,8 +6,8 @@ class MetricsCollector:
 
     def __init__(self):
         """Initialize metrics collector."""
-        self.metrics = {}
-        self.high_water_marks = {}
+        self.metrics: dict[str, float] = {}
+        self.high_water_marks: dict[str, float] = {}
 
     def increment(self, metric: str, value: int = 1):
         """Increment a metric."""
