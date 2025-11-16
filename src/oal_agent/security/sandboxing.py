@@ -26,7 +26,8 @@ def sanitize_path(base_path: str, target_path: str) -> str:
     real_target_path = os.path.realpath(os.path.join(base_path, target_path))
 
     # Ensure the target path is within the base path
-    if not real_target_path.startswith(real_base_path):
+    common_path = os.path.commonpath([real_base_path, real_target_path])
+    if common_path != real_base_path:
         raise ValueError(f"Path {target_path} attempts to escape base path {base_path}")
 
     return real_target_path
@@ -95,21 +96,19 @@ class Sandbox:
             try:
                 resource.setrlimit(resource.RLIMIT_CPU, (cpu_limit, cpu_limit))
             except Exception as e:
-                print(f"Error: Could not set CPU time limit in child process: {{e}}", file=sys.stderr)
+                print(f"Error: Could not set CPU time limit in child process: {e}", file=sys.stderr)
                 sys.exit(1)
-    
-        mem_limit_str = os.getenv("OAL_MEMORY_TIME_LIMIT")
+        mem_limit_str = os.getenv("OAL_MEMORY_LIMIT")
         if mem_limit_str:
             mem_limit = int(mem_limit_str)
             if mem_limit <= 0:
-                print(f"Error: Invalid memory limit in child process: {{mem_limit}} must be positive", file=sys.stderr)
+                print(f"Error: Invalid memory limit in child process: {mem_limit} must be positive", file=sys.stderr)
                 sys.exit(1)
             try:
                 resource.setrlimit(resource.RLIMIT_AS, (mem_limit, mem_limit))
             except Exception as e:
-                print(f"Error: Could not set memory limit in child process: {{e}}", file=sys.stderr)
+                print(f"Error: Could not set memory limit in child process: {e}", file=sys.stderr)
                 sys.exit(1)
-    
     exec({code!r})
     """
 

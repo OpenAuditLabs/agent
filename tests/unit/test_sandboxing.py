@@ -78,6 +78,22 @@ def test_sanitize_path_symlink_within_base(temp_paths):
     assert sanitized == expected_path
 
 
+def test_sanitize_path_prefix_directory_escape(temp_paths, tmp_path):
+    """Test sanitizing a path where a sibling directory has the base path as a prefix."""
+    base = str(temp_paths["base"])
+    
+    # Create a sibling directory named like "<base>_evil"
+    evil_sibling_dir = tmp_path / f"{os.path.basename(base)}_evil"
+    evil_sibling_dir.mkdir()
+    (evil_sibling_dir / "evil_file.txt").write_text("evil content")
+
+    target = f"../{os.path.basename(evil_sibling_dir)}/evil_file.txt"
+    with pytest.raises(
+        ValueError, match=f"Path {target} attempts to escape base path {base}"
+    ):
+        sanitize_path(base, target)
+
+
 @pytest.mark.skipif(
     sys.platform == "win32", reason="Resource module not available on Windows"
 )
