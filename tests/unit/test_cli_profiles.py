@@ -2,9 +2,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import os
+
 from click.testing import CliRunner
+
 from src.oal_agent.cli import cli
 from src.oal_agent.core.config import reset_settings
+
 
 def test_cli_profile_option_loads_settings(tmp_path):
     """Test that the --profile option correctly loads profile-specific settings."""
@@ -20,9 +23,13 @@ def test_cli_profile_option_loads_settings(tmp_path):
         result = runner.invoke(cli, ["--profile", "test_profile", "_debug_settings"])
 
         assert result.exit_code == 0
-        assert "Using profile-specific configuration from '.env.test_profile'" in result.output
+        assert (
+            "Using profile-specific configuration from '.env.test_profile'"
+            in result.output
+        )
         assert "API_PORT=8081" in result.output
         assert "LLM_PROVIDER=test_llm" in result.output
+
 
 def test_cli_profile_option_non_existent_file(tmp_path):
     """Test that a warning is issued if the profile file does not exist."""
@@ -32,8 +39,15 @@ def test_cli_profile_option_non_existent_file(tmp_path):
         result = runner.invoke(cli, ["--profile", "non_existent", "serve", "--help"])
 
         assert result.exit_code == 0
-        assert "Warning: Profile configuration file '.env.non_existent' not found." in result.output
-        assert "Using profile-specific configuration from '.env.non_existent'" not in result.output # Ensure it's not loaded
+        assert (
+            "Warning: Profile configuration file '.env.non_existent' not found."
+            in result.output
+        )
+        assert (
+            "Using profile-specific configuration from '.env.non_existent'"
+            not in result.output
+        )  # Ensure it's not loaded
+
 
 def test_cli_profile_and_config_options_precedence(tmp_path):
     """Test that --profile settings take precedence over --config settings."""
@@ -52,13 +66,19 @@ def test_cli_profile_and_config_options_precedence(tmp_path):
         with open(profile_env_path, "w") as f:
             f.write(profile_env_content)
 
-        result = runner.invoke(cli, ["--config", config_env_path, "--profile", "profile", "_debug_settings"])
+        result = runner.invoke(
+            cli,
+            ["--config", config_env_path, "--profile", "profile", "_debug_settings"],
+        )
 
         assert result.exit_code == 0
         assert f"Using configuration from '{config_env_path}'" in result.output
-        assert "Using profile-specific configuration from '.env.profile'" in result.output
+        assert (
+            "Using profile-specific configuration from '.env.profile'" in result.output
+        )
         assert "API_PORT=8083" in result.output
         assert "LLM_PROVIDER=profile_llm" in result.output
+
 
 def test_cli_config_and_profile_options_precedence_reversed(tmp_path):
     """Test that --config settings are applied if --profile does not override them."""
@@ -77,11 +97,16 @@ def test_cli_config_and_profile_options_precedence_reversed(tmp_path):
         with open(profile_env_path, "w") as f:
             f.write(profile_env_content)
 
-        result = runner.invoke(cli, ["--config", config_env_path, "--profile", "profile", "_debug_settings"])
+        result = runner.invoke(
+            cli,
+            ["--config", config_env_path, "--profile", "profile", "_debug_settings"],
+        )
 
         assert result.exit_code == 0
         assert f"Using configuration from '{config_env_path}'" in result.output
-        assert "Using profile-specific configuration from '.env.profile'" in result.output
+        assert (
+            "Using profile-specific configuration from '.env.profile'" in result.output
+        )
         assert "API_HOST=1.2.3.4" in result.output
         assert "API_PORT=8082" in result.output
         assert "LLM_PROVIDER=config_llm" in result.output

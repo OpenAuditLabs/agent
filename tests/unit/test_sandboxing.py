@@ -81,7 +81,7 @@ def test_sanitize_path_symlink_within_base(temp_paths):
 def test_sanitize_path_prefix_directory_escape(temp_paths, tmp_path):
     """Test sanitizing a path where a sibling directory has the base path as a prefix."""
     base = str(temp_paths["base"])
-    
+
     # Create a sibling directory named like "<base>_evil"
     evil_sibling_dir = tmp_path / f"{os.path.basename(base)}_evil"
     evil_sibling_dir.mkdir()
@@ -154,9 +154,8 @@ def test_sandbox_windows_no_limits(capsys):
 
         sandbox.run(code, cpu_time_limit=cpu_time_limit, memory_limit=memory_limit)
         captured = capsys.readouterr()
-        assert (
-            captured.stderr
-            == "Warning: CPU time and memory limits are not supported on Windows.\n"
+        assert captured.stderr == (
+            "Warning: CPU time and memory limits are not supported on Windows.\n"
         )
     else:
         pytest.skip("Test only applicable on Windows")
