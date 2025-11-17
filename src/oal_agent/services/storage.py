@@ -37,7 +37,7 @@ class StorageService:
         file_path = (self.storage_path / key).resolve()
 
         if not file_path.is_relative_to(self.storage_path):
-            return None
+            raise InvalidKey("Key leads to a path outside storage directory.")
 
         if not await asyncio.to_thread(file_path.exists):
             return None

@@ -28,7 +28,7 @@ async def test_save_invalid_key_dot_dot(storage_service):
     key = "../evil_file.txt"
     data = b"malicious content"
 
-    with pytest.raises(InvalidKey):
+    with pytest.raises(InvalidKey, match="Key cannot contain '..' or start with '/\\.'"):
         await storage_service.save(key, data)
 
 @pytest.mark.asyncio
@@ -36,36 +36,36 @@ async def test_save_invalid_key_absolute_path(storage_service):
     key = "/etc/passwd"
     data = b"malicious content"
 
-    with pytest.raises(InvalidKey):
+    with pytest.raises(InvalidKey, match="Key cannot contain '..' or start with '/\\.'"):
         await storage_service.save(key, data)
 
 @pytest.mark.asyncio
-async def test_save_key_outside_storage_path(storage_service, tmp_path):
+async def test_save_key_outside_storage_path(storage_service):
     key = "sub_dir/../../evil_file.txt"
     data = b"malicious content"
 
-    with pytest.raises(InvalidKey):
+    with pytest.raises(InvalidKey, match="Key cannot contain '..' or start with '/\\.'"):
         await storage_service.save(key, data)
 
 @pytest.mark.asyncio
 async def test_load_invalid_key_dot_dot(storage_service):
     key = "../evil_file.txt"
 
-    with pytest.raises(InvalidKey):
+    with pytest.raises(InvalidKey, match="Key cannot contain '..' or start with '/\\.'"):
         await storage_service.load(key)
 
 @pytest.mark.asyncio
 async def test_load_invalid_key_absolute_path(storage_service):
     key = "/etc/passwd"
 
-    with pytest.raises(InvalidKey):
+    with pytest.raises(InvalidKey, match="Key cannot contain '..' or start with '/\\.'"):
         await storage_service.load(key)
 
 @pytest.mark.asyncio
 async def test_load_key_outside_storage_path(storage_service):
     key = "sub_dir/../../evil_file.txt"
 
-    with pytest.raises(InvalidKey):
+    with pytest.raises(InvalidKey, match="Key cannot contain '..' or start with '/\\.'"):
         await storage_service.load(key)
 
 @pytest.mark.asyncio
