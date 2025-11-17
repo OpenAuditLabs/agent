@@ -35,3 +35,9 @@ class OrchestrationError(OALAgentError):
     """Error during orchestration."""
 
     pass
+
+
+class InvalidKey(OALAgentError):
+    """Invalid key error."""
+
+    pass
