@@ -38,6 +38,12 @@ To integrate with a broader telemetry system like OpenTelemetry, you would typic
 
 Example of extending `setup_logging` (conceptual, requires OpenTelemetry SDK installation):
 
+::: danger OpenTelemetry Logs API is Experimental
+The OpenTelemetry Logs API and SDK are currently experimental and unstable. Imports from `opentelemetry.sdk._logs` (and other `_logs` submodules) may change in minor or patch releases and could require code updates.
+
+For the latest status and to track breaking changes, please refer to the [official OpenTelemetry Python Logs API documentation](https://opentelemetry.io/docs/instrumentation/python/manual/#logs).
+:::
+
 ```python
 import logging
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
@@ -86,7 +92,7 @@ To set up a basic OpenTelemetry environment for exporting telemetry data, you'll
 First, install the necessary OpenTelemetry packages:
 
 ```bash
-pip install opentelemetry-sdk opentelemetry-exporter-otlp opentelemetry-instrumentation-logging
+pip install opentelemetry-sdk opentelemetry-exporter-otlp opentelemetry-instrumentation-logging opentelemetry-instrumentation-fastapi opentelemetry-instrumentation-uvicorn opentelemetry-instrumentation-requests
 ```
 
 ### 2. Console Exporter (for local development/debugging)
