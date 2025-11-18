@@ -32,3 +32,16 @@ Security validation, policies, and sandboxing.
 
 ### Telemetry
 Logging, metrics, and distributed tracing.
+
+## Event Flow
+
+```mermaid
+graph TD
+    A[Job Enqueued] --> B(QueueService.enqueue);
+    B --> C{Job Queue};
+    C --> D(QueueService._worker);
+    D --> E(QueueService.dequeue);
+    E --> F(Orchestrator.orchestrate);
+    F --> G(CoordinatorAgent.route);
+    G --> H[Task Routed to Specialized Agent];
+```
