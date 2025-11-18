@@ -4,6 +4,7 @@ import asyncio
 import time
 from typing import Any, Dict, Optional
 
+from oal_agent.core.orchestrator import Orchestrator
 from oal_agent.telemetry.logging import get_logger
 from oal_agent.telemetry.metrics import metrics
 
@@ -24,6 +25,7 @@ class QueueService:
         self.queue_url = queue_url
         self.queue: asyncio.Queue[Dict[str, Any]] = asyncio.Queue(maxsize=max_size)
         self.worker_task = None
+        self.orchestrator = Orchestrator()
 
     async def enqueue(self, job_id: str, job_data: dict):
         """Add a job to the queue."""
@@ -47,7 +49,7 @@ class QueueService:
                 start_time = time.time()
                 try:
                     logger.debug("Processing job: %s", job["job_id"])
-                    # Process the job here. For now, just acknowledge it.
+                    await self.orchestrator.orchestrate(job["job_id"])
                 except Exception:
                     metrics.increment("queue_processing_errors_total")
                     logger.exception("Error processing job: %s", job["job_id"])
