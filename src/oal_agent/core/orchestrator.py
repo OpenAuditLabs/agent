@@ -15,7 +15,7 @@ class Orchestrator:
         """Initialize the orchestrator."""
         self.coordinator_agent = CoordinatorAgent()
 
-    async def orchestrate(self, job_id: str):
+    async def orchestrate(self, job_id: str, job_data: dict):
         """Orchestrate an analysis job."""
         logger.info("Starting orchestration for job_id: %s", job_id)
         try:
@@ -24,7 +24,7 @@ class Orchestrator:
             if job_id == "simulate_error":
                 raise ValueError("Simulated orchestration error")
             # Call coordinator to route the task
-            await self.coordinator_agent.route({"job_id": job_id, "task_data": "..."})
+            await self.coordinator_agent.route({"job_id": job_id, "job_data": job_data})
             logger.info("Orchestration completed for job_id: %s", job_id)
         except Exception as e:
             logger.error("Orchestration failed for job_id: %s: %s", job_id, e)

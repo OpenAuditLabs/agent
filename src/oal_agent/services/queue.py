@@ -49,7 +49,7 @@ class QueueService:
                 start_time = time.time()
                 try:
                     logger.debug("Processing job: %s", job["job_id"])
-                    await self.orchestrator.orchestrate(job["job_id"])
+                    await self.orchestrator.orchestrate(job["job_id"], job["job_data"])
                 except Exception:
                     metrics.increment("queue_processing_errors_total")
                     logger.exception("Error processing job: %s", job["job_id"])
