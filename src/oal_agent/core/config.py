@@ -17,6 +17,7 @@ class Settings(BaseSettings):
         queue_max_size: The maximum size of the message queue. Defaults to 100.
         llm_provider: The provider for the Large Language Model. Defaults to "openai".
         llm_api_key: The API key for the LLM provider. Defaults to an empty string.
+        coordinator_timeout: The timeout in seconds for the coordinator agent's routing. Defaults to 5.
     """
 
     api_host: str = (
@@ -31,6 +32,7 @@ class Settings(BaseSettings):
 
     llm_provider: str = "openai"
     llm_api_key: str = ""
+    coordinator_timeout: int = 5
 
     @classmethod
     def from_dict(cls, env_vars: Dict[str, str]) -> "Settings":
