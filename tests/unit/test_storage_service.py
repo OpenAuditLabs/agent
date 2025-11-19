@@ -49,15 +49,16 @@ async def test_save_key_outside_storage_path(storage_service):
     data = b"malicious content"
 
     with pytest.raises(
-        InvalidKey, match=r"Key cannot contain '\.\.' or start with '/'"
+        InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"
     ):
         await storage_service.save(key, data)
 
 
 @pytest.mark.asyncio
 async def test_load_invalid_key_dot_dot(storage_service):
+    key = "../secret"
     with pytest.raises(
-        InvalidKey, match=r"Key cannot contain '\\.\.' or start with '/' "
+        InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"
     ):
         await storage_service.load(key)
 
