@@ -1,11 +1,11 @@
 """Orchestrator for coordinating analysis tasks."""
 
-import logging
 import asyncio
+import logging
 
-from oal_agent.core.errors import OrchestrationError
 from oal_agent.agents.coordinator import CoordinatorAgent
 from oal_agent.core.config import settings
+from oal_agent.core.errors import OrchestrationError
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,9 @@ class Orchestrator:
             logger.info("Orchestration completed for job_id: %s", job_id)
         except asyncio.TimeoutError as e:
             logger.error("Coordinator routing timed out for job_id: %s", job_id)
-            raise OrchestrationError(f"Coordinator routing timed out for job {job_id}") from e
+            raise OrchestrationError(
+                f"Coordinator routing timed out for job {job_id}"
+            ) from e
         except Exception as e:
             logger.error("Orchestration failed for job_id: %s: %s", job_id, e)
             raise OrchestrationError(f"Failed to orchestrate job {job_id}: {e}") from e

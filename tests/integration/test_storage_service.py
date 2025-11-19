@@ -1,13 +1,16 @@
-import pytest
-import aiofiles
 from pathlib import Path
 
+
+import pytest
+
 from src.oal_agent.services.storage import StorageService
+
 
 @pytest.fixture
 def storage_service(tmp_path: Path) -> StorageService:
     """Fixture for StorageService with a temporary storage path."""
     return StorageService(storage_path=str(tmp_path))
+
 
 @pytest.mark.asyncio
 async def test_save_and_load_data(storage_service: StorageService):
@@ -20,6 +23,7 @@ async def test_save_and_load_data(storage_service: StorageService):
 
     assert loaded_data == data
 
+
 @pytest.mark.asyncio
 async def test_load_non_existent_data(storage_service: StorageService):
     """Test loading non-existent data."""
@@ -27,6 +31,7 @@ async def test_load_non_existent_data(storage_service: StorageService):
     loaded_data = await storage_service.load(key)
 
     assert loaded_data is None
+
 
 @pytest.mark.asyncio
 async def test_save_to_subfolder_and_load(storage_service: StorageService):

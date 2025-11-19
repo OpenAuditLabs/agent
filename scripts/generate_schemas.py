@@ -7,17 +7,21 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).parent.parent))
 
 from src.oal_agent.app.schemas.items import ItemCreate, ItemUpdate
-from src.oal_agent.app.schemas.jobs import PaginationParams, JobRequest, JobResponse
+from src.oal_agent.app.schemas.jobs import JobRequest, JobResponse, PaginationParams
 
 SCHEMA_DIR = Path(__file__).parent.parent / "data" / "schemas"
 SCHEMA_DIR.mkdir(parents=True, exist_ok=True)
 
+
 def generate_schema(model, filename):
     schema = model.model_json_schema()
     if model == ItemUpdate:
-        schema["x-validation-note"] = "At least one of 'name' or 'description' must be provided."
+        schema["x-validation-note"] = (
+            "At least one of 'name' or 'description' must be provided."
+        )
     with open(SCHEMA_DIR / filename, "w") as f:
         json.dump(schema, f, indent=2)
+
 
 if __name__ == "__main__":
     # Items schemas

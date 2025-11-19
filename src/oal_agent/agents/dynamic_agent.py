@@ -12,9 +12,13 @@ class DynamicAgent:
         self.logger = setup_logger(self.__class__.__name__, logging.DEBUG)
         self.logger.debug("DynamicAgent initialized with params: %s", self.init_params)
 
-    async def analyze(self, contract_code: str, contract_id: str, analysis_params: dict):
+    async def analyze(
+        self, contract_code: str, contract_id: str, analysis_params: dict
+    ):
         """Perform dynamic analysis."""
-        self.logger.debug("Analyzing contract %s with params: %s", contract_id, analysis_params)
+        self.logger.debug(
+            "Analyzing contract %s with params: %s", contract_id, analysis_params
+        )
         # TODO: Implement dynamic analysis
         analysis_summary = "Placeholder summary for dynamic analysis."
         self.logger.debug("Analysis result for %s: %s", contract_id, analysis_summary)
