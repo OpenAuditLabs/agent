@@ -1,17 +1,16 @@
-import asyncio
 import pytest
-from pathlib import Path
-import aiofiles
 import pytest_asyncio
 
-from src.oal_agent.services.storage import StorageService
 from src.oal_agent.core.errors import InvalidKey
+from src.oal_agent.services.storage import StorageService
+
 
 @pytest_asyncio.fixture
 async def storage_service(tmp_path):
     storage_path = tmp_path / "test_storage"
     storage_path.mkdir()
     return StorageService(str(storage_path))
+
 
 @pytest.mark.asyncio
 async def test_save_and_load_valid_key(storage_service):
@@ -23,54 +22,72 @@ async def test_save_and_load_valid_key(storage_service):
 
     assert loaded_data == data
 
+
 @pytest.mark.asyncio
 async def test_save_rejects_invalid_key_dotdot(storage_service):
     key = "../invalid/key"
     data = b"sample data"
-    with pytest.raises(InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"):\
-:
+    with pytest.raises(
+        InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"
+    ):
         await storage_service.save(key, data)
+
 
 @pytest.mark.asyncio
 async def test_save_invalid_key_absolute_path(storage_service):
     key = "/absolute/path"
     data = b"sample data"
-    with pytest.raises(InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"):\
-
+    with pytest.raises(
+        InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"
+    ):
         await storage_service.save(key, data)
+
 
 @pytest.mark.asyncio
 async def test_save_key_outside_storage_path(storage_service):
     key = "sub_dir/../../evil_file.txt"
     data = b"malicious content"
 
-    with pytest.raises(InvalidKey, match=r"Key cannot contain '\.\.' or start with '/'"):
+    with pytest.raises(
+        InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"
+    ):
         await storage_service.save(key, data)
+
 
 @pytest.mark.asyncio
 async def test_load_invalid_key_dot_dot(storage_service):
-        with pytest.raises(InvalidKey, match=r"Key cannot contain '\\.\.' or start with '/' "):\
+    key = "../secret"
+    with pytest.raises(
+        InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"
+    ):
         await storage_service.load(key)
+
 
 @pytest.mark.asyncio
 async def test_load_invalid_key_absolute_path(storage_service):
     key = "/invalid/path"
-    with pytest.raises(InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"):\
-
+    with pytest.raises(
+        InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"
+    ):
         await storage_service.load(key)
+
 
 @pytest.mark.asyncio
 async def test_load_key_outside_storage_path(storage_service):
     key = "sub_dir/../../evil_file.txt"
 
-            with pytest.raises(InvalidKey, match="Key cannot contain '..' or start with '/'"):\
-            await storage_service.load(key)
+    with pytest.raises(
+        InvalidKey, match=r"Key cannot contain '\\.\\.' or start with '/'"
+    ):
+        await storage_service.load(key)
+
 
 @pytest.mark.asyncio
 async def test_load_non_existent_file(storage_service):
     key = "non_existent_file.txt"
     loaded_data = await storage_service.load(key)
     assert loaded_data is None
+
 
 @pytest.mark.asyncio
 async def test_save_nested_directory(storage_service):
@@ -80,6 +97,7 @@ async def test_save_nested_directory(storage_service):
     loaded_data = await storage_service.load(key)
     assert loaded_data == data
 
+
 @pytest.mark.asyncio
 async def test_load_file_from_nested_directory(storage_service):
     key = "dir1/dir2/nested_file.txt"
@@ -88,6 +106,7 @@ async def test_load_file_from_nested_directory(storage_service):
     loaded_data = await storage_service.load(key)
     assert loaded_data == data
 
+
 @pytest.mark.asyncio
 async def test_save_empty_data(storage_service):
     key = "empty.txt"
@@ -95,6 +114,7 @@ async def test_save_empty_data(storage_service):
     await storage_service.save(key, data)
     loaded_data = await storage_service.load(key)
     assert loaded_data == data
+
 
 @pytest.mark.asyncio
 async def test_overwrite_file(storage_service):
@@ -106,6 +126,7 @@ async def test_overwrite_file(storage_service):
     await storage_service.save(key, data2)
     loaded_data = await storage_service.load(key)
     assert loaded_data == data2
+
 
 @pytest.mark.asyncio
 async def test_storage_path_resolution(tmp_path):

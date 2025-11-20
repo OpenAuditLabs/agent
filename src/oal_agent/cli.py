@@ -39,8 +39,18 @@ from .core.config import Settings, settings
     type=str,
     help="Load profile-specific settings from .env.<profile_name> (e.g., 'dev' loads .env.dev)",
 )
+@click.option(
+    "--timeout",
+    type=int,
+    help="Timeout for API requests in seconds (e.g., 30)",
+)
 @click.pass_context
-def cli(ctx: click.Context, config: Optional[str], profile: Optional[str]):
+def cli(
+    ctx: click.Context,
+    config: Optional[str],
+    profile: Optional[str],
+    timeout: Optional[int],
+):
     """OAL Agent CLI."""
     all_env_vars = {}
 
@@ -70,9 +80,13 @@ def cli(ctx: click.Context, config: Optional[str], profile: Optional[str]):
             )
 
     if all_env_vars:
+        if timeout is not None:
+            all_env_vars["request_timeout"] = str(timeout)
         ctx.obj = Settings.from_dict(all_env_vars)
     else:
         ctx.obj = settings
+        if timeout is not None:
+            ctx.obj.request_timeout = timeout
 
 
 @cli.command(help="Start the OAL Agent API server.")
@@ -124,7 +138,7 @@ def status(ctx: click.Context, job_id: str):
     click.echo(f"Fetching status for job ID: {job_id} from {api_url}...")
     try:
         # Use a timeout to avoid the CLI hanging indefinitely. Adjust default as needed or make configurable.
-        response = requests.get(api_url, timeout=15)
+        response = requests.get(api_url, timeout=current_settings.request_timeout)
         response.raise_for_status()  # Raise an exception for HTTP errors (4xx or 5xx)
         job_response = JobResponse.model_validate(response.json())
         click.echo(f"Job ID: {job_response.job_id}")
