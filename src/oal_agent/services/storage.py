@@ -1,5 +1,4 @@
 import asyncio
-import os
 import secrets
 from pathlib import Path
 from typing import Optional
@@ -7,10 +6,11 @@ from typing import Optional
 import aiofiles
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
 from oal_agent.core.config import settings
-from oal_agent.core.errors import InvalidKey, DecryptionError
+from oal_agent.core.errors import DecryptionError, InvalidKey
 
 """Storage service."""
 
@@ -31,51 +31,49 @@ class StorageService:
         """
         self.storage_path = Path(storage_path).resolve()
         self.encryption_key = encryption_key
+        self._derived_key = None
 
-        if settings.storage_encryption_enabled and not self.encryption_key:
-            raise ValueError("Encryption key must be provided when storage encryption is enabled.")
-
-    def _derive_key(self, key: bytes, salt: bytes) -> bytes:
-        """Derive a fixed-size key from the provided encryption key using PBKDF2HMAC."""
-        kdf = PBKDF2HMAC(
-            algorithm=hashes.SHA256(),
-            length=32,
-            salt=salt,
-            iterations=480000,
-            backend=default_backend()
-        )
-        return kdf.derive(key)
+        if settings.storage_encryption_enabled:
+            if not self.encryption_key:
+                raise ValueError(
+                    "Encryption key must be provided when storage encryption is enabled."
+                )
+            salt = b"OpenAuditLabs_Storage_v1"
+            kdf = PBKDF2HMAC(
+                algorithm=hashes.SHA256(),
+                length=32,
+                salt=salt,
+                iterations=480000,
+                backend=default_backend(),
+            )
+            self._derived_key = kdf.derive(self.encryption_key)
 
     def _encrypt(self, data: bytes) -> bytes:
         """Encrypt data using AES-256-GCM."""
-        if not self.encryption_key:
+        if not self._derived_key:
             return data
 
-        salt = os.urandom(16)
-        derived_key = self._derive_key(self.encryption_key, salt)
-        aesgcm = AESGCM(derived_key)
-        nonce = os.urandom(12)
+        aesgcm = AESGCM(self._derived_key)
+        nonce = secrets.token_bytes(12)
         ciphertext = aesgcm.encrypt(nonce, data, None)
-        return salt + nonce + ciphertext
+        return nonce + ciphertext
 
     def _decrypt(self, data: bytes) -> bytes:
         """Decrypt data using AES-256-GCM."""
-        if not self.encryption_key:
+        if not self._derived_key:
             return data
 
-        if len(data) < 28:  # 16 bytes salt + 12 bytes nonce
-            raise DecryptionError("Ciphertext too short for decryption.")
+        if len(data) < 12:  # 12 bytes nonce
+            raise DecryptionError("Ciphertext too short.")
 
-        salt = data[:16]
-        nonce = data[16:28]
-        ciphertext = data[28:]
+        nonce = data[:12]
+        ciphertext = data[12:]
 
-        derived_key = self._derive_key(self.encryption_key, salt)
-        aesgcm = AESGCM(derived_key)
+        aesgcm = AESGCM(self._derived_key)
         try:
             return aesgcm.decrypt(nonce, ciphertext, None)
         except Exception as e:
-            raise DecryptionError("Decryption failed: Invalid key or corrupted data.") from e
+            raise DecryptionError("Decryption failed.") from e
 
     async def save(self, key: str, data: bytes):
         """Save data to storage. If encryption is enabled, data will be encrypted at rest."""

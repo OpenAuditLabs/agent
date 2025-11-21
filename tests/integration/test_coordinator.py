@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-
 from oal_agent.core.config import settings
 from oal_agent.core.errors import OrchestrationError
 from oal_agent.core.orchestrator import Orchestrator

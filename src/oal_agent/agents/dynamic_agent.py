@@ -6,7 +6,7 @@ from oal_agent.utils.logging_utils import setup_logger
 class DynamicAgent:
     """Performs dynamic analysis on smart contracts."""
 
-    def __init__(self, init_params: dict = None):
+    def __init__(self, init_params: dict = {}):
         """Initialize the dynamic agent."""
         self.init_params = init_params if init_params is not None else {}
         self.logger = setup_logger(self.__class__.__name__, logging.DEBUG)
