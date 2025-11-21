@@ -1,13 +1,16 @@
 import asyncio
-import hashlib
+import os
 import secrets
 from pathlib import Path
 from typing import Optional
 
 import aiofiles
-
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from oal_agent.core.config import settings
-from oal_agent.core.errors import InvalidKey
+from oal_agent.core.errors import InvalidKey, DecryptionError
 
 """Storage service."""
 
@@ -32,33 +35,47 @@ class StorageService:
         if settings.storage_encryption_enabled and not self.encryption_key:
             raise ValueError("Encryption key must be provided when storage encryption is enabled.")
 
-    def _derive_key(self, key: bytes) -> bytes:
-        """Derive a fixed-size key from the provided encryption key using SHA256."""
-        return hashlib.sha256(key).digest()
+    def _derive_key(self, key: bytes, salt: bytes) -> bytes:
+        """Derive a fixed-size key from the provided encryption key using PBKDF2HMAC."""
+        kdf = PBKDF2HMAC(
+            algorithm=hashes.SHA256(),
+            length=32,
+            salt=salt,
+            iterations=480000,
+            backend=default_backend()
+        )
+        return kdf.derive(key)
 
     def _encrypt(self, data: bytes) -> bytes:
-        """Encrypt data using a simple XOR cipher with the derived encryption key.
-
-        WARNING: This is a placeholder for demonstration purposes. In a production environment,
-        a robust cryptographic library (e.g., `cryptography`) and a proper encryption scheme
-        (e.g., AES-256 with GCM) should be used.
-        """
+        """Encrypt data using AES-256-GCM."""
         if not self.encryption_key:
             return data
-        derived_key = self._derive_key(self.encryption_key)
-        return bytes(d ^ derived_key[i % len(derived_key)] for i, d in enumerate(data))
+
+        salt = os.urandom(16)
+        derived_key = self._derive_key(self.encryption_key, salt)
+        aesgcm = AESGCM(derived_key)
+        nonce = os.urandom(12)
+        ciphertext = aesgcm.encrypt(nonce, data, None)
+        return salt + nonce + ciphertext
 
     def _decrypt(self, data: bytes) -> bytes:
-        """Decrypt data using a simple XOR cipher with the derived encryption key.
-
-        WARNING: This is a placeholder for demonstration purposes. In a production environment,
-        a robust cryptographic library (e.g., `cryptography`) and a proper encryption scheme
-        (e.g., AES-256 with GCM) should be used.
-        """
+        """Decrypt data using AES-256-GCM."""
         if not self.encryption_key:
             return data
-        derived_key = self._derive_key(self.encryption_key)
-        return bytes(d ^ derived_key[i % len(derived_key)] for i, d in enumerate(data))
+
+        if len(data) < 28:  # 16 bytes salt + 12 bytes nonce
+            raise DecryptionError("Ciphertext too short for decryption.")
+
+        salt = data[:16]
+        nonce = data[16:28]
+        ciphertext = data[28:]
+
+        derived_key = self._derive_key(self.encryption_key, salt)
+        aesgcm = AESGCM(derived_key)
+        try:
+            return aesgcm.decrypt(nonce, ciphertext, None)
+        except Exception as e:
+            raise DecryptionError("Decryption failed: Invalid key or corrupted data.") from e
 
     async def save(self, key: str, data: bytes):
         """Save data to storage. If encryption is enabled, data will be encrypted at rest."""
