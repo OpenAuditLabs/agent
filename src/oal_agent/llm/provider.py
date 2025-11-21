@@ -115,4 +115,3 @@ class OpenAIProvider(LLMProvider):
                     await asyncio.sleep(backoff_time)
                 else:
                     raise
-        raise LLMTimeoutError("Failed to generate text after multiple retries.")
