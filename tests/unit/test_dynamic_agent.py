@@ -23,7 +23,7 @@ class TestDynamicAgent:
         """
         agent = DynamicAgent()
         contract_code = "pragma solidity ^0.8.0; contract MyContract {}"
-        await agent.analyze(contract_code)
+        await agent.analyze(contract_code, "test_contract_id", {})
         # As the method is a placeholder, no specific return value or side effect is expected yet.
         # The test simply ensures that calling the method does not raise an exception.
         assert True

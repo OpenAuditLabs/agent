@@ -41,3 +41,9 @@ class InvalidKey(OALAgentError):
     """Invalid key error."""
 
     pass
+
+
+class DecryptionError(OALAgentError):
+    """Decryption error."""
+
+    pass
