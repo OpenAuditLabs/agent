@@ -23,12 +23,6 @@ class StorageService:
     """
 
     def __init__(self, storage_path: str, encryption_key: Optional[bytes] = None):
-        """Initialize storage service.
-
-        Args:
-            storage_path: The base path for storing files.
-            encryption_key: An optional key for at-rest encryption. Required if encryption is enabled.
-        """
         self.storage_path = Path(storage_path).resolve()
         self.encryption_key = encryption_key
         self._derived_key = None
