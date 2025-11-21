@@ -19,6 +19,7 @@ class Settings(BaseSettings):
         llm_api_key: The API key for the LLM provider. Defaults to an empty string.
         coordinator_timeout: The timeout in seconds for the coordinator agent's routing. Defaults to 5.
         request_timeout: The timeout in seconds for API requests. Defaults to 15.
+        storage_encryption_enabled: Whether to enable at-rest encryption for stored data. Defaults to False.
     """
 
     api_host: str = (
@@ -35,6 +36,7 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     coordinator_timeout: int = 5
     request_timeout: int = 15
+    storage_encryption_enabled: bool = False
 
     @classmethod
     def from_dict(cls, env_vars: Dict[str, str]) -> "Settings":
