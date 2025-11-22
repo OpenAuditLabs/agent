@@ -55,7 +55,7 @@ def test_get_job_results_not_found(client):
 
 
 @pytest.mark.parametrize(
-    "payload, expected_status_code, error_detail",
+    "payload, expected_status_code, expected_error_detail",
     [
         # Missing contract_code
         (
@@ -65,7 +65,7 @@ def test_get_job_results_not_found(client):
                 "pipeline": "static",
             },
             422,
-            "Field required",
+            {"loc": ["body", "contract_code"], "msg": "Field required"},
         ),
         # contract_code not a string
         (
@@ -76,7 +76,7 @@ def test_get_job_results_not_found(client):
                 "pipeline": "static",
             },
             422,
-            "Input should be a valid string",
+            {"loc": ["body", "contract_code"], "msg": "Input should be a valid string"},
         ),
         # chain_id not an integer
         (
@@ -87,7 +87,7 @@ def test_get_job_results_not_found(client):
                 "pipeline": "static",
             },
             422,
-            "Input should be a valid integer, unable to parse string as an integer",
+            {"loc": ["body", "chain_id"], "msg": "Input should be a valid integer, unable to parse string as an integer"},
         ),
         # pipeline not a string
         (
@@ -98,12 +98,12 @@ def test_get_job_results_not_found(client):
                 "pipeline": 123,
             },
             422,
-            "Input should be a valid string",
+            {"loc": ["body", "pipeline"], "msg": "Input should be a valid string"},
         ),
     ],
 )
 def test_submit_analysis_malformed_payload(
-    client, payload, expected_status_code, error_detail
+    client, payload, expected_status_code, expected_error_detail
 ):
     """
     Test submitting a smart contract for analysis with malformed payloads.
@@ -112,7 +112,10 @@ def test_submit_analysis_malformed_payload(
 
     assert response.status_code == expected_status_code
     response_data = response.json()
-    assert any(error_detail in err["msg"] for err in response_data["detail"])
+    assert any(
+        err["loc"] == expected_error_detail["loc"] and expected_error_detail["msg"] in err["msg"]
+        for err in response_data["detail"]
+    )
 
 
 # TODO: Add tests for successful job status and results retrieval once the
