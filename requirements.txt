@@ -8,3 +8,5 @@ tiktoken>=0.5.1
 tenacity>=8.2.3
 pyyaml>=6.0.1
 cryptography>=44.0.1
+opentelemetry-sdk
+opentelemetry-api
