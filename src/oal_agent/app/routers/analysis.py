@@ -1,9 +1,4 @@
-"""Analysis router."""
-
-import logging
-import uuid
-
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 
 from oal_agent.app.schemas.jobs import JobRequest, JobResponse
 from oal_agent.app.schemas.results import AnalysisResult, AnalysisStatus
@@ -16,16 +11,11 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 results_sink = ResultsSink()
 
 
-@router.head(
-    "/",
-    response_model={},
-    response_model_examples={
-        "success": {"summary": "Readiness check successful", "value": {}}
-    },
-)
-async def readiness_check():
+@router.head("/")
+async def readiness_check(response: Response):
     """Perform a readiness check for the analysis service."""
-    return {}
+    response.status_code = 200
+    return
 
 
 @router.post("/", response_model=JobResponse)
