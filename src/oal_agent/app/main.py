@@ -13,7 +13,7 @@ from oal_agent.core.config import settings
 from oal_agent.services.queue import QueueService
 from oal_agent.telemetry.logging import get_logger, setup_logging
 
-from .routers import analysis, items
+from .routers import analysis, items, users
 
 setup_logging()
 
@@ -65,6 +65,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 
 app.include_router(analysis.router, prefix="/api/v1")
 app.include_router(items.router, prefix="/api/v1/items")
+app.include_router(users.router, prefix="/api/v1/users")
 
 
 @app.get("/")
