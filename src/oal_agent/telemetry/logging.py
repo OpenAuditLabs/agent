@@ -1,16 +1,16 @@
 """Standardized logging configuration for human and machine readability."""
 
+import contextvars
 import logging
 import os
 import sys
-import contextvars
-import uuid
 
 DEFAULT_LOG_FORMAT = "%(asctime)s - %(levelname)s - %(name)s - %(request_id)s - %(correlation_id)s - %(message)s"
 DEFAULT_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S%z"
 
 request_id_ctx = contextvars.ContextVar("request_id", default=None)
 correlation_id_ctx = contextvars.ContextVar("correlation_id", default=None)
+
 
 class RequestIDFilter(logging.Filter):
     def filter(self, record):

@@ -1,26 +1,32 @@
+import aiofiles
 import pytest
 import pytest_asyncio
-import aiofiles
 
 from src.oal_agent.core.errors import DecryptionError, InvalidKey
 from src.oal_agent.services.storage import StorageService
-from src.oal_agent.core.config import settings
 
 
 @pytest.mark.asyncio
 async def test_storage_service_init_encryption_enabled_no_key(tmp_path, monkeypatch):
     # Mock settings.storage_encryption_enabled at its import path
-    monkeypatch.setattr('src.oal_agent.core.config.settings', 'storage_encryption_enabled', True)
+    monkeypatch.setattr(
+        "src.oal_agent.core.config.settings", "storage_encryption_enabled", True
+    )
     storage_path = tmp_path / "test_storage_enc_no_key"
     storage_path.mkdir()
-    with pytest.raises(ValueError, match="Encryption key must be provided when storage encryption is enabled."):
+    with pytest.raises(
+        ValueError,
+        match="Encryption key must be provided when storage encryption is enabled.",
+    ):
         StorageService(str(storage_path), encryption_key=None)
 
 
 @pytest_asyncio.fixture
 async def unencrypted_storage_service_with_key(tmp_path, monkeypatch):
     # Mock settings.storage_encryption_enabled at its import path
-    monkeypatch.setattr('src.oal_agent.core.config.settings', 'storage_encryption_enabled', False)
+    monkeypatch.setattr(
+        "src.oal_agent.core.config.settings", "storage_encryption_enabled", False
+    )
     encryption_key = b"a_key_that_should_be_ignored_by_fixture"
     storage_path = tmp_path / "unencrypted_test_storage_with_key"
     storage_path.mkdir()
@@ -30,7 +36,9 @@ async def unencrypted_storage_service_with_key(tmp_path, monkeypatch):
 @pytest_asyncio.fixture
 async def encrypted_storage_service(tmp_path, monkeypatch):
     # Mock settings.storage_encryption_enabled at its import path
-    monkeypatch.setattr('src.oal_agent.core.config.settings', 'storage_encryption_enabled', True)
+    monkeypatch.setattr(
+        "src.oal_agent.core.config.settings", "storage_encryption_enabled", True
+    )
     encryption_key = b"a_fixture_secret_key_for_testing"
     storage_path = tmp_path / "encrypted_test_storage"
     storage_path.mkdir()
@@ -67,7 +75,9 @@ async def test_load_decryption_error_corrupted_data(encrypted_storage_service):
 
 
 @pytest.mark.asyncio
-async def test_storage_service_init_encryption_disabled_with_key(unencrypted_storage_service_with_key):
+async def test_storage_service_init_encryption_disabled_with_key(
+    unencrypted_storage_service_with_key,
+):
     service = unencrypted_storage_service_with_key
     storage_path = service.storage_path
 
@@ -86,7 +96,9 @@ async def test_storage_service_init_encryption_disabled_with_key(unencrypted_sto
 
 
 @pytest.mark.asyncio
-async def test_storage_service_init_encryption_enabled_with_key(encrypted_storage_service):
+async def test_storage_service_init_encryption_enabled_with_key(
+    encrypted_storage_service,
+):
     service = encrypted_storage_service
     storage_path = service.storage_path
 
@@ -99,10 +111,13 @@ async def test_storage_service_init_encryption_enabled_with_key(encrypted_storag
     async with aiofiles.open(file_path, mode="rb") as f:
         encrypted_data = await f.read()
     assert encrypted_data != data
-    assert len(encrypted_data) > len(data) # Encrypted data should be longer due to nonce/tag
+    assert len(encrypted_data) > len(
+        data
+    )  # Encrypted data should be longer due to nonce/tag
 
     loaded_data = await service.load(key)
     assert loaded_data == data
+
 
 @pytest.mark.asyncio
 async def test_save_and_load_valid_key(storage_service):
@@ -226,5 +241,3 @@ async def test_storage_path_resolution(tmp_path):
     absolute_storage_path.mkdir()
     service_abs = StorageService(str(absolute_storage_path))
     assert service_abs.storage_path == absolute_storage_path.resolve()
-
-

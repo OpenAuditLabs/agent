@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     coordinator_timeout: int = 5
     request_timeout: int = 15
     storage_encryption_enabled: bool = False
+    prometheus_pushgateway_url: str | None = None
+    prometheus_pushgateway_job: str = "oal_agent"
+    prometheus_pushgateway_enabled: bool = False
 
     @classmethod
     def from_dict(cls, env_vars: Dict[str, str]) -> "Settings":

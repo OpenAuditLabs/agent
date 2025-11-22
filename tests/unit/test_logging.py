@@ -140,7 +140,12 @@ def test_date_format_from_env_var(caplog):
 
 def test_request_id_filter():
     """Test that RequestIDFilter adds request_id and correlation_id to log records and they appear in output."""
-    from src.oal_agent.telemetry.logging import request_id_ctx, correlation_id_ctx, get_logger, setup_logging
+    from src.oal_agent.telemetry.logging import (
+        correlation_id_ctx,
+        get_logger,
+        request_id_ctx,
+        setup_logging,
+    )
 
     with patch.object(sys, "stdout", new_callable=StringIO) as mock_stdout:
         setup_logging()
@@ -160,6 +165,7 @@ def test_request_id_filter():
         finally:
             request_id_ctx.reset(token_req)
             correlation_id_ctx.reset(token_corr)
+
 
 def test_request_id_filter_no_ids():
     """Test that RequestIDFilter uses default values when no IDs are set and they appear in output."""
