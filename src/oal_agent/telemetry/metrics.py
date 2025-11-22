@@ -1,8 +1,12 @@
 """Metrics collection."""
 
+import logging
+
 from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
 
 from src.oal_agent.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class MetricsCollector:
@@ -54,11 +58,11 @@ class MetricsCollector:
                 job=settings.prometheus_pushgateway_job,
                 registry=registry,
             )
-            print(
+            logger.info(
                 f"Metrics pushed to Prometheus Pushgateway at {settings.prometheus_pushgateway_url}"
             )
-        except Exception as e:
-            print(f"Failed to push metrics to Prometheus Pushgateway: {e}")
+        except Exception:
+            logger.exception("Failed to push metrics to Prometheus Pushgateway")
 
 
 metrics = MetricsCollector()
