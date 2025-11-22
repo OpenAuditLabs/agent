@@ -2,13 +2,14 @@ import aiofiles
 import pytest
 import pytest_asyncio
 
-from src.oal_agent.core.config import reset_settings
+
 from src.oal_agent.core.errors import DecryptionError, InvalidKey
 from src.oal_agent.services.storage import StorageService
 import src.oal_agent.services.storage as storage_module
 
 
 @pytest.mark.asyncio
+async def test_storage_service_init_encryption_enabled_no_key(tmp_path, monkeypatch):
     monkeypatch.setattr(
         storage_module.settings, "storage_encryption_enabled", True
     )
