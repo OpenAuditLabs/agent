@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from src.oal_agent.app.main import app
+from oal_agent.app.main import app
 
 
 @pytest.fixture(scope="module")
