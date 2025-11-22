@@ -53,6 +53,71 @@ def test_get_job_results_not_found(client):
     assert response.json() == {"detail": "Results not found"}
 
 
+
+@pytest.mark.parametrize(
+    "payload, expected_status_code, expected_error_detail",
+    [
+        # Missing contract_code
+        (
+            {
+                "contract_address": "0x1234567890123456789012345678901234567890",
+                "chain_id": 1,
+                "pipeline": "static",
+            },
+            422,
+            {"loc": ["body", "contract_code"], "msg": "Field required"},
+        ),
+        # contract_code not a string
+        (
+            {
+                "contract_code": 123,
+                "contract_address": "0x1234567890123456789012345678901234567890",
+                "chain_id": 1,
+                "pipeline": "static",
+            },
+            422,
+            {"loc": ["body", "contract_code"], "msg": "Input should be a valid string"},
+        ),
+        # chain_id not an integer
+        (
+            {
+                "contract_code": "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }",
+                "contract_address": "0x1234567890123456789012345678901234567890",
+                "chain_id": "one",
+                "pipeline": "static",
+            },
+            422,
+            {"loc": ["body", "chain_id"], "msg": "Input should be a valid integer, unable to parse string as an integer"},
+        ),
+        # pipeline not a string
+        (
+            {
+                "contract_code": "pragma solidity ^0.8.0; contract MyContract { function foo() public {} }",
+                "contract_address": "0x1234567890123456789012345678901234567890",
+                "chain_id": 1,
+                "pipeline": 123,
+            },
+            422,
+            {"loc": ["body", "pipeline"], "msg": "Input should be a valid string"},
+        ),
+    ],
+)
+def test_submit_analysis_malformed_payload(
+    client, payload, expected_status_code, expected_error_detail
+):
+    """
+    Test submitting a smart contract for analysis with malformed payloads.
+    """
+    response = client.post("/api/v1/analysis/", json=payload)
+
+    assert response.status_code == expected_status_code
+    response_data = response.json()
+    assert any(
+        err["loc"] == expected_error_detail["loc"] and expected_error_detail["msg"] in err["msg"]
+        for err in response_data["detail"]
+    )
+
+
 # TODO: Add tests for successful job status and results retrieval once the
 #       corresponding logic is implemented in the analysis router.
 #       These tests currently expect 404 as per the router's placeholder implementation.
