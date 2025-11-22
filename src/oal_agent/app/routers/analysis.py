@@ -16,6 +16,18 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 results_sink = ResultsSink()
 
 
+@router.head(
+    "/",
+    response_model={},
+    response_model_examples={
+        "success": {"summary": "Readiness check successful", "value": {}}
+    },
+)
+async def readiness_check():
+    """Perform a readiness check for the analysis service."""
+    return {}
+
+
 @router.post("/", response_model=JobResponse)
 async def submit_analysis(job: JobRequest):
     """Submit a smart contract for analysis."""
