@@ -1,3 +1,6 @@
+import logging
+import uuid
+
 from fastapi import APIRouter, HTTPException, Response
 
 from oal_agent.app.schemas.jobs import JobRequest, JobResponse

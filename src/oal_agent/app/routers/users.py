@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -18,12 +18,24 @@ async def get_all_users(
         ge=0,
         description="Number of users to skip",
     ),
+    role: Optional[str] = Query(
+        None,
+        description="Filter users by role",
+        examples=["admin"],
+    ),
+    status: Optional[str] = Query(
+        None,
+        description="Filter users by status",
+        examples=["active"],
+    ),
 ):
-    """Retrieve a list of all users with pagination.
+    """Retrieve a list of all users with pagination and optional filtering.
 
     Args:
         limit (int): Maximum number of users to return. Defaults to 100, min 1, max 1000.
         offset (int): Number of users to skip. Defaults to 0, min 0.
+        role (Optional[str]): Filter users by role.
+        status (Optional[str]): Filter users by status.
 
     Returns:
         dict: (WIP) A dictionary containing:
