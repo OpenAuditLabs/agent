@@ -21,7 +21,9 @@ def test_get_all_users_default_pagination(client):
     response_data = response.json()
     assert "users" in response_data
     assert isinstance(response_data["users"], list)
-    assert response_data["total_count"] == 0  # As per current placeholder implementation
+    assert (
+        response_data["total_count"] == 0
+    )  # As per current placeholder implementation
     assert response_data["limit"] == 100
     assert response_data["offset"] == 0
 

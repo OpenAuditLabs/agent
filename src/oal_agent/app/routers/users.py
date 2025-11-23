@@ -1,29 +1,51 @@
-from typing import Any, Dict, List
+import logging
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
+from oal_agent.app.schemas.users import UserRole, UserStatus
+
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
+
+_DEFAULT_LIMIT_QUERY = Query(
+    100,
+    ge=1,
+    le=1000,
+    description="Maximum number of users to return",
+)
+_DEFAULT_OFFSET_QUERY = Query(
+    0,
+    ge=0,
+    description="Number of users to skip",
+)
+_DEFAULT_ROLE_QUERY = Query(
+    None,
+    description="Filter users by role",
+    examples=["admin"],
+)
+_DEFAULT_STATUS_QUERY = Query(
+    None,
+    description="Filter users by status",
+    examples=["active"],
+)
 
 
 @router.get("/", summary="Get all users", response_description="List of all users")
 async def get_all_users(
-    limit: int = Query(
-        100,
-        ge=1,
-        le=1000,
-        description="Maximum number of users to return",
-    ),
-    offset: int = Query(
-        0,
-        ge=0,
-        description="Number of users to skip",
-    ),
+    limit: int = _DEFAULT_LIMIT_QUERY,
+    offset: int = _DEFAULT_OFFSET_QUERY,
+    role: Optional[UserRole] = _DEFAULT_ROLE_QUERY,
+    status: Optional[UserStatus] = _DEFAULT_STATUS_QUERY,
 ):
-    """Retrieve a list of all users with pagination.
+    """Retrieve a list of all users with pagination and optional filtering.
 
     Args:
         limit (int): Maximum number of users to return. Defaults to 100, min 1, max 1000.
         offset (int): Number of users to skip. Defaults to 0, min 0.
+        role (Optional[UserRole]): Filter users by role.
+        status (Optional[UserStatus]): Filter users by status.
 
     Returns:
         dict: (WIP) A dictionary containing:
@@ -40,6 +62,16 @@ async def get_all_users(
             []
         )  # Replace with actual user data from the service
         total_count = 0  # Replace with actual total count from the service
+
+        # Apply role filter if provided
+        if role:
+            # In a real implementation, this would filter the user collection/queryset
+            logger.debug("Filtering by role: %s", role.value)
+
+        # Apply status filter if provided
+        if status:
+            # In a real implementation, this would filter the user collection/queryset
+            logger.debug("Filtering by status: %s", status.value)
 
         return {
             "users": users,

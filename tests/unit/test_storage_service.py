@@ -2,17 +2,14 @@ import aiofiles
 import pytest
 import pytest_asyncio
 
-
+import src.oal_agent.services.storage as storage_module
 from src.oal_agent.core.errors import DecryptionError, InvalidKey
 from src.oal_agent.services.storage import StorageService
-import src.oal_agent.services.storage as storage_module
 
 
 @pytest.mark.asyncio
 async def test_storage_service_init_encryption_enabled_no_key(tmp_path, monkeypatch):
-    monkeypatch.setattr(
-        storage_module.settings, "storage_encryption_enabled", True
-    )
+    monkeypatch.setattr(storage_module.settings, "storage_encryption_enabled", True)
     storage_path = tmp_path / "test_storage_enc_no_key"
     storage_path.mkdir()
     with pytest.raises(
@@ -25,9 +22,7 @@ async def test_storage_service_init_encryption_enabled_no_key(tmp_path, monkeypa
 @pytest_asyncio.fixture
 async def unencrypted_storage_service_with_key(tmp_path, monkeypatch):
     # Mock settings.storage_encryption_enabled at its import path
-    monkeypatch.setattr(
-        storage_module.settings, "storage_encryption_enabled", False
-    )
+    monkeypatch.setattr(storage_module.settings, "storage_encryption_enabled", False)
     encryption_key = b"a_key_that_should_be_ignored_by_fixture"
     storage_path = tmp_path / "unencrypted_test_storage_with_key"
     storage_path.mkdir()
@@ -38,9 +33,7 @@ async def unencrypted_storage_service_with_key(tmp_path, monkeypatch):
 @pytest_asyncio.fixture
 async def encrypted_storage_service(tmp_path, monkeypatch):
     # Mock settings.storage_encryption_enabled at its import path
-    monkeypatch.setattr(
-        storage_module.settings, "storage_encryption_enabled", True
-    )
+    monkeypatch.setattr(storage_module.settings, "storage_encryption_enabled", True)
     encryption_key = b"a_fixture_secret_key_for_testing"
     storage_path = tmp_path / "encrypted_test_storage"
     storage_path.mkdir()

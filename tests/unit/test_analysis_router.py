@@ -53,7 +53,6 @@ def test_get_job_results_not_found(client):
     assert response.json() == {"detail": "Results not found"}
 
 
-
 @pytest.mark.parametrize(
     "payload, expected_status_code, expected_error_detail",
     [
@@ -87,7 +86,10 @@ def test_get_job_results_not_found(client):
                 "pipeline": "static",
             },
             422,
-            {"loc": ["body", "chain_id"], "msg": "Input should be a valid integer, unable to parse string as an integer"},
+            {
+                "loc": ["body", "chain_id"],
+                "msg": "Input should be a valid integer, unable to parse string as an integer",
+            },
         ),
         # pipeline not a string
         (
@@ -113,7 +115,8 @@ def test_submit_analysis_malformed_payload(
     assert response.status_code == expected_status_code
     response_data = response.json()
     assert any(
-        err["loc"] == expected_error_detail["loc"] and expected_error_detail["msg"] in err["msg"]
+        err["loc"] == expected_error_detail["loc"]
+        and expected_error_detail["msg"] in err["msg"]
         for err in response_data["detail"]
     )
 
