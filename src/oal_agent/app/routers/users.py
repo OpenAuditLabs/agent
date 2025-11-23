@@ -1,5 +1,5 @@
-from typing import Any, Dict, List, Optional
 import logging
+from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -9,30 +9,35 @@ router = APIRouter()
 
 logger = logging.getLogger(__name__)
 
+_DEFAULT_LIMIT_QUERY = Query(
+    100,
+    ge=1,
+    le=1000,
+    description="Maximum number of users to return",
+)
+_DEFAULT_OFFSET_QUERY = Query(
+    0,
+    ge=0,
+    description="Number of users to skip",
+)
+_DEFAULT_ROLE_QUERY = Query(
+    None,
+    description="Filter users by role",
+    examples=["admin"],
+)
+_DEFAULT_STATUS_QUERY = Query(
+    None,
+    description="Filter users by status",
+    examples=["active"],
+)
+
 
 @router.get("/", summary="Get all users", response_description="List of all users")
 async def get_all_users(
-    limit: int = Query(
-        100,
-        ge=1,
-        le=1000,
-        description="Maximum number of users to return",
-    ),
-    offset: int = Query(
-        0,
-        ge=0,
-        description="Number of users to skip",
-    ),
-    role: Optional[UserRole] = Query(
-        None,
-        description="Filter users by role",
-        examples=["admin"],
-    ),
-    status: Optional[UserStatus] = Query(
-        None,
-        description="Filter users by status",
-        examples=["active"],
-    ),
+    limit: int = _DEFAULT_LIMIT_QUERY,
+    offset: int = _DEFAULT_OFFSET_QUERY,
+    role: Optional[UserRole] = _DEFAULT_ROLE_QUERY,
+    status: Optional[UserStatus] = _DEFAULT_STATUS_QUERY,
 ):
     """Retrieve a list of all users with pagination and optional filtering.
 
