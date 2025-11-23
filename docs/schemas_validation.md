@@ -13,29 +13,29 @@ The `min_length` and `max_length` constraints are implemented to:
 
 When creating a new item, the following rules apply:
 
-*   **`name` (string, required):**
-  *   Must have a minimum length of `3` characters.
-  *   Must have a maximum length of `50` characters.
-*   **`description` (string, optional):**
-  *   If provided, must have a minimum length of `10` characters.
-  *   If provided, must have a maximum length of `500` characters.
-  *   Empty strings (`""`) are **not** considered valid if a description is provided. To omit a description, do not include the field or send `null`.
+* **`name` (string, required):**
+  * Must have a minimum length of `3` characters.
+  * Must have a maximum length of `50` characters.
+* **`description` (string, optional):**
+  * If provided, must have a minimum length of `10` characters.
+  * If provided, must have a maximum length of `500` characters.
+  * Empty strings (`""`) are **not** considered valid if a description is provided. To omit a description, do not include the field or send `null`.
 
 ## ItemUpdate Schema Validation
 
 When updating an existing item, the following rules apply:
 
-*   **`name` (string, optional):**
-  *   If provided, must have a minimum length of `3` characters.
-  *   If provided, must have a maximum length of `50` characters.
-  *   Empty strings (`""`) are **not** considered valid for updating the name. To clear the name, `null` must be explicitly sent.
-*   **`description` (string, optional):**
-  *   If provided, must have a minimum length of `10` characters.
-  *   If provided, must have a maximum length of `500` characters.
-  *   Empty strings (`""`) are **not** considered valid for updating the description. To clear the description, `null` must be explicitly sent.
-*   **Partial Update Semantics:**
-  *   The `ItemUpdate` schema enforces that at least one of `name` or `description` must be provided in the request body. An update request with an empty body or only `null` values for both fields will be rejected.
-  *   **Important Behavioral Change:** Unlike some partial update patterns, sending an empty string (`""`) for an optional field like `name` or `description` will result in a validation error due to the `min_length` constraint. To explicitly remove or clear the value of an optional field, clients **must** send `null` for that field.
+* **`name` (string, optional):**
+  * Must have a minimum length of `3` characters.
+  * Must have a maximum length of `50` characters.
+  * Empty strings (`""`) are **not** considered valid for updating the name. To clear the name, `null` must be explicitly sent.
+* **`description` (string, optional):**
+  * Must have a minimum length of `10` characters.
+  * Must have a maximum length of `500` characters.
+  * Empty strings (`""`) are **not** considered valid for updating the description. To clear the description, `null` must be explicitly sent.
+* **Partial Update Semantics:**
+  * The `ItemUpdate` schema enforces that at least one of `name` or `description` must be provided in the request body. An update request with an empty body or only `null` values for both fields will be rejected.
+  * **Important Behavioral Change:** Unlike some partial update patterns, sending an empty string (`""`) for an optional field like `name` or `description` will result in a validation error due to the `min_length` constraint. To explicitly remove or clear the value of an optional field, clients **must** send `null` for that field.
 
 ## Impact on Existing Clients and Justification
 
