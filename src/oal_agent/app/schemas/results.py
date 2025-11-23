@@ -17,14 +17,43 @@ class AnalysisStatus(str, Enum):
     UNKNOWN = "unknown"
 
 
+class Severity(str, Enum):
+    """Enumeration for the severity of a security finding."""
+
+    CRITICAL = "Critical"
+    HIGH = "High"
+    MEDIUM = "Medium"
+    LOW = "Low"
+    INFORMATIONAL = "Informational"
+
+
 class Finding(BaseModel):
     """Security finding schema."""
 
-    severity: str
-    title: str
-    description: str
-    location: Dict[str, Any]
-    recommendation: str
+    severity: Severity = Field(..., description="The severity of the finding.")
+    title: str = Field(..., min_length=1, description="The title of the finding.")
+    description: str = Field(
+        ..., min_length=1, description="A detailed description of the finding."
+    )
+    location: Dict[str, Any] = Field(
+        ..., description="The location of the finding within the code."
+    )
+    recommendation: str = Field(
+        ..., min_length=1, description="Recommended actions to remediate the finding."
+    )
+
+    class Config:
+        """Pydantic model configuration."""
+
+        json_schema_extra: ClassVar[Dict[str, Any]] = {
+            "example": {
+                "severity": "High",
+                "title": "Reentrancy Vulnerability",
+                "description": "The contract is vulnerable to reentrancy attacks.",
+                "location": {"file": "contract.sol", "line": 10, "column": 5},
+                "recommendation": "Implement checks-effects-interactions pattern.",
+            }
+        }
 
 
 class AnalysisResult(BaseModel):
