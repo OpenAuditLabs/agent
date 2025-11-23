@@ -3,7 +3,9 @@
     "name": {
       "anyOf": [
         {
-          "type": "string"
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 50
         },
         {
           "type": "null"
@@ -16,7 +18,9 @@
     "description": {
       "anyOf": [
         {
-          "type": "string"
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
         },
         {
           "type": "null"
