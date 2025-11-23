@@ -4,6 +4,7 @@
 """Main FastAPI application."""
 
 import sys
+import os
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
@@ -90,3 +91,14 @@ async def ready():
 async def metrics():
     """Metrics endpoint."""
     return {"metrics": "Not implemented yet"}
+
+
+@app.get("/build-info")
+async def build_info():
+    """Returns build information from environment variables."""
+    return {
+        "git_commit_sha": os.getenv("GIT_COMMIT_SHA", "N/A"),
+        "git_branch": os.getenv("GIT_BRANCH", "N/A"),
+        "git_tag": os.getenv("GIT_TAG", "N/A"),
+        "build_date": os.getenv("BUILD_DATE", "N/A"),
+    }
