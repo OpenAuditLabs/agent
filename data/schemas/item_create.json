@@ -3,12 +3,16 @@
     "name": {
       "description": "The name of the item",
       "title": "Name",
-      "type": "string"
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 50
     },
     "description": {
       "anyOf": [
         {
-          "type": "string"
+          "type": "string",
+          "minLength": 10,
+          "maxLength": 500
         },
         {
           "type": "null"
