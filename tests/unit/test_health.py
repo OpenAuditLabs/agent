@@ -27,3 +27,13 @@ def test_metrics_endpoint():
     response = client.get("/metrics")
     assert response.status_code == 200
     assert response.json() == {"metrics": "Not implemented yet"}
+
+
+def test_build_info_endpoint():
+    response = client.get("/build-info")
+    assert response.status_code == 200
+    json_response = response.json()
+    assert "git_commit_sha" in json_response
+    assert "git_branch" in json_response
+    assert "git_tag" in json_response
+    assert "build_date" in json_response
