@@ -2,6 +2,8 @@ from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException, Query
 
+from oal_agent.app.schemas.users import UserRole, UserStatus
+
 router = APIRouter()
 
 
@@ -18,12 +20,12 @@ async def get_all_users(
         ge=0,
         description="Number of users to skip",
     ),
-    role: Optional[str] = Query(
+    role: Optional[UserRole] = Query(
         None,
         description="Filter users by role",
         examples=["admin"],
     ),
-    status: Optional[str] = Query(
+    status: Optional[UserStatus] = Query(
         None,
         description="Filter users by status",
         examples=["active"],
@@ -52,6 +54,16 @@ async def get_all_users(
             []
         )  # Replace with actual user data from the service
         total_count = 0  # Replace with actual total count from the service
+
+        # Apply role filter if provided
+        if role:
+            # In a real implementation, this would filter the user collection/queryset
+            print(f"Filtering by role: {role.value}")
+
+        # Apply status filter if provided
+        if status:
+            # In a real implementation, this would filter the user collection/queryset
+            print(f"Filtering by status: {status.value}")
 
         return {
             "users": users,
