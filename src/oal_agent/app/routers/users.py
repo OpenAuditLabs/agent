@@ -1,10 +1,13 @@
 from typing import Any, Dict, List, Optional
+import logging
 
 from fastapi import APIRouter, HTTPException, Query
 
 from oal_agent.app.schemas.users import UserRole, UserStatus
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 
 
 @router.get("/", summary="Get all users", response_description="List of all users")
@@ -36,8 +39,8 @@ async def get_all_users(
     Args:
         limit (int): Maximum number of users to return. Defaults to 100, min 1, max 1000.
         offset (int): Number of users to skip. Defaults to 0, min 0.
-        role (Optional[str]): Filter users by role.
-        status (Optional[str]): Filter users by status.
+        role (Optional[UserRole]): Filter users by role.
+        status (Optional[UserStatus]): Filter users by status.
 
     Returns:
         dict: (WIP) A dictionary containing:
@@ -58,12 +61,12 @@ async def get_all_users(
         # Apply role filter if provided
         if role:
             # In a real implementation, this would filter the user collection/queryset
-            print(f"Filtering by role: {role.value}")
+            logger.debug("Filtering by role: %s", role.value)
 
         # Apply status filter if provided
         if status:
             # In a real implementation, this would filter the user collection/queryset
-            print(f"Filtering by status: {status.value}")
+            logger.debug("Filtering by status: %s", status.value)
 
         return {
             "users": users,
