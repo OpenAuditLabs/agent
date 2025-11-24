@@ -2,6 +2,7 @@
 
 from typing import Dict
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -43,7 +44,7 @@ class Settings(BaseSettings):
     prometheus_pushgateway_job: str = "oal_agent"
     prometheus_pushgateway_enabled: bool = False
     evaluation_mode: bool = False
-    max_concurrent_pipelines: int = 10
+    max_concurrent_pipelines: int = Field(10, gt=0)
 
     @classmethod
     def from_dict(cls, env_vars: Dict[str, str]) -> "Settings":
