@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     prometheus_pushgateway_url: str | None = None
     prometheus_pushgateway_job: str = "oal_agent"
     prometheus_pushgateway_enabled: bool = False
+    evaluation_mode: bool = False
 
     @classmethod
     def from_dict(cls, env_vars: Dict[str, str]) -> "Settings":
