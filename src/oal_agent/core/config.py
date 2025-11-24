@@ -20,6 +20,7 @@ class Settings(BaseSettings):
         coordinator_timeout: The timeout in seconds for the coordinator agent's routing. Defaults to 5.
         request_timeout: The timeout in seconds for API requests. Defaults to 15.
         storage_encryption_enabled: Whether to enable at-rest encryption for stored data. Defaults to False.
+        evaluation_mode: A boolean indicating whether the agent is running in evaluation mode. Defaults to False.
     """
 
     api_host: str = (
