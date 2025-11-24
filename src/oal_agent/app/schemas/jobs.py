@@ -1,8 +1,8 @@
 """Job schemas."""
 
-from typing import Optional
+from typing import Optional, Self
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator, ValidationError
 
 
 class PaginationParams(BaseModel):
@@ -32,3 +32,26 @@ class JobResponse(BaseModel):
     job_id: str
     status: str
     message: Optional[str] = None
+    previous_status: Optional[str] = None
+
+    @model_validator(mode="after")
+    def validate_status_transition(self) -> Self:
+        new_status = self.status
+        previous_status = self.previous_status
+
+        if previous_status is None:
+            # Initial state, any status is allowed
+            return self
+
+        allowed_transitions = {
+            "PENDING": ["RUNNING"],
+            "RUNNING": ["COMPLETED", "FAILED"],
+            "COMPLETED": [],
+            "FAILED": [],
+        }
+
+        if new_status not in allowed_transitions.get(previous_status, []):
+            raise ValueError(
+                f"Invalid state transition from '{previous_status}' to '{new_status}'"
+            )
+        return self
