@@ -62,6 +62,6 @@ def test_request_metadata_dependency_no_headers(client):
     response_data = response.json()
 
     assert response_data["request_id"] is None
-    assert response_data["user_agent"] is None
+    assert response_data["user_agent"] == "testclient"
     assert response_data["x_forwarded_for"] is None
     assert response_data["client_ip"] is None
