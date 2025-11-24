@@ -130,7 +130,7 @@ async def test_save_and_load_valid_key(storage_service):
 async def test_save_rejects_invalid_key_dotdot(storage_service):
     key = "../invalid/key"
     data = b"sample data"
-    with pytest.raises(InvalidKey, match=r"Key cannot contain"):
+    with pytest.raises(InvalidKey, match=r"Key cannot contain '..' or start '/' "):
         await storage_service.save(key, data)
 
 
@@ -138,7 +138,7 @@ async def test_save_rejects_invalid_key_dotdot(storage_service):
 async def test_save_invalid_key_absolute_path(storage_service):
     key = "/absolute/path"
     data = b"sample data"
-    with pytest.raises(InvalidKey, match=r"Key cannot contain"):
+    with pytest.raises(InvalidKey, match=r"Key cannot contain '..' or start '/'"):
         await storage_service.save(key, data)
 
 
@@ -146,28 +146,28 @@ async def test_save_invalid_key_absolute_path(storage_service):
 async def test_save_key_outside_storage_path(storage_service):
     key = "sub_dir/../../evil_file.txt"
     data = b"malicious content"
-    with pytest.raises(InvalidKey, match=r"Key cannot contain"):
+    with pytest.raises(InvalidKey, match=r"Key leads to a path outside storage directory."):
         await storage_service.save(key, data)
 
 
 @pytest.mark.asyncio
 async def test_load_invalid_key_dot_dot(storage_service):
     key = "../secret"
-    with pytest.raises(InvalidKey, match=r"Key cannot contain"):
+    with pytest.raises(InvalidKey, match=r"Key cannot contain '..' or start '/'"):
         await storage_service.load(key)
 
 
 @pytest.mark.asyncio
 async def test_load_invalid_key_absolute_path(storage_service):
     key = "/invalid/path"
-    with pytest.raises(InvalidKey, match=r"Key cannot contain"):
+    with pytest.raises(InvalidKey, match=r"Key cannot contain '..' or start '/' "):
         await storage_service.load(key)
 
 
 @pytest.mark.asyncio
 async def test_load_key_outside_storage_path(storage_service):
     key = "sub_dir/../../evil_file.txt"
-    with pytest.raises(InvalidKey, match=r"Key cannot contain"):
+    with pytest.raises(InvalidKey, match=r"Key leads to a path outside storage directory."):
         await storage_service.load(key)
 
 

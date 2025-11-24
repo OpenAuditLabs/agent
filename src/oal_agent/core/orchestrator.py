@@ -37,10 +37,10 @@ class Orchestrator:
             except asyncio.TimeoutError as e:
                 logger.error("Job %s: Coordinator routing timed out.", job_id)
                 raise OrchestrationError(
-                    f"Coordinator routing timed out for job {job_id}"
+                    message=f"Coordinator routing timed out for job {job_id}"
                 ) from e
             except Exception as e:
                 logger.error("Job %s: Orchestration failed: %s", job_id, e)
-                raise OrchestrationError(f"Failed to orchestrate job {job_id}: {e}") from e
+                raise OrchestrationError(message=f"Failed to orchestrate job {job_id}: {e}") from e
             finally:
                 logger.info("Job %s: Released pipeline slot.", job_id)

@@ -58,7 +58,7 @@ class StorageService:
             return data
 
         if len(data) < 12:  # 12 bytes nonce
-            raise DecryptionError("Ciphertext too short.")
+            raise DecryptionError(message="Ciphertext too short.")
 
         nonce = data[:12]
         ciphertext = data[12:]
@@ -67,34 +67,34 @@ class StorageService:
         try:
             return aesgcm.decrypt(nonce, ciphertext, None)
         except Exception as e:
-            raise DecryptionError("Decryption failed.") from e
+            raise DecryptionError(message="Decryption failed.") from e
 
     async def save(self, key: str, data: bytes):
         """Save data to storage. If encryption is enabled, data will be encrypted at rest."""
         if ".." in key or key.startswith("/"):
-            raise InvalidKey("Key cannot contain '..' or start '/'.")
+            raise InvalidKey(message="Key cannot contain '..' or start '/'.")
 
         file_path = (self.storage_path / key).resolve()
 
         if not file_path.is_relative_to(self.storage_path):
-            raise InvalidKey("Key leads to a path outside storage directory.")
+            raise InvalidKey(message="Key leads to a path outside storage directory.")
 
         if settings.storage_encryption_enabled and self.encryption_key:
             data = self._encrypt(data)
 
-        await asyncio.to_thread(file_path.parent.mkdir, parents=True, exist_ok=True)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         async with aiofiles.open(file_path, mode="wb") as f:
             await f.write(data)
 
     async def load(self, key: str):
         """Load data from storage. If encryption is enabled, data will be decrypted after loading."""
         if ".." in key or key.startswith("/"):
-            raise InvalidKey("Key cannot contain '..' or start '/'.")
+            raise InvalidKey(message="Key cannot contain '..' or start '/'.")
 
         file_path = (self.storage_path / key).resolve()
 
         if not file_path.is_relative_to(self.storage_path):
-            raise InvalidKey("Key leads to a path outside storage directory.")
+            raise InvalidKey(message="Key leads to a path outside storage directory.")
 
         if not await asyncio.to_thread(file_path.exists):
             return None
