@@ -2,6 +2,7 @@
 
 from typing import Dict
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,6 +22,7 @@ class Settings(BaseSettings):
         request_timeout: The timeout in seconds for API requests. Defaults to 15.
         storage_encryption_enabled: Whether to enable at-rest encryption for stored data. Defaults to False.
         evaluation_mode: A boolean indicating whether the agent is running in evaluation mode. Defaults to False.
+        max_concurrent_pipelines: The maximum number of analysis pipelines that can run concurrently. Defaults to 10.
     """
 
     api_host: str = (
@@ -42,6 +44,7 @@ class Settings(BaseSettings):
     prometheus_pushgateway_job: str = "oal_agent"
     prometheus_pushgateway_enabled: bool = False
     evaluation_mode: bool = False
+    max_concurrent_pipelines: int = Field(10, gt=0)
 
     @classmethod
     def from_dict(cls, env_vars: Dict[str, str]) -> "Settings":
