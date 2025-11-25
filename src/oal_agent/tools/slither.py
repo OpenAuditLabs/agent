@@ -35,7 +35,9 @@ class SlitherTool:
 
 def _map_severity(impact: str) -> Severity:
     """Maps Slither's impact string to internal Severity enum."""
-    impact_lower = impact.lower()
+    impact_lower = (impact or "").lower()
+    if "critical" in impact_lower:
+        return Severity.CRITICAL
     if "high" in impact_lower:
         return Severity.HIGH
     if "medium" in impact_lower:

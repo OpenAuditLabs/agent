@@ -91,7 +91,7 @@ def test_parse_slither_output(sample_slither_json_output):
     expected_findings = [
         {
             "check": "uninitialized-state-variables",
-            "impact": "High",
+            "severity": Severity.HIGH.value,
             "confidence": "High",
             "description": "State variables are not initialized.",
             "elements": [
@@ -122,6 +122,7 @@ def test_parse_slither_output_invalid_json():
 
 
 def test_map_severity():
+    assert _map_severity("Critical") == Severity.CRITICAL
     assert _map_severity("High") == Severity.HIGH
     assert _map_severity("Medium") == Severity.MEDIUM
     assert _map_severity("Low") == Severity.LOW
@@ -130,5 +131,5 @@ def test_map_severity():
     assert _map_severity("medium") == Severity.MEDIUM
     assert _map_severity("low") == Severity.LOW
     assert _map_severity("informational") == Severity.INFORMATIONAL
-    assert _map_severity("Critical") == Severity.LOW  # Slither doesn't have Critical, defaults to LOW
     assert _map_severity("Unknown Impact") == Severity.LOW
+    assert _map_severity(None) == Severity.LOW
