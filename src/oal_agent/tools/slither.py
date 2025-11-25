@@ -2,6 +2,9 @@
 
 import json
 import subprocess
+from enum import Enum
+
+from oal_agent.app.schemas.results import Severity
 
 
 class SlitherTool:
@@ -37,11 +40,32 @@ def parse_slither_output(json_output: str) -> list[dict]:
     """
     data = json.loads(json_output)
     findings = []
+def _map_severity(impact: str) -> Severity:
+    """Maps Slither's impact string to internal Severity enum."""
+    impact_lower = impact.lower()
+    if "high" in impact_lower:
+        return Severity.HIGH
+    if "medium" in impact_lower:
+        return Severity.MEDIUM
+    if "low" in impact_lower:
+        return Severity.LOW
+    if "informational" in impact_lower:
+        return Severity.INFORMATIONAL
+    return Severity.LOW  # Default or unknown impact
+
+
+def parse_slither_output(json_output: str) -> list[dict]:
+    """
+    Parses the JSON output from Slither and normalizes findings.
+    """
+    data = json.loads(json_output)
+    findings = []
     if "results" in data and "detectors" in data["results"]:
         for detector_finding in data["results"]["detectors"]:
+            severity = _map_severity(detector_finding.get("impact", "Low"))
             finding = {
                 "check": detector_finding.get("check"),
-                "impact": detector_finding.get("impact"),
+                "severity": severity.value,  # Use the mapped severity
                 "confidence": detector_finding.get("confidence"),
                 "description": detector_finding.get("description"),
                 "elements": detector_finding.get("elements", []),

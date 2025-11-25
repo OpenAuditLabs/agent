@@ -4,7 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
-from src.oal_agent.tools.slither import SlitherTool, parse_slither_output
+from oal_agent.app.schemas.results import Severity
+from src.oal_agent.tools.slither import SlitherTool, parse_slither_output, _map_severity
 
 
 @pytest.fixture
@@ -118,3 +119,16 @@ def test_parse_slither_output_no_detectors_key():
 def test_parse_slither_output_invalid_json():
     with pytest.raises(json.JSONDecodeError):
         parse_slither_output("invalid json")
+
+
+def test_map_severity():
+    assert _map_severity("High") == Severity.HIGH
+    assert _map_severity("Medium") == Severity.MEDIUM
+    assert _map_severity("Low") == Severity.LOW
+    assert _map_severity("Informational") == Severity.INFORMATIONAL
+    assert _map_severity("high") == Severity.HIGH
+    assert _map_severity("medium") == Severity.MEDIUM
+    assert _map_severity("low") == Severity.LOW
+    assert _map_severity("informational") == Severity.INFORMATIONAL
+    assert _map_severity("Critical") == Severity.LOW  # Slither doesn't have Critical, defaults to LOW
+    assert _map_severity("Unknown Impact") == Severity.LOW
