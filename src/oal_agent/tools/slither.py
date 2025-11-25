@@ -2,7 +2,6 @@
 
 import json
 import subprocess
-from enum import Enum
 
 from oal_agent.app.schemas.results import Severity
 
@@ -34,12 +33,6 @@ class SlitherTool:
             raise Exception(f"Slither analysis failed: {e.stderr}") from e
 
 
-def parse_slither_output(json_output: str) -> list[dict]:
-    """
-    Parses the JSON output from Slither and normalizes findings.
-    """
-    data = json.loads(json_output)
-    findings = []
 def _map_severity(impact: str) -> Severity:
     """Maps Slither's impact string to internal Severity enum."""
     impact_lower = impact.lower()
