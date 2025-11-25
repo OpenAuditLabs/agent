@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     """
     Application settings.
 
+    Settings are loaded in the following order of precedence (highest to lowest):
+    1.  Arguments passed directly to the Settings constructor.
+    2.  Environment variables (e.g., `API_HOST`).
+    3.  Variables loaded from a `.env` file in the project root.
+    4.  Default values defined in the Settings class.
+
     Attributes:
         api_host: The host for the API server. Defaults to "127.0.0.1".
         api_port: The port for the API server. Defaults to 8000.
