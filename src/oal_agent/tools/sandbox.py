@@ -25,8 +25,8 @@ async def execute_external_command(command: str, *args: str) -> SandboxResult:
     )
     stdout, stderr = await process.communicate()
     return SandboxResult(
-        stdout=stdout.decode().strip(),
-        stderr=stderr.decode().strip(),
+        stdout=stdout.decode('utf-8', errors='replace').rstrip("\n"),
+        stderr=stderr.decode('utf-8', errors='replace').rstrip("\n"),
         exit_code=process.returncode,
     )
 

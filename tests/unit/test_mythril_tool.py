@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, Mock, patch
 import pytest
 
 from oal_agent.tools.mythril import MythrilTool
+from oal_agent.tools.sandbox import SandboxResult
 
 
 @pytest.fixture
@@ -22,11 +23,11 @@ async def test_analyze_uses_temp_file_and_cleans_up(mythril_tool):
     with patch(
         "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
     ) as mock_execute:
-        mock_execute.return_value = "Mythril analysis result"
+        mock_execute.return_value = SandboxResult(stdout="Mythril analysis result", stderr="", exit_code=0)
 
         result = await mythril_tool.analyze(contract_code)
 
-        assert result == "Mythril analysis result"
+        assert result.stdout == "Mythril analysis result"
         mock_execute.assert_called_once()
 
         args = mock_execute.call_args[0]
@@ -43,7 +44,7 @@ async def test_analyze_returns_result_despite_cleanup_error(mythril_tool, tmp_pa
     contract_code = (
         "pragma solidity ^0.8.0; contract MyContract { function bar() public {} }"
     )
-    mock_result = "Analysis result despite cleanup error"
+    mock_result = SandboxResult(stdout="Analysis result despite cleanup error", stderr="", exit_code=0)
 
     with patch(
         "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
@@ -55,7 +56,7 @@ async def test_analyze_returns_result_despite_cleanup_error(mythril_tool, tmp_pa
             with patch("oal_agent.tools.mythril.logger") as mock_logger:
                 result = await mythril_tool.analyze(contract_code)
 
-                assert result == mock_result
+                assert result.stdout == mock_result.stdout
                 mock_unlink.assert_called_once()
                 # Ensure the logger.warning was called
                 mock_logger.warning.assert_called_once()
@@ -73,7 +74,7 @@ async def test_analyze_temp_file_content(mythril_tool, tmp_path):
         with open(temp_file_path, "r") as f:
             content = f.read()
             assert content == contract_code
-        return "Content verified result"
+        return SandboxResult(stdout="Content verified result", stderr="", exit_code=0)
 
     original_named_temp_file = tempfile.NamedTemporaryFile
 
@@ -91,7 +92,7 @@ async def test_analyze_temp_file_content(mythril_tool, tmp_path):
         with patch("tempfile.NamedTemporaryFile", side_effect=mock_named_temp_file):
             result = await mythril_tool.analyze(contract_code)
 
-            assert result == "Content verified result"
+            assert result.stdout == "Content verified result"
             assert temp_file_path is not None
             assert not os.path.exists(
                 temp_file_path
@@ -168,7 +169,7 @@ async def test_analyze_file_permissions_set(mythril_tool, tmp_path):
         "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
     ) as mock_execute:
         with patch("os.chmod") as mock_chmod:
-            mock_execute.return_value = "Permission check result"
+            mock_execute.return_value = SandboxResult(stdout="Permission check result", stderr="", exit_code=0)
 
             # To ensure tempfile.NamedTemporaryFile creates a file in tmp_path
             original_named_temp_file = tempfile.NamedTemporaryFile
@@ -185,7 +186,7 @@ async def test_analyze_file_permissions_set(mythril_tool, tmp_path):
             with patch("tempfile.NamedTemporaryFile", side_effect=mock_named_temp_file):
                 result = await mythril_tool.analyze(contract_code)
 
-                assert result == "Permission check result"
+                assert result.stdout == "Permission check result"
                 mock_chmod.assert_called_once_with(temp_file_path, 0o600)
 
 
@@ -222,11 +223,11 @@ async def test_analyze_temp_file_closed_before_command(mythril_tool, tmp_path):
     ) as mock_execute:
         with patch("tempfile.NamedTemporaryFile", side_effect=MockNamedTemporaryFile):
 
-            mock_execute.return_value = "Closed file check result"
+            mock_execute.return_value = SandboxResult(stdout="Closed file check result", stderr="", exit_code=0)
 
             result = await mythril_tool.analyze(contract_code)
 
-            assert result == "Closed file check result"
+            assert result.stdout == "Closed file check result"
             mock_close.assert_called_once()
             mock_execute.assert_called_once()
 
