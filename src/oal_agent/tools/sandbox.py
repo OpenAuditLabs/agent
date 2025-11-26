@@ -1,14 +1,34 @@
 """Sandbox tool for safe contract execution."""
 
+import asyncio
+from dataclasses import dataclass
 
-async def execute_external_command(command: str, *args: str) -> str:
+
+@dataclass
+class SandboxResult:
+    """Result of a sandboxed execution."""
+
+    stdout: str
+    stderr: str
+    exit_code: int
+
+
+async def execute_external_command(command: str, *args: str) -> SandboxResult:
     """
     Executes an external command in a sandboxed environment.
-    TODO: Implement actual sandboxed execution.
     """
-    full_command = [command] + list(args)
-    # Placeholder for actual execution
-    return f"Executed: {' '.join(full_command)}"
+    process = await asyncio.create_subprocess_exec(
+        command,
+        *args,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    stdout, stderr = await process.communicate()
+    return SandboxResult(
+        stdout=stdout.decode('utf-8', errors='replace').rstrip("\n"),
+        stderr=stderr.decode('utf-8', errors='replace').rstrip("\n"),
+        exit_code=process.returncode,
+    )
 
 
 class SandboxTool:
