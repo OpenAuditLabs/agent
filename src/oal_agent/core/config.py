@@ -29,6 +29,7 @@ class Settings(BaseSettings):
         storage_encryption_enabled: Whether to enable at-rest encryption for stored data. Defaults to False.
         evaluation_mode: A boolean indicating whether the agent is running in evaluation mode. Defaults to False.
         max_concurrent_pipelines: The maximum number of analysis pipelines that can run concurrently. Defaults to 10.
+        additional_policies_path: Optional path to a file or directory containing extra policy definitions. Defaults to None.
     """
 
     api_host: str = (
