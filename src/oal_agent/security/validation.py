@@ -4,7 +4,7 @@ import json
 from typing import Any, Dict, Optional
 
 from jsonschema import validate
-from jsonschema.exceptions import ValidationError
+from jsonschema.exceptions import SchemaError, ValidationError
 
 from oal_agent.core.errors import ValidationError as OALValidationError
 
@@ -86,9 +86,11 @@ class Validator:
             schema: The JSON schema to validate against.
 
         Raises:
-            JsonSchemaError: If the JSON data does not conform to the schema.
+            JsonSchemaError: If the JSON data does not conform to the schema or if the schema itself is invalid.
         """
         try:
             validate(instance=json_data, schema=schema)
         except ValidationError as e:
             raise JsonSchemaError(e.message) from e
+        except SchemaError as e:
+            raise JsonSchemaError(f"Invalid schema: {e.message}") from e
