@@ -8,7 +8,8 @@ from oal_agent.tools.mythril import MythrilTool
 
 
 @pytest.fixture
-def mythril_tool():
+def mythril_tool(mocker):
+    mocker.patch("oal_agent.tools.mythril.MythrilTool._check_mythril_version")
     return MythrilTool()
 
 
@@ -231,55 +232,58 @@ async def test_analyze_temp_file_closed_before_command(mythril_tool, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_check_mythril_version_supported(mythril_tool):
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value = Mock(
-            stdout="Mythril version 0.24.12\n", stderr="", returncode=0
+async def test_check_mythril_version_supported(mocker):
+    mocker.patch("shutil.which", return_value="/usr/bin/myth")
+    mocker.patch(
+        "oal_agent.tools.mythril.subprocess.run",
+        return_value=Mock(stdout="Mythril version 0.24.12\n", stderr="", returncode=0),
+    )
+    with patch("oal_agent.tools.mythril.logger") as mock_logger:
+        tool = MythrilTool()
+        mock_logger.info.assert_called_with(
+            "Mythril version %s detected (supported).", "0.24.12"
         )
-        with patch("oal_agent.tools.mythril.logger") as mock_logger:
-            mythril_tool._check_mythril_version()
-            mock_logger.info.assert_called_with(
-                "Mythril version %s detected (supported).", "0.24.12"
-            )
-            mock_logger.warning.assert_not_called()
+        mock_logger.warning.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_check_mythril_version_unsupported(mythril_tool):
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value = Mock(
-            stdout="Mythril version 0.23.0\n", stderr="", returncode=0
+async def test_check_mythril_version_unsupported(mocker):
+    mocker.patch("shutil.which", return_value="/usr/bin/myth")
+    mocker.patch(
+        "oal_agent.tools.mythril.subprocess.run",
+        return_value=Mock(stdout="Mythril version 0.23.0\n", stderr="", returncode=0),
+    )
+    with patch("oal_agent.tools.mythril.logger") as mock_logger:
+        tool = MythrilTool()
+        mock_logger.warning.assert_called_with(
+            "Unsupported Mythril version detected: %s. Expected version starting with %s.",
+            "0.23.0",
+            "0.24",
         )
-        with patch("oal_agent.tools.mythril.logger") as mock_logger:
-            mythril_tool._check_mythril_version()
-            mock_logger.warning.assert_called_with(
-                "Unsupported Mythril version detected: %s. Expected version starting with %s.",
-                "0.23.0",
-                "0.24",
-            )
-            mock_logger.info.assert_not_called()
+        mock_logger.info.assert_not_called()
 
 
 @pytest.mark.asyncio
-async def test_check_mythril_version_not_found(mythril_tool):
-    with patch("subprocess.run") as mock_run:
-        mock_run.side_effect = FileNotFoundError
-        with patch("oal_agent.tools.mythril.logger") as mock_logger:
-            mythril_tool._check_mythril_version()
-            mock_logger.error.assert_called_with(
-                "Mythril command not found. Please ensure Mythril is installed and in your PATH."
-            )
+async def test_check_mythril_version_not_found(mocker):
+    mocker.patch("shutil.which", return_value=None)
+    with patch("oal_agent.tools.mythril.logger") as mock_logger:
+        with pytest.raises(RuntimeError, match="Mythril executable not found."):
+            MythrilTool()
+        mock_logger.error.assert_called_with(
+            "Mythril command not found. Please ensure Mythril is installed and in your PATH."
+        )
 
 
 @pytest.mark.asyncio
-async def test_check_mythril_version_parse_error(mythril_tool):
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value = Mock(
-            stdout="Some unexpected output\n", stderr="", returncode=0
+async def test_check_mythril_version_parse_error(mocker):
+    mocker.patch("shutil.which", return_value="/usr/bin/myth")
+    mocker.patch(
+        "oal_agent.tools.mythril.subprocess.run",
+        return_value=Mock(stdout="Some unexpected output\n", stderr="", returncode=0),
+    )
+    with patch("oal_agent.tools.mythril.logger") as mock_logger:
+        tool = MythrilTool()
+        mock_logger.warning.assert_called_with(
+            "Could not parse Mythril version from output: %s",
+            "Some unexpected output",
         )
-        with patch("oal_agent.tools.mythril.logger") as mock_logger:
-            mythril_tool._check_mythril_version()
-            mock_logger.warning.assert_called_with(
-                "Could not parse Mythril version from output: %s",
-                "Some unexpected output",
-            )

@@ -5,6 +5,7 @@ import logging
 import os
 import tempfile
 import re
+import shutil
 import subprocess
 
 from oal_agent.tools.sandbox import execute_external_command
@@ -23,9 +24,16 @@ class MythrilTool:
 
     def _check_mythril_version(self):
         """Check Mythril version and warn if unsupported."""
+        myth_path = shutil.which("myth")
+        if not myth_path:
+            logger.error(
+                "Mythril command not found. Please ensure Mythril is installed and in your PATH."
+            )
+            raise RuntimeError("Mythril executable not found.")
+
         try:
             result = subprocess.run(
-                ["myth", "--version"], capture_output=True, text=True, check=True
+                [myth_path, "--version"], capture_output=True, text=True, check=True
             )
             version_output = result.stdout.strip()
             match = re.search(r"Mythril version (\d+\.\d+\.\d+)", version_output)
@@ -43,16 +51,14 @@ class MythrilTool:
                 logger.warning(
                     "Could not parse Mythril version from output: %s", version_output
                 )
-        except FileNotFoundError:
-            logger.error(
-                "Mythril command not found. Please ensure Mythril is installed and in your PATH."
-            )
         except subprocess.CalledProcessError as e:
-            logger.error(
+            logger.exception(
                 "Error checking Mythril version: %s - %s", e, e.stderr.strip()
             )
+            raise RuntimeError("Failed to check Mythril version.") from e
         except Exception as e:
-            logger.error("An unexpected error occurred during Mythril version check: %s", e)
+            logger.exception("An unexpected error occurred during Mythril version check.")
+            raise RuntimeError("An unexpected error occurred during Mythril version check.") from e
 
     async def analyze(self, contract_code: str):
         """Run Mythril analysis."""
