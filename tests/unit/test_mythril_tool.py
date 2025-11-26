@@ -288,3 +288,36 @@ async def test_check_mythril_version_parse_error(mocker):
             "Could not parse Mythril version from output: %s",
             "Some unexpected output",
         )
+
+
+@pytest.mark.asyncio
+async def test_analyze_captures_stderr(mythril_tool):
+    contract_code = "pragma solidity ^0.8.0; contract MyContract { function test() public {} }"
+    mock_stderr = "Mythril warning: This is a test warning."
+
+    with patch(
+        "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
+    ) as mock_execute:
+        mock_execute.return_value = SandboxResult(stdout="Analysis output", stderr=mock_stderr, exit_code=0)
+
+        result = await mythril_tool.analyze(contract_code)
+
+        assert result.stderr == mock_stderr
+        mock_execute.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_analyze_raises_on_non_zero_exit_code(mythril_tool):
+    contract_code = "pragma solidity ^0.8.0; contract MyContract { function fail() public {} }"
+    mock_stderr = "Mythril error: Something went wrong."
+
+    with patch(
+        "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
+    ) as mock_execute:
+        mock_execute.return_value = SandboxResult(stdout="", stderr=mock_stderr, exit_code=1)
+
+        with pytest.raises(RuntimeError) as excinfo:
+            await mythril_tool.analyze(contract_code)
+
+        assert f"Mythril analysis failed with exit code 1: {mock_stderr}" in str(excinfo.value)
+        mock_execute.assert_called_once()

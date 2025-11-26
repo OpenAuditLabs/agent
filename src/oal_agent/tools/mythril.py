@@ -80,6 +80,8 @@ class MythrilTool:
 
             # Call execute_external_command with the temporary file path
             result = await execute_external_command("myth", "analyze", temp_path)
+            if result.exit_code != 0:
+                raise RuntimeError(f'Mythril analysis failed with exit code {result.exit_code}: {result.stderr}')
             return result
         except Exception as e:
             # Propagate or wrap exceptions with informative messages
