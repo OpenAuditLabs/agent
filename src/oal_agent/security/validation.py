@@ -6,10 +6,14 @@ from typing import Any, Dict, Optional
 from jsonschema import validate
 from jsonschema.exceptions import ValidationError
 
+from oal_agent.core.errors import ValidationError as OALValidationError
 
-class JsonSchemaError(ValueError):
+
+class JsonSchemaError(OALValidationError):
     """Custom exception for JSON schema validation errors."""
-    pass
+
+    def __init__(self, detail: str):
+        super().__init__(f"JSON schema validation failed: {detail}")
 
 
 class Validator:
@@ -59,7 +63,7 @@ class Validator:
         """Loads a JSON schema from a file.
 
         Args:
-            schema_path: The absolute path to the JSON schema file.
+            schema_path: The path to the JSON schema file.
 
         Returns:
             The loaded JSON schema as a dictionary.
@@ -68,7 +72,7 @@ class Validator:
             FileNotFoundError: If the schema file does not exist.
             json.JSONDecodeError: If the schema file is not valid JSON.
         """
-        with open(schema_path, "r") as f:
+        with open(schema_path, "r", encoding="utf-8") as f:
             return json.load(f)
 
     @staticmethod
@@ -87,4 +91,4 @@ class Validator:
         try:
             validate(instance=json_data, schema=schema)
         except ValidationError as e:
-            raise JsonSchemaError(f"JSON schema validation failed: {e.message}") from e
+            raise JsonSchemaError(e.message) from e
