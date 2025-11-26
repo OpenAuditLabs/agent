@@ -4,10 +4,15 @@ import asyncio
 import logging
 import os
 import tempfile
+import re
+import shutil
+import subprocess
 
 from oal_agent.tools.sandbox import execute_external_command
 
 logger = logging.getLogger(__name__)
+
+SUPPORTED_MYTHRIL_VERSION_PREFIX = "0.24"
 
 
 class MythrilTool:
@@ -15,7 +20,45 @@ class MythrilTool:
 
     def __init__(self):
         """Initialize Mythril tool."""
-        pass
+        self._check_mythril_version()
+
+    def _check_mythril_version(self):
+        """Check Mythril version and warn if unsupported."""
+        myth_path = shutil.which("myth")
+        if not myth_path:
+            logger.error(
+                "Mythril command not found. Please ensure Mythril is installed and in your PATH."
+            )
+            raise RuntimeError("Mythril executable not found.")
+
+        try:
+            result = subprocess.run(
+                [myth_path, "--version"], capture_output=True, text=True, check=True
+            )
+            version_output = result.stdout.strip()
+            match = re.search(r"Mythril version (\d+\.\d+\.\d+)", version_output)
+            if match:
+                version = match.group(1)
+                if not version.startswith(SUPPORTED_MYTHRIL_VERSION_PREFIX):
+                    logger.warning(
+                        "Unsupported Mythril version detected: %s. Expected version starting with %s.",
+                        version,
+                        SUPPORTED_MYTHRIL_VERSION_PREFIX,
+                    )
+                else:
+                    logger.info("Mythril version %s detected (supported).", version)
+            else:
+                logger.warning(
+                    "Could not parse Mythril version from output: %s", version_output
+                )
+        except subprocess.CalledProcessError as e:
+            logger.exception(
+                "Error checking Mythril version: %s - %s", e, e.stderr.strip()
+            )
+            raise RuntimeError("Failed to check Mythril version.") from e
+        except Exception as e:
+            logger.exception("An unexpected error occurred during Mythril version check.")
+            raise RuntimeError("An unexpected error occurred during Mythril version check.") from e
 
     async def analyze(self, contract_code: str):
         """Run Mythril analysis."""
