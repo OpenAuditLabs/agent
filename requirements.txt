@@ -10,3 +10,4 @@ pyyaml>=6.0.1
 cryptography>=44.0.1
 opentelemetry-sdk
 opentelemetry-api
+jsonschema>=4.18.0
