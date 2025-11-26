@@ -2,8 +2,11 @@
 
 import logging
 import os
+import importlib.util
+import sys
 
 from oal_agent.tools.slither import SlitherTool
+from oal_agent.core.config import settings
 
 
 class SecurityPolicy:
@@ -50,3 +53,34 @@ class SecurityPolicy:
         # For now, assuming if analysis_results is not empty, then misconfigurations were found.
         # This logic will need to be refined once SlitherTool.analyze is fully implemented.
         return bool(analysis_results)
+
+def load_additional_policies():
+    """Loads additional security policy modules from a configurable directory."""
+    if not settings.additional_policies_path:
+        return
+
+    policy_dir = settings.additional_policies_path
+    if not os.path.isdir(policy_dir):
+        logging.warning(f"Additional policies directory not found: {policy_dir}")
+        return
+
+    logging.info(f"Loading additional policies from: {policy_dir}")
+    for filename in os.listdir(policy_dir):
+        if filename.endswith(".py") and not filename.startswith("__"):
+            module_name = filename[:-3]
+            file_path = os.path.join(policy_dir, filename)
+            try:
+                spec = importlib.util.spec_from_file_location(module_name, file_path)
+                if spec and spec.loader:
+                    module = importlib.util.module_from_spec(spec)
+                    sys.modules[module_name] = module
+                    spec.loader.exec_module(module)
+                    logging.info(f"Successfully loaded policy module: {module_name}")
+                    # Here, you would typically call a registration function within the loaded module
+                    # For example: module.register_policies(SecurityPolicy)
+                else:
+                    logging.error(f"Could not get spec or loader for module: {module_name}")
+            except Exception as e:
+                logging.error(f"Failed to load policy module {module_name} from {file_path}: {e}", exc_info=True)
+
+load_additional_policies()
