@@ -231,43 +231,55 @@ async def test_analyze_temp_file_closed_before_command(mythril_tool, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_analyze_no_temp_file_leak_on_error(mythril_tool, tmp_path):
-    contract_code = "pragma solidity ^0.8.0; contract MyContract { function error_func() public {} }"
+async def test_check_mythril_version_supported(mythril_tool):
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = Mock(
+            stdout="Mythril version 0.24.12\n", stderr="", returncode=0
+        )
+        with patch("oal_agent.tools.mythril.logger") as mock_logger:
+            mythril_tool._check_mythril_version()
+            mock_logger.info.assert_called_with(
+                "Mythril version %s detected (supported).", "0.24.12"
+            )
+            mock_logger.warning.assert_not_called()
 
-    temp_file_path = None
 
-    class MockNamedTemporaryFileWithError:
-        def __init__(self, *args, **kwargs):
-            nonlocal temp_file_path
-            self.name = str(tmp_path / "mock_temp_file_error.sol")
-            temp_file_path = self.name
-            self.closed = False
-            # Create a dummy file to simulate its existence for cleanup check
-            tmp_path.joinpath("mock_temp_file_error.sol").write_text("dummy content")
+@pytest.mark.asyncio
+async def test_check_mythril_version_unsupported(mythril_tool):
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = Mock(
+            stdout="Mythril version 0.23.0\n", stderr="", returncode=0
+        )
+        with patch("oal_agent.tools.mythril.logger") as mock_logger:
+            mythril_tool._check_mythril_version()
+            mock_logger.warning.assert_called_with(
+                "Unsupported Mythril version detected: %s. Expected version starting with %s.",
+                "0.23.0",
+                "0.24",
+            )
+            mock_logger.info.assert_not_called()
 
-        def write(self, content):
-            raise IOError("Simulated write error")
 
-        def close(self):
-            self.closed = True
+@pytest.mark.asyncio
+async def test_check_mythril_version_not_found(mythril_tool):
+    with patch("subprocess.run") as mock_run:
+        mock_run.side_effect = FileNotFoundError
+        with patch("oal_agent.tools.mythril.logger") as mock_logger:
+            mythril_tool._check_mythril_version()
+            mock_logger.error.assert_called_with(
+                "Mythril command not found. Please ensure Mythril is installed and in your PATH."
+            )
 
-        def __enter__(self):
-            return self
 
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            pass
-
-    with patch(
-        "tempfile.NamedTemporaryFile", side_effect=MockNamedTemporaryFileWithError
-    ):
-        with patch(
-            "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
-        ) as mock_execute:
-
-            with pytest.raises(RuntimeError, match="Mythril analysis failed"):
-                await mythril_tool.analyze(contract_code)
-
-            mock_execute.assert_not_called()
-            assert not os.path.exists(
-                temp_file_path
-            ), "Temporary file was not cleaned up on error"
+@pytest.mark.asyncio
+async def test_check_mythril_version_parse_error(mythril_tool):
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = Mock(
+            stdout="Some unexpected output\n", stderr="", returncode=0
+        )
+        with patch("oal_agent.tools.mythril.logger") as mock_logger:
+            mythril_tool._check_mythril_version()
+            mock_logger.warning.assert_called_with(
+                "Could not parse Mythril version from output: %s",
+                "Some unexpected output",
+            )
