@@ -1,6 +1,19 @@
 """Input validation."""
 
-from typing import Optional
+import json
+from typing import Any, Dict, Optional
+
+from jsonschema import validate
+from jsonschema.exceptions import SchemaError, ValidationError
+
+from oal_agent.core.errors import ValidationError as OALValidationError
+
+
+class JsonSchemaError(OALValidationError):
+    """Custom exception for JSON schema validation errors."""
+
+    def __init__(self, detail: str):
+        super().__init__(f"JSON schema validation failed: {detail}")
 
 
 class Validator:
@@ -44,3 +57,40 @@ class Validator:
             return True
         except ValueError:
             return False
+
+    @staticmethod
+    def load_json_schema(schema_path: str) -> Dict[str, Any]:
+        """Loads a JSON schema from a file.
+
+        Args:
+            schema_path: The path to the JSON schema file.
+
+        Returns:
+            The loaded JSON schema as a dictionary.
+
+        Raises:
+            FileNotFoundError: If the schema file does not exist.
+            json.JSONDecodeError: If the schema file is not valid JSON.
+        """
+        with open(schema_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    @staticmethod
+    def validate_json_with_schema(
+        json_data: Dict[str, Any], schema: Dict[str, Any]
+    ) -> None:
+        """Validates a JSON object against a given JSON schema.
+
+        Args:
+            json_data: The JSON object to validate.
+            schema: The JSON schema to validate against.
+
+        Raises:
+            JsonSchemaError: If the JSON data does not conform to the schema or if the schema itself is invalid.
+        """
+        try:
+            validate(instance=json_data, schema=schema)
+        except ValidationError as e:
+            raise JsonSchemaError(e.message) from e
+        except SchemaError as e:
+            raise JsonSchemaError(f"Invalid schema: {e.message}") from e
