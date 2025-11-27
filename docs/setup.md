@@ -111,7 +111,22 @@ SECRET_KEY=generate-a-random-secret-key
 
 # Logging
 LOG_LEVEL=INFO
+
+# Dynamic Policy Loading (Optional)
+# ADDITIONAL_POLICIES_PATH=/path/to/your/policies
 ```
+
+#### Dynamic Policy Loading Security
+
+The `additional_policies_path` setting allows the agent to dynamically load and execute Python modules containing extra policy definitions. This feature introduces significant security risks, including arbitrary code execution.
+
+**Operational Security Recommendations:**
+
+*   **Trust Requirements:** The `additional_policies_path` MUST point only to trusted, access-controlled directories.
+*   **Access Control:** Ensure that the directory and its contents are secured against unauthorized modifications by restricting write access to only authorized personnel.
+*   **Content Verification:** Operators enabling this feature must verify the ownership, permissions, and contents of the policy directory to prevent supply chain attacks or privilege escalation.
+*   **Environment:** This feature should only be used in environments where strict control over the policy directory can be maintained.
+
 
 ### 6. Install External Tools
 
