@@ -40,7 +40,7 @@ def register_policies(policy_instance):
     load_additional_policies()
 
     # Assert that the module was loaded and its registration function was called (via log)
-    assert "Successfully loaded policy module: test_policy_dummy" in caplog.text
+    assert "Successfully loaded policy module: oal_agent.security.dynamic_policies.test_policy_dummy" in caplog.text
     # Verify that the dummy_action was added to the ALLOWED_ACTIONS
     # This requires a way to access the SecurityPolicy instance, which is not directly exposed by load_additional_policies
     # For now, we'll rely on the log message to confirm loading.
@@ -78,5 +78,5 @@ raise ImportError("Simulated import error")
     settings.additional_policies_path = str(tmp_path)
     load_additional_policies()
 
-    assert "Failed to load policy module test_policy_error" in caplog.text
+    assert "Failed to load policy module oal_agent.security.dynamic_policies.test_policy_error" in caplog.text
     assert "Simulated import error" in caplog.text

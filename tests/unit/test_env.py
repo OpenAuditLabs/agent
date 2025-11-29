@@ -3,7 +3,12 @@ import os
 import pytest
 
 from src.oal_agent.utils.env import (
-    get_env, require_env, validate_env_variables, get_env_int, get_env_bool, get_env_list
+    get_env,
+    get_env_bool,
+    get_env_int,
+    get_env_list,
+    require_env,
+    validate_env_variables,
 )
 
 
@@ -124,7 +129,9 @@ class TestEnvUtils:
 
     def test_get_env_int_success_with_min_max(self):
         os.environ["TEST_INT_RANGE"] = "50"
-        assert get_env_int("TEST_INT_RANGE", default=0, min_value=10, max_value=100) == 50
+        assert (
+            get_env_int("TEST_INT_RANGE", default=0, min_value=10, max_value=100) == 50
+        )
 
     def test_get_env_int_below_min(self):
         os.environ["TEST_INT_BELOW_MIN"] = "5"
@@ -141,20 +148,26 @@ class TestEnvUtils:
             get_env_int("TEST_INT_ABOVE_MAX", default=0, max_value=100)
 
     def test_get_env_int_default_with_min_max(self):
-        assert get_env_int("NON_EXISTENT_INT_RANGE", default=50, min_value=10, max_value=100) == 50
+        assert (
+            get_env_int(
+                "NON_EXISTENT_INT_RANGE", default=50, min_value=10, max_value=100
+            )
+            == 50
+        )
 
     def test_get_env_int_default_below_min(self):
         with pytest.raises(
-            ValueError, match="default value 5 is less than the minimum allowed value 10"
+            ValueError,
+            match="Default value 5 is less than the minimum allowed value 10",
         ):
             get_env_int("NON_EXISTENT_DEFAULT_BELOW_MIN", default=5, min_value=10)
 
     def test_get_env_int_default_above_max(self):
         with pytest.raises(
-            ValueError, match="default value 150 is greater than the maximum allowed value 100"
+            ValueError,
+            match="Default value 150 is greater than the maximum allowed value 100",
         ):
             get_env_int("NON_EXISTENT_DEFAULT_ABOVE_MAX", default=150, max_value=100)
-
 
     def test_get_env_bool_success(self):
         os.environ["TEST_BOOL"] = "True"
@@ -172,10 +185,17 @@ class TestEnvUtils:
 
     def test_get_env_list_with_custom_separator(self):
         os.environ["TEST_LIST_SEP"] = "val1;val2; val3"
-        assert get_env_list("TEST_LIST_SEP", default=[], separator=";") == ["val1", "val2", "val3"]
+        assert get_env_list("TEST_LIST_SEP", default=[], separator=";") == [
+            "val1",
+            "val2",
+            "val3",
+        ]
 
     def test_get_env_list_default(self):
-        assert get_env_list("NON_EXISTENT_LIST", default=["default1", "default2"]) == ["default1", "default2"]
+        assert get_env_list("NON_EXISTENT_LIST", default=["default1", "default2"]) == [
+            "default1",
+            "default2",
+        ]
 
     def test_get_env_list_empty_string(self):
         os.environ["EMPTY_LIST"] = ""
@@ -184,5 +204,3 @@ class TestEnvUtils:
     def test_get_env_list_empty_items(self):
         os.environ["EMPTY_ITEMS_LIST"] = " , item1, , item2 , "
         assert get_env_list("EMPTY_ITEMS_LIST", default=[]) == ["item1", "item2"]
-
-
