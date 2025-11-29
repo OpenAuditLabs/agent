@@ -13,6 +13,21 @@ class JsonFormatter(logging.Formatter):
             "name": record.name,
             "message": record.getMessage(),
         }
+
+        if record.exc_info:
+            log_record["exception"] = self.formatException(record.exc_info)
+        if record.stack_info:
+            log_record["stack"] = self.formatStack(record.stack_info)
+
+        for key, value in record.__dict__.items():
+            if key not in [
+                'name', 'levelname', 'pathname', 'lineno', 'msg', 'args',
+                'exc_info', 'exc_text', 'stack_info', 'funcName', 'created',
+                'msecs', 'relativeCreated', 'thread', 'threadName', 'processName',
+                'process', 'asctime', 'message'
+            ]:
+                log_record[key] = value
+
         return json.dumps(log_record)
 
 
