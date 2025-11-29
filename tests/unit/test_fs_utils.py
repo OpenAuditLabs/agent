@@ -40,7 +40,7 @@ def test_is_system_path():
     assert is_system_path(Path("/usr/non_existent_dir/file.txt"))
 
 
-@pytest.mark.skipif(os.geteuid() == 0, reason="Test skipped when running as root due to permission limitations")
+@pytest.mark.skipif(os.name != "posix" or os.geteuid() == 0, reason="Test skipped when running as root or on non-POSIX systems due to permission limitations")
 def test_is_read_only_path(tmp_path: Path):
     """
     Tests the is_read_only_path function with various scenarios.
