@@ -21,17 +21,34 @@ class JsonFormatter(logging.Formatter):
 
         for key, value in record.__dict__.items():
             if key not in [
-                'name', 'levelname', 'pathname', 'lineno', 'msg', 'args',
-                'exc_info', 'exc_text', 'stack_info', 'funcName', 'created',
-                'msecs', 'relativeCreated', 'thread', 'threadName', 'processName',
-                'process', 'asctime', 'message'
+                "name",
+                "levelname",
+                "pathname",
+                "lineno",
+                "msg",
+                "args",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "funcName",
+                "created",
+                "msecs",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "processName",
+                "process",
+                "asctime",
+                "message",
             ]:
                 log_record[key] = value
 
         return json.dumps(log_record)
 
 
-def setup_logger(name: str, level: int = logging.INFO, json_format: bool = False) -> logging.Logger:
+def setup_logger(
+    name: str, level: int = logging.INFO, json_format: bool = False
+) -> logging.Logger:
     logger = logging.getLogger(name)
     if logger.handlers:
         logger.setLevel(level)

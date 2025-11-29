@@ -95,7 +95,7 @@ def get_env_int(
     """
     env_value_str = os.getenv(key)
     from_env = env_value_str is not None
-    
+
     value = _get_env_value(key, default=default, cast_to=int)
 
     if from_env:
@@ -128,9 +128,7 @@ def get_env_bool(key: str, default: bool) -> bool:
     return _get_env_value(key, default=default, cast_to=bool)
 
 
-def get_env_list(
-    key: str, default: list[str], separator: str = ","
-) -> list[str]:
+def get_env_list(key: str, default: list[str], separator: str = ",") -> list[str]:
     """
     Fetches an environment variable as a list of strings with a default value and custom separator.
 
@@ -146,4 +144,3 @@ def get_env_list(
     if not value:
         return list(default)
     return [item.strip() for item in value.split(separator) if item.strip()]
-

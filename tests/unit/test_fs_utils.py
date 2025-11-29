@@ -1,13 +1,18 @@
 import os
-import pytest
-from pathlib import Path
 import re
-from oal_agent.utils.fs import READ_ONLY_PATHS, is_system_path, is_read_only_path
+from pathlib import Path
+
+import pytest
+
+from oal_agent.utils.fs import READ_ONLY_PATHS, is_read_only_path, is_system_path
+
 
 def is_windows_path_string(path_str: str) -> bool:
     return bool(re.match(r"^[a-zA-Z]:[\\/]", path_str))
 
+
 # New tests for is_system_path and is_read_only_path
+
 
 def test_is_system_path():
     """
@@ -27,7 +32,9 @@ def test_is_system_path():
     assert not is_system_path(Path("/home/user/my_document.txt"))
     assert not is_system_path(Path("relative/path/to/file.py"))
     assert not is_system_path(Path("/tmp/test_file.txt"))
-    assert not is_system_path(Path("/var/log/my_app/events.log")) # /var/log is generally writable
+    assert not is_system_path(
+        Path("/var/log/my_app/events.log")
+    )  # /var/log is generally writable
 
     # Test with a path that doesn't exist but matches a system path prefix
     assert is_system_path(Path("/usr/non_existent_dir/file.txt"))
@@ -51,7 +58,9 @@ def test_is_read_only_path(tmp_path: Path):
     writable_file = tmp_path / "writable.txt"
     writable_file.write_text("test")
     os.chmod(writable_file, 0o644)  # Ensure it's writable
-    assert not is_read_only_path(writable_file), "Expected writable_file to not be read-only"
+    assert not is_read_only_path(
+        writable_file
+    ), "Expected writable_file to not be read-only"
 
     # Test with an existing, read-only file in a non-system directory
     read_only_file = tmp_path / "read_only.txt"
@@ -61,16 +70,20 @@ def test_is_read_only_path(tmp_path: Path):
 
     # Test with a non-existent path that is not a system path
     non_existent_non_system_path = tmp_path / "non_existent_dir" / "file.txt"
-    assert not is_read_only_path(non_existent_non_system_path), "Expected non-existent non-system path to not be read-only"
+    assert not is_read_only_path(
+        non_existent_non_system_path
+    ), "Expected non-existent non-system path to not be read-only"
 
     # Test with an existing writable directory
     writable_dir = tmp_path / "writable_dir"
     writable_dir.mkdir()
-    os.chmod(writable_dir, 0o755) # Ensure it's writable
-    assert not is_read_only_path(writable_dir), "Expected writable_dir to not be read-only"
+    os.chmod(writable_dir, 0o755)  # Ensure it's writable
+    assert not is_read_only_path(
+        writable_dir
+    ), "Expected writable_dir to not be read-only"
 
     # Test with an existing read-only directory
     read_only_dir = tmp_path / "read_only_dir"
     read_only_dir.mkdir()
-    os.chmod(read_only_dir, 0o555) # Make it read-only (executable but not writable)
+    os.chmod(read_only_dir, 0o555)  # Make it read-only (executable but not writable)
     assert is_read_only_path(read_only_dir), "Expected read_only_dir to be read-only"
