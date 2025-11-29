@@ -75,7 +75,7 @@ def get_env_int(
     max_value: Optional[int] = None,
 ) -> int:
     """
-    Fetches an environment variable as an integer with optional default, min, and max validation.
+    Fetches an environment variable as an integer with a default value and optional min and max validation.
 
     Both environment-derived values and the provided default are validated against
     the min/max constraints.
@@ -93,17 +93,23 @@ def get_env_int(
         ValueError: If the environment variable (or the provided default) is not a valid integer or
                     is outside the specified min/max range.
     """
+    env_value_str = os.getenv(key)
+    from_env = env_value_str is not None
+    
     value = _get_env_value(key, default=default, cast_to=int)
+
+    if from_env:
+        source_desc = f"Environment variable {key} value"
+    else:
+        source_desc = "Default value"
 
     if min_value is not None and value < min_value:
         raise ValueError(
-            f"Environment variable {key} value {value} is less than "
-            f"the minimum allowed value {min_value}"
+            f"{source_desc} {value} is less than the minimum allowed value {min_value}"
         )
     if max_value is not None and value > max_value:
         raise ValueError(
-            f"Environment variable {key} value {value} is greater than "
-            f"the maximum allowed value {max_value}"
+            f"{source_desc} {value} is greater than the maximum allowed value {max_value}"
         )
     return value
 
@@ -138,6 +144,6 @@ def get_env_list(
     """
     value = _get_env_value(key, default=None, cast_to=str)
     if not value:
-        return default
+        return list(default)
     return [item.strip() for item in value.split(separator) if item.strip()]
 
