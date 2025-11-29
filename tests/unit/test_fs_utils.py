@@ -1,3 +1,12 @@
+import os
+import pytest
+from pathlib import Path
+import re
+from oal_agent.utils.fs import READ_ONLY_PATHS, is_system_path, is_read_only_path
+
+def is_windows_path_string(path_str: str) -> bool:
+    return bool(re.match(r"^[a-zA-Z]:[\\/]", path_str))
+
 # New tests for is_system_path and is_read_only_path
 
 def test_is_system_path():
@@ -5,8 +14,10 @@ def test_is_system_path():
     Tests the is_system_path function with various system and non-system paths.
     """
     # Test with known system paths
-    for p in READ_ONLY_PATHS:
-        assert is_system_path(Path(p)), f"Expected {p} to be a system path"
+    for p_str in READ_ONLY_PATHS:
+        if os.name != "nt" and is_windows_path_string(p_str):
+            pytest.skip(f"Skipping Windows path test {p_str} on non-Windows OS")
+        assert is_system_path(Path(p_str)), f"Expected {p_str} to be a system path"
 
     # Test with subdirectories of known system paths
     assert is_system_path(Path("/usr/local/bin"))
@@ -28,6 +39,8 @@ def test_is_read_only_path(tmp_path: Path):
     """
     # Test with known system paths (should be read-only by definition)
     for p_str in READ_ONLY_PATHS:
+        if os.name != "nt" and is_windows_path_string(p_str):
+            pytest.skip(f"Skipping Windows path test {p_str} on non-Windows OS")
         p = Path(p_str)
         assert is_read_only_path(p), f"Expected system path {p} to be read-only"
 
