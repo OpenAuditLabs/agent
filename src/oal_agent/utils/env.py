@@ -66,3 +66,84 @@ def validate_env_variables(
     """
     for key, cast_to in required_vars.items():
         require_env(key, cast_to=cast_to)
+
+
+def get_env_int(
+    key: str,
+    default: int,
+    min_value: Optional[int] = None,
+    max_value: Optional[int] = None,
+) -> int:
+    """
+    Fetches an environment variable as an integer with a default value and optional min and max validation.
+
+    Both environment-derived values and the provided default are validated against
+    the min/max constraints.
+
+    Args:
+        key: The name of the environment variable.
+        default: The default value to return if the environment variable is not set.
+        min_value: Optional minimum allowed value for the integer.
+        max_value: Optional maximum allowed value for the integer.
+
+    Returns:
+        The integer value of the environment variable or the default.
+
+    Raises:
+        ValueError: If the environment variable (or the provided default) is not a valid integer or
+                    is outside the specified min/max range.
+    """
+    env_value_str = os.getenv(key)
+    from_env = env_value_str is not None
+    
+    value = _get_env_value(key, default=default, cast_to=int)
+
+    if from_env:
+        source_desc = f"Environment variable {key} value"
+    else:
+        source_desc = "Default value"
+
+    if min_value is not None and value < min_value:
+        raise ValueError(
+            f"{source_desc} {value} is less than the minimum allowed value {min_value}"
+        )
+    if max_value is not None and value > max_value:
+        raise ValueError(
+            f"{source_desc} {value} is greater than the maximum allowed value {max_value}"
+        )
+    return value
+
+
+def get_env_bool(key: str, default: bool) -> bool:
+    """
+    Fetches an environment variable as a boolean with a default value.
+
+    Args:
+        key: The name of the environment variable.
+        default: The default value to return if the environment variable is not set.
+
+    Returns:
+        The boolean value of the environment variable or the default.
+    """
+    return _get_env_value(key, default=default, cast_to=bool)
+
+
+def get_env_list(
+    key: str, default: list[str], separator: str = ","
+) -> list[str]:
+    """
+    Fetches an environment variable as a list of strings with a default value and custom separator.
+
+    Args:
+        key: The name of the environment variable.
+        default: The default value to return if the environment variable is not set.
+        separator: The string used to separate values in the environment variable.
+
+    Returns:
+        A list of strings from the environment variable or the default.
+    """
+    value = _get_env_value(key, default=None, cast_to=str)
+    if not value:
+        return list(default)
+    return [item.strip() for item in value.split(separator) if item.strip()]
+
