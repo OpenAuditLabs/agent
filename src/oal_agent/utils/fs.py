@@ -14,11 +14,17 @@ from oal_agent.utils.fs_utils import read_file_content
 
 # Common read-only system directories (case-insensitive for some OS, but typically exact match on Linux)
 
+# Common read-only system directories (case-insensitive on Windows, exact match on Linux/macOS)
+
+# Consumers of this set should normalize paths and perform case-insensitive comparisons on Windows.
+
 READ_ONLY_PATHS = {
 
-    "/etc", "/usr", "/bin", "/sbin", "/lib", "/boot", "/dev", "/proc", "/sys", "/run",
+    "/etc", "/usr", "/bin", "/sbin", "/lib", "/boot", "/dev", "/proc", "/sys", "/run", "/root",
 
-    "/var/lock", "/var/run" # Specific common read-only subdirectories
+    "/System", "/Library", "/private/var/db",  # macOS system paths
+
+    "C:\\Windows", "C:\\Program Files", "C:\\Program Files (x86)" # Windows system paths
 
 }
 
@@ -52,25 +58,73 @@ def is_system_path(path: Path) -> bool:
 
     # Normalize path for consistent checking
 
-    try:
+        try:
 
-        abs_path = path.resolve()
+            abs_path = path.resolve()
 
-    except OSError:
+        except OSError:
 
-        # Path does not exist, but we can still check its string representation
+            # Path does not exist, but we can still check its absolute string representation
 
-        abs_path = path.absolute()
+            abs_path = path.absolute()
 
+    
 
+        for ro_path_str in READ_ONLY_PATHS:
 
-    for ro_path in READ_ONLY_PATHS:
+            ro_path = Path(ro_path_str)
 
-        if str(abs_path) == ro_path or str(abs_path).startswith(f"{ro_path}/"):
+            # On Windows, paths are case-insensitive. Normalize to lower case for comparison.
 
-            return True
+            # This is a heuristic; a more robust solution might use platform-specific Path methods
 
-    return False
+            # or a library like `pathvalidate` if available.
+
+            if os.name == 'nt':
+
+                if abs_path.as_posix().lower() == ro_path.as_posix().lower():
+
+                    return True
+
+                try:
+
+                    # Check if abs_path is a subpath of ro_path, case-insensitively
+
+                    # This involves converting to string and comparing prefixes for simplicity,
+
+                    # as relative_to might be too strict with case or drive letters.
+
+                    if str(abs_path).lower().startswith(str(ro_path).lower()):
+
+                        return True
+
+                except TypeError:
+
+                    # Handle cases where path components might be non-string (unlikely with Path)
+
+                    pass
+
+            else:
+
+                if abs_path == ro_path:
+
+                    return True
+
+                try:
+
+                    # Check if abs_path is a subpath of ro_path
+
+                    abs_path.relative_to(ro_path)
+
+                    return True
+
+                except ValueError:
+
+                    # path is not a subpath of ro_path
+
+                    pass
+
+        return False
 
 
 
@@ -116,7 +170,10 @@ def write_file(path: str, content: str):
 
         raise PermissionError(f"Attempt to write to a read-only path: {path}")
 
-    ensure_dir(os.path.dirname(path))
+    parent_dir = os.path.dirname(path)
+    if parent_dir and is_read_only_path(parent_dir):
+        raise PermissionError(f"Attempt to write to a file in a read-only directory: {parent_dir}")
+    ensure_dir(parent_dir)
 
     with open(path, "w") as f:
 
