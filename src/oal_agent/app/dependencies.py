@@ -1,9 +1,9 @@
 """FastAPI dependencies."""
 
 import time
-from typing import AsyncGenerator, Generator, Annotated, Optional
+from typing import AsyncGenerator, Generator, Optional
 
-from fastapi import Request, Header, Depends
+from fastapi import Header
 from pydantic import BaseModel
 
 from oal_agent.telemetry.logging import logger

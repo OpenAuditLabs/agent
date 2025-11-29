@@ -3,12 +3,12 @@
 import asyncio
 import logging
 import os
-import tempfile
 import re
 import shutil
 import subprocess
+import tempfile
 
-from oal_agent.tools.sandbox import execute_external_command, SandboxResult
+from oal_agent.tools.sandbox import SandboxResult, execute_external_command
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +57,12 @@ class MythrilTool:
             )
             raise RuntimeError("Failed to check Mythril version.") from e
         except Exception as e:
-            logger.exception("An unexpected error occurred during Mythril version check.")
-            raise RuntimeError("An unexpected error occurred during Mythril version check.") from e
+            logger.exception(
+                "An unexpected error occurred during Mythril version check."
+            )
+            raise RuntimeError(
+                "An unexpected error occurred during Mythril version check."
+            ) from e
 
     async def analyze(self, contract_code: str) -> SandboxResult:
         """Run Mythril analysis."""
@@ -81,7 +85,9 @@ class MythrilTool:
             # Call execute_external_command with the temporary file path
             result = await execute_external_command("myth", "analyze", temp_path)
             if result.exit_code != 0:
-                raise RuntimeError(f'Mythril analysis failed with exit code {result.exit_code}: {result.stderr}')
+                raise RuntimeError(
+                    f"Mythril analysis failed with exit code {result.exit_code}: {result.stderr}"
+                )
             return result
         except Exception as e:
             # Propagate or wrap exceptions with informative messages

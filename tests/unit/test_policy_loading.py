@@ -1,11 +1,11 @@
-import os
-import sys
-import pytest
 import logging
-from unittest.mock import patch
+import sys
 
-from oal_agent.core.config import settings, reset_settings
+import pytest
+
+from oal_agent.core.config import reset_settings, settings
 from oal_agent.security.policies import load_additional_policies
+
 
 @pytest.fixture(autouse=True)
 def run_around_tests():
@@ -17,6 +17,7 @@ def run_around_tests():
     for key in keys_to_remove:
         del sys.modules[key]
     reset_settings()
+
 
 def test_load_additional_policies_from_valid_directory(tmp_path, caplog):
     """Tests that additional policy modules are loaded from a valid directory."""
@@ -46,6 +47,7 @@ def register_policies(policy_instance):
     # A more robust test would involve passing a mock SecurityPolicy instance to register_policies
     # and asserting changes on it.
 
+
 def test_load_additional_policies_no_path_configured(caplog):
     """Tests that no policies are loaded if no additional_policies_path is configured."""
     caplog.set_level(logging.INFO)
@@ -53,12 +55,14 @@ def test_load_additional_policies_no_path_configured(caplog):
     load_additional_policies()
     assert "Loading additional policies from" not in caplog.text
 
+
 def test_load_additional_policies_invalid_directory(caplog):
     """Tests that a warning is logged if the configured directory does not exist."""
     caplog.set_level(logging.WARNING)
     settings.additional_policies_path = "/non/existent/path/for/policies"
     load_additional_policies()
     assert "Additional policies directory not found" in caplog.text
+
 
 def test_load_additional_policies_with_error_in_module(tmp_path, caplog):
     """Tests that errors during module loading are caught and logged."""

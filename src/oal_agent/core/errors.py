@@ -34,47 +34,73 @@ class OALAgentError(Exception):
 class AnalysisError(OALAgentError):
     """Error during analysis."""
 
-    def __init__(self, message: str = "Analysis failed.", error_code: str = ErrorCodes.ANALYSIS_FAILED):
+    def __init__(
+        self,
+        message: str = "Analysis failed.",
+        error_code: str = ErrorCodes.ANALYSIS_FAILED,
+    ):
         super().__init__(message, error_code)
 
 
 class ValidationError(OALAgentError):
     """Validation error."""
 
-    def __init__(self, message: str = "Validation failed.", error_code: str = ErrorCodes.VALIDATION_FAILED):
+    def __init__(
+        self,
+        message: str = "Validation failed.",
+        error_code: str = ErrorCodes.VALIDATION_FAILED,
+    ):
         super().__init__(message, error_code)
 
 
 class ConfigurationError(OALAgentError):
     """Configuration error."""
 
-    def __init__(self, message: str = "Configuration error.", error_code: str = ErrorCodes.CONFIGURATION_ERROR):
+    def __init__(
+        self,
+        message: str = "Configuration error.",
+        error_code: str = ErrorCodes.CONFIGURATION_ERROR,
+    ):
         super().__init__(message, error_code)
 
 
 class LLMTimeoutError(OALAgentError):
     """LLM timeout error."""
 
-    def __init__(self, message: str = "LLM timed out.", error_code: str = ErrorCodes.LLM_TIMEOUT):
+    def __init__(
+        self, message: str = "LLM timed out.", error_code: str = ErrorCodes.LLM_TIMEOUT
+    ):
         super().__init__(message, error_code)
 
 
 class OrchestrationError(OALAgentError):
     """Error during orchestration."""
 
-    def __init__(self, message: str = "Orchestration failed.", error_code: str = ErrorCodes.ORCHESTRATION_FAILED):
+    def __init__(
+        self,
+        message: str = "Orchestration failed.",
+        error_code: str = ErrorCodes.ORCHESTRATION_FAILED,
+    ):
         super().__init__(message, error_code)
 
 
 class InvalidKey(OALAgentError):
     """Invalid key error."""
 
-    def __init__(self, message: str = "Invalid key provided.", error_code: str = ErrorCodes.INVALID_KEY):
+    def __init__(
+        self,
+        message: str = "Invalid key provided.",
+        error_code: str = ErrorCodes.INVALID_KEY,
+    ):
         super().__init__(message, error_code)
 
 
 class DecryptionError(OALAgentError):
     """Decryption error."""
 
-    def __init__(self, message: str = "Decryption failed.", error_code: str = ErrorCodes.DECRYPTION_FAILED):
+    def __init__(
+        self,
+        message: str = "Decryption failed.",
+        error_code: str = ErrorCodes.DECRYPTION_FAILED,
+    ):
         super().__init__(message, error_code)

@@ -1,12 +1,12 @@
 """Security policies."""
 
+import importlib.util
 import logging
 import os
-import importlib.util
 import sys
 
-from oal_agent.tools.slither import SlitherTool
 from oal_agent.core.config import settings
+from oal_agent.tools.slither import SlitherTool
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +56,7 @@ class SecurityPolicy:
         # This logic will need to be refined once SlitherTool.analyze is fully implemented.
         return bool(analysis_results)
 
+
 def load_additional_policies():
     """
     Loads additional security policy modules from a configurable directory.
@@ -102,7 +103,9 @@ def load_additional_policies():
                     if hasattr(module, "register_policies"):
                         try:
                             module.register_policies(SecurityPolicy)
-                            logger.info(f"Successfully registered policies from module: {module_name}")
+                            logger.info(
+                                f"Successfully registered policies from module: {module_name}"
+                            )
                         except Exception as reg_e:
                             logger.error(
                                 f"Failed to register policies from module {module_name}: {reg_e}",
@@ -114,8 +117,14 @@ def load_additional_policies():
                             "No policies were registered from this module."
                         )
                 else:
-                    logger.error(f"Could not get spec or loader for module: {module_name}")
+                    logger.error(
+                        f"Could not get spec or loader for module: {module_name}"
+                    )
             except Exception as e:
-                logger.error(f"Failed to load policy module {module_name} from {file_path}: {e}", exc_info=True)
+                logger.error(
+                    f"Failed to load policy module {module_name} from {file_path}: {e}",
+                    exc_info=True,
+                )
+
 
 load_additional_policies()

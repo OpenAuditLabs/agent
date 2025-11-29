@@ -3,8 +3,8 @@
 
 """Main FastAPI application."""
 
-import sys
 import os
+import sys
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse

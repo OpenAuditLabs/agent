@@ -22,7 +22,9 @@ class Orchestrator:
         """Orchestrate an analysis job."""
         logger.info("Job %s: Waiting to acquire pipeline slot.", job_id)
         async with self.semaphore:
-            logger.info("Job %s: Acquired pipeline slot. Starting orchestration.", job_id)
+            logger.info(
+                "Job %s: Acquired pipeline slot. Starting orchestration.", job_id
+            )
             try:
                 # TODO: Implement actual orchestration logic here
                 # For demonstration, let's simulate a potential error
@@ -30,7 +32,9 @@ class Orchestrator:
                     raise ValueError("Simulated orchestration error")
                 # Call coordinator to route the task with a timeout
                 await asyncio.wait_for(
-                    self.coordinator_agent.route({"job_id": job_id, "job_data": job_data}),
+                    self.coordinator_agent.route(
+                        {"job_id": job_id, "job_data": job_data}
+                    ),
                     timeout=settings.coordinator_timeout,
                 )
                 logger.info("Job %s: Orchestration completed.", job_id)
@@ -41,6 +45,8 @@ class Orchestrator:
                 ) from e
             except Exception as e:
                 logger.error("Job %s: Orchestration failed: %s", job_id, e)
-                raise OrchestrationError(message=f"Failed to orchestrate job {job_id}: {e}") from e
+                raise OrchestrationError(
+                    message=f"Failed to orchestrate job {job_id}: {e}"
+                ) from e
             finally:
                 logger.info("Job %s: Released pipeline slot.", job_id)

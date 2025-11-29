@@ -4,9 +4,14 @@ from pydantic import BaseModel, Field, model_validator
 
 
 class ItemCreate(BaseModel):
-    name: str = Field(..., min_length=3, max_length=50, description="The name of the item")
+    name: str = Field(
+        ..., min_length=3, max_length=50, description="The name of the item"
+    )
     description: Optional[str] = Field(
-        None, min_length=10, max_length=500, description="A detailed description of the item"
+        None,
+        min_length=10,
+        max_length=500,
+        description="A detailed description of the item",
     )
 
     model_config = {
@@ -22,9 +27,14 @@ class ItemCreate(BaseModel):
 
 
 class ItemUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=3, max_length=50, description="The new name of the item")
+    name: Optional[str] = Field(
+        None, min_length=3, max_length=50, description="The new name of the item"
+    )
     description: Optional[str] = Field(
-        None, min_length=10, max_length=500, description="The new detailed description of the item"
+        None,
+        min_length=10,
+        max_length=500,
+        description="The new detailed description of the item",
     )
 
     model_config = {
