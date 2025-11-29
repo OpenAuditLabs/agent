@@ -21,7 +21,7 @@ def test_is_system_path():
     # Test with known system paths
     for p_str in READ_ONLY_PATHS:
         if os.name != "nt" and is_windows_path_string(p_str):
-            pytest.skip(f"Skipping Windows path test {p_str} on non-Windows OS")
+            continue  # Skip Windows-specific paths on non-Windows OS
         assert is_system_path(Path(p_str)), f"Expected {p_str} to be a system path"
 
     # Test with subdirectories of known system paths
@@ -40,6 +40,7 @@ def test_is_system_path():
     assert is_system_path(Path("/usr/non_existent_dir/file.txt"))
 
 
+@pytest.mark.skipif(os.geteuid() == 0, reason="Test skipped when running as root due to permission limitations")
 def test_is_read_only_path(tmp_path: Path):
     """
     Tests the is_read_only_path function with various scenarios.
@@ -47,7 +48,7 @@ def test_is_read_only_path(tmp_path: Path):
     # Test with known system paths (should be read-only by definition)
     for p_str in READ_ONLY_PATHS:
         if os.name != "nt" and is_windows_path_string(p_str):
-            pytest.skip(f"Skipping Windows path test {p_str} on non-Windows OS")
+            continue  # Skip Windows-specific paths on non-Windows OS
         p = Path(p_str)
         assert is_read_only_path(p), f"Expected system path {p} to be read-only"
 

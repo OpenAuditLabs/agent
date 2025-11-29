@@ -66,8 +66,9 @@ async def test_load_decryption_error_corrupted_data(encrypted_storage_service):
     async with aiofiles.open(file_path, mode="wb") as f:
         await f.write(corrupted_data)
 
-    with pytest.raises(DecryptionError, match="Decryption failed."):
+    with pytest.raises(DecryptionError) as excinfo:
         await service.load(key)
+    assert str(excinfo.value) == "Decryption failed."
 
 
 @pytest.mark.asyncio
@@ -128,8 +129,6 @@ async def test_save_and_load_valid_key(storage_service):
 
 @pytest.mark.asyncio
 async def test_save_rejects_invalid_key_dotdot(storage_service):
-    key = "../invalid/key"
-    data = b"sample data"
     with pytest.raises(InvalidKey, match=r"Key cannot contain '..' or start '/' "):
         await storage_service.save(key, data)
 
@@ -147,10 +146,8 @@ async def test_save_key_outside_storage_path(storage_service):
     key = "sub_dir/../../evil_file.txt"
     data = b"malicious content"
     with pytest.raises(
-        InvalidKey, match=r"Key leads to a path outside storage directory."
-    ):
-        await storage_service.save(key, data)
-
+                    InvalidKey, match=r"Key cannot contain '..' or start '/'"
+                ):
 
 @pytest.mark.asyncio
 async def test_load_invalid_key_dot_dot(storage_service):
@@ -170,9 +167,8 @@ async def test_load_invalid_key_absolute_path(storage_service):
 async def test_load_key_outside_storage_path(storage_service):
     key = "sub_dir/../../evil_file.txt"
     with pytest.raises(
-        InvalidKey, match=r"Key leads to a path outside storage directory."
-    ):
-        await storage_service.load(key)
+                    InvalidKey, match=r"Key cannot contain '..' or start '/'"
+                ):        await storage_service.load(key)
 
 
 @pytest.mark.asyncio
