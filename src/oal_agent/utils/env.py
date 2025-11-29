@@ -77,6 +77,9 @@ def get_env_int(
     """
     Fetches an environment variable as an integer with optional default, min, and max validation.
 
+    Both environment-derived values and the provided default are validated against
+    the min/max constraints.
+
     Args:
         key: The name of the environment variable.
         default: The default value to return if the environment variable is not set.
@@ -87,7 +90,7 @@ def get_env_int(
         The integer value of the environment variable or the default.
 
     Raises:
-        ValueError: If the environment variable is not a valid integer or
+        ValueError: If the environment variable (or the provided default) is not a valid integer or
                     is outside the specified min/max range.
     """
     value = _get_env_value(key, default=default, cast_to=int)

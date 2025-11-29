@@ -143,6 +143,19 @@ class TestEnvUtils:
     def test_get_env_int_default_with_min_max(self):
         assert get_env_int("NON_EXISTENT_INT_RANGE", default=50, min_value=10, max_value=100) == 50
 
+    def test_get_env_int_default_below_min(self):
+        with pytest.raises(
+            ValueError, match="default value 5 is less than the minimum allowed value 10"
+        ):
+            get_env_int("NON_EXISTENT_DEFAULT_BELOW_MIN", default=5, min_value=10)
+
+    def test_get_env_int_default_above_max(self):
+        with pytest.raises(
+            ValueError, match="default value 150 is greater than the maximum allowed value 100"
+        ):
+            get_env_int("NON_EXISTENT_DEFAULT_ABOVE_MAX", default=150, max_value=100)
+
+
     def test_get_env_bool_success(self):
         os.environ["TEST_BOOL"] = "True"
         assert get_env_bool("TEST_BOOL", default=False) is True
