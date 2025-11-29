@@ -2,7 +2,9 @@ import os
 
 import pytest
 
-from src.oal_agent.utils.env import get_env, require_env, validate_env_variables
+from src.oal_agent.utils.env import (
+    get_env, require_env, validate_env_variables, get_env_int, get_env_bool, get_env_list
+)
 
 
 class TestEnvUtils:
@@ -119,3 +121,55 @@ class TestEnvUtils:
             ValueError, match="Environment variable VAR2 expected to be an integer"
         ):
             validate_env_variables(required_vars)
+
+    def test_get_env_int_success_with_min_max(self):
+        os.environ["TEST_INT_RANGE"] = "50"
+        assert get_env_int("TEST_INT_RANGE", default=0, min_value=10, max_value=100) == 50
+
+    def test_get_env_int_below_min(self):
+        os.environ["TEST_INT_BELOW_MIN"] = "5"
+        with pytest.raises(
+            ValueError, match="value 5 is less than the minimum allowed value 10"
+        ):
+            get_env_int("TEST_INT_BELOW_MIN", default=0, min_value=10)
+
+    def test_get_env_int_above_max(self):
+        os.environ["TEST_INT_ABOVE_MAX"] = "150"
+        with pytest.raises(
+            ValueError, match="value 150 is greater than the maximum allowed value 100"
+        ):
+            get_env_int("TEST_INT_ABOVE_MAX", default=0, max_value=100)
+
+    def test_get_env_int_default_with_min_max(self):
+        assert get_env_int("NON_EXISTENT_INT_RANGE", default=50, min_value=10, max_value=100) == 50
+
+    def test_get_env_bool_success(self):
+        os.environ["TEST_BOOL"] = "True"
+        assert get_env_bool("TEST_BOOL", default=False) is True
+        os.environ["TEST_BOOL"] = "false"
+        assert get_env_bool("TEST_BOOL", default=True) is False
+
+    def test_get_env_bool_default(self):
+        assert get_env_bool("NON_EXISTENT_BOOL", default=True) is True
+        assert get_env_bool("NON_EXISTENT_BOOL_FALSE", default=False) is False
+
+    def test_get_env_list_success(self):
+        os.environ["TEST_LIST"] = "item1,item2, item3"
+        assert get_env_list("TEST_LIST", default=[]) == ["item1", "item2", "item3"]
+
+    def test_get_env_list_with_custom_separator(self):
+        os.environ["TEST_LIST_SEP"] = "val1;val2; val3"
+        assert get_env_list("TEST_LIST_SEP", default=[], separator=";") == ["val1", "val2", "val3"]
+
+    def test_get_env_list_default(self):
+        assert get_env_list("NON_EXISTENT_LIST", default=["default1", "default2"]) == ["default1", "default2"]
+
+    def test_get_env_list_empty_string(self):
+        os.environ["EMPTY_LIST"] = ""
+        assert get_env_list("EMPTY_LIST", default=["a"]) == ["a"]
+
+    def test_get_env_list_empty_items(self):
+        os.environ["EMPTY_ITEMS_LIST"] = " , item1, , item2 , "
+        assert get_env_list("EMPTY_ITEMS_LIST", default=[]) == ["item1", "item2"]
+
+
