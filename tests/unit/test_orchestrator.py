@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import time
 from unittest.mock import AsyncMock, patch
 
@@ -28,7 +27,9 @@ async def test_orchestrator_concurrency_limit():
     active_times_lock = asyncio.Lock()
 
     # Mock the coordinator agent's route method to simulate work
-    with patch.object(orchestrator.coordinator_agent, "route", new_callable=AsyncMock) as mock_route:
+    with patch.object(
+        orchestrator.coordinator_agent, "route", new_callable=AsyncMock
+    ) as mock_route:
 
         async def long_running_task(*args, **kwargs):
             start_time = time.monotonic()
@@ -60,7 +61,9 @@ async def test_orchestrator_concurrency_limit():
                 current_concurrent_tasks += 1
             else:
                 current_concurrent_tasks -= 1
-            max_concurrent_tasks_observed = max(max_concurrent_tasks_observed, current_concurrent_tasks)
+            max_concurrent_tasks_observed = max(
+                max_concurrent_tasks_observed, current_concurrent_tasks
+            )
 
         assert max_concurrent_tasks_observed == settings.max_concurrent_pipelines
         assert mock_route.call_count == 5  # All tasks should eventually run
@@ -70,13 +73,20 @@ async def test_orchestrator_concurrency_limit():
 async def test_orchestrator_error_handling():
     """Test that the orchestrator handles errors during orchestration."""
     orchestrator = Orchestrator()
-    with patch.object(orchestrator.coordinator_agent, "route", new_callable=AsyncMock) as mock_route:
+    with patch.object(
+        orchestrator.coordinator_agent, "route", new_callable=AsyncMock
+    ) as mock_route:
         mock_route.side_effect = ValueError("Simulated error during routing")
 
-        with pytest.raises(OrchestrationError, match="Failed to orchestrate job test_job: Simulated error during routing"):
+        with pytest.raises(
+            OrchestrationError,
+            match="Failed to orchestrate job test_job: Simulated error during routing",
+        ):
             await orchestrator.orchestrate("test_job", {"data": "test"})
 
-        mock_route.assert_called_once_with({"job_id": "test_job", "job_data": {"data": "test"}})
+        mock_route.assert_called_once_with(
+            {"job_id": "test_job", "job_data": {"data": "test"}}
+        )
 
 
 @pytest.mark.asyncio
@@ -85,7 +95,9 @@ async def test_orchestrator_timeout_handling():
     settings.coordinator_timeout = 0.01  # Set a very short timeout
     orchestrator = Orchestrator()
 
-    with patch.object(orchestrator.coordinator_agent, "route", new_callable=AsyncMock) as mock_route:
+    with patch.object(
+        orchestrator.coordinator_agent, "route", new_callable=AsyncMock
+    ) as mock_route:
         # Simulate a task that takes longer than the timeout
         async def slow_task(*args, **kwargs):
             await asyncio.sleep(0.1)
@@ -93,7 +105,11 @@ async def test_orchestrator_timeout_handling():
 
         mock_route.side_effect = slow_task
 
-        with pytest.raises(OrchestrationError, match="Coordinator routing timed out for job test_job"):
+        with pytest.raises(
+            OrchestrationError, match="Coordinator routing timed out for job test_job"
+        ):
             await orchestrator.orchestrate("test_job", {"data": "test"})
 
-        mock_route.assert_called_once_with({"job_id": "test_job", "job_data": {"data": "test"}})
+        mock_route.assert_called_once_with(
+            {"job_id": "test_job", "job_data": {"data": "test"}}
+        )

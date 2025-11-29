@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated
 
 import pytest
 from fastapi import APIRouter, Depends
@@ -12,7 +12,9 @@ test_router = APIRouter()
 
 
 @test_router.get("/test-metadata")
-async def get_metadata(metadata: Annotated[RequestMetadata, Depends(get_request_metadata)]):
+async def get_metadata(
+    metadata: Annotated[RequestMetadata, Depends(get_request_metadata)],
+):
     return {
         "request_id": metadata.request_id,
         "user_agent": metadata.user_agent,

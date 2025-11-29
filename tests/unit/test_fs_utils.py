@@ -1,7 +1,10 @@
 from pathlib import Path
-import stat
 
-from src.oal_agent.utils.fs_utils import read_file_content, safe_path_join, safe_temp_dir
+from src.oal_agent.utils.fs_utils import (
+    read_file_content,
+    safe_path_join,
+    safe_temp_dir,
+)
 
 
 def test_read_file_content_success(tmp_path: Path):
@@ -153,6 +156,7 @@ def test_safe_temp_dir_creation_and_cleanup():
         assert (temp_dir_path.stat().st_mode & 0o777) == 0o700
         (temp_dir_path / "test_file.txt").write_text("hello")
     assert not temp_dir_path.exists()
+
 
 def test_safe_temp_dir_with_suffix_and_prefix():
     """

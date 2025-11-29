@@ -5,7 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from oal_agent.app.schemas.results import Severity
-from src.oal_agent.tools.slither import SlitherTool, parse_slither_output, _map_severity
+from src.oal_agent.tools.slither import SlitherTool, _map_severity, parse_slither_output
 
 
 @pytest.fixture

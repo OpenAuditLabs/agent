@@ -76,7 +76,7 @@ def safe_temp_dir(suffix: str = "", prefix: str = "tmp_") -> Path:
     Yields:
         Path: The path to the created temporary directory.
     """
-    temp_dir: Path | None = None
+    temp_dir: Union[Path, None] = None
     try:
         temp_dir = Path(tempfile.mkdtemp(suffix=suffix, prefix=prefix))
         temp_dir.chmod(0o700)  # Owner read/write/execute only
@@ -84,4 +84,3 @@ def safe_temp_dir(suffix: str = "", prefix: str = "tmp_") -> Path:
     finally:
         if temp_dir and temp_dir.exists():
             shutil.rmtree(temp_dir)
-

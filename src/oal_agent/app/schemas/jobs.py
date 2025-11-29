@@ -2,15 +2,18 @@
 
 from typing import List, Optional, Self
 
-from pydantic import BaseModel, Field, model_validator, ValidationError
+from pydantic import BaseModel, Field, model_validator
 
 
 class PipelineArtifactsSummary(BaseModel):
     """Summary of artifacts produced by a pipeline."""
 
-    logs: List[str] = Field(default_factory=list, description="List of paths to log files.")
-    reports: List[str] = Field(default_factory=list, description="List of paths to report files.")
-
+    logs: List[str] = Field(
+        default_factory=list, description="List of paths to log files."
+    )
+    reports: List[str] = Field(
+        default_factory=list, description="List of paths to report files."
+    )
 
 
 class PaginationParams(BaseModel):

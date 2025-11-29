@@ -23,7 +23,9 @@ async def test_analyze_uses_temp_file_and_cleans_up(mythril_tool):
     with patch(
         "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
     ) as mock_execute:
-        mock_execute.return_value = SandboxResult(stdout="Mythril analysis result", stderr="", exit_code=0)
+        mock_execute.return_value = SandboxResult(
+            stdout="Mythril analysis result", stderr="", exit_code=0
+        )
 
         result = await mythril_tool.analyze(contract_code)
 
@@ -44,7 +46,9 @@ async def test_analyze_returns_result_despite_cleanup_error(mythril_tool, tmp_pa
     contract_code = (
         "pragma solidity ^0.8.0; contract MyContract { function bar() public {} }"
     )
-    mock_result = SandboxResult(stdout="Analysis result despite cleanup error", stderr="", exit_code=0)
+    mock_result = SandboxResult(
+        stdout="Analysis result despite cleanup error", stderr="", exit_code=0
+    )
 
     with patch(
         "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
@@ -169,7 +173,9 @@ async def test_analyze_file_permissions_set(mythril_tool, tmp_path):
         "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
     ) as mock_execute:
         with patch("os.chmod") as mock_chmod:
-            mock_execute.return_value = SandboxResult(stdout="Permission check result", stderr="", exit_code=0)
+            mock_execute.return_value = SandboxResult(
+                stdout="Permission check result", stderr="", exit_code=0
+            )
 
             # To ensure tempfile.NamedTemporaryFile creates a file in tmp_path
             original_named_temp_file = tempfile.NamedTemporaryFile
@@ -223,7 +229,9 @@ async def test_analyze_temp_file_closed_before_command(mythril_tool, tmp_path):
     ) as mock_execute:
         with patch("tempfile.NamedTemporaryFile", side_effect=MockNamedTemporaryFile):
 
-            mock_execute.return_value = SandboxResult(stdout="Closed file check result", stderr="", exit_code=0)
+            mock_execute.return_value = SandboxResult(
+                stdout="Closed file check result", stderr="", exit_code=0
+            )
 
             result = await mythril_tool.analyze(contract_code)
 
@@ -240,7 +248,7 @@ async def test_check_mythril_version_supported(mocker):
         return_value=Mock(stdout="Mythril version 0.24.12\n", stderr="", returncode=0),
     )
     with patch("oal_agent.tools.mythril.logger") as mock_logger:
-        tool = MythrilTool()
+        MythrilTool()
         mock_logger.info.assert_called_with(
             "Mythril version %s detected (supported).", "0.24.12"
         )
@@ -255,7 +263,7 @@ async def test_check_mythril_version_unsupported(mocker):
         return_value=Mock(stdout="Mythril version 0.23.0\n", stderr="", returncode=0),
     )
     with patch("oal_agent.tools.mythril.logger") as mock_logger:
-        tool = MythrilTool()
+        MythrilTool()
         mock_logger.warning.assert_called_with(
             "Unsupported Mythril version detected: %s. Expected version starting with %s.",
             "0.23.0",
@@ -283,7 +291,7 @@ async def test_check_mythril_version_parse_error(mocker):
         return_value=Mock(stdout="Some unexpected output\n", stderr="", returncode=0),
     )
     with patch("oal_agent.tools.mythril.logger") as mock_logger:
-        tool = MythrilTool()
+        MythrilTool()
         mock_logger.warning.assert_called_with(
             "Could not parse Mythril version from output: %s",
             "Some unexpected output",
@@ -292,13 +300,17 @@ async def test_check_mythril_version_parse_error(mocker):
 
 @pytest.mark.asyncio
 async def test_analyze_captures_stderr(mythril_tool):
-    contract_code = "pragma solidity ^0.8.0; contract MyContract { function test() public {} }"
+    contract_code = (
+        "pragma solidity ^0.8.0; contract MyContract { function test() public {} }"
+    )
     mock_stderr = "Mythril warning: This is a test warning."
 
     with patch(
         "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
     ) as mock_execute:
-        mock_execute.return_value = SandboxResult(stdout="Analysis output", stderr=mock_stderr, exit_code=0)
+        mock_execute.return_value = SandboxResult(
+            stdout="Analysis output", stderr=mock_stderr, exit_code=0
+        )
 
         result = await mythril_tool.analyze(contract_code)
 
@@ -308,16 +320,22 @@ async def test_analyze_captures_stderr(mythril_tool):
 
 @pytest.mark.asyncio
 async def test_analyze_raises_on_non_zero_exit_code(mythril_tool):
-    contract_code = "pragma solidity ^0.8.0; contract MyContract { function fail() public {} }"
+    contract_code = (
+        "pragma solidity ^0.8.0; contract MyContract { function fail() public {} }"
+    )
     mock_stderr = "Mythril error: Something went wrong."
 
     with patch(
         "oal_agent.tools.mythril.execute_external_command", new_callable=AsyncMock
     ) as mock_execute:
-        mock_execute.return_value = SandboxResult(stdout="", stderr=mock_stderr, exit_code=1)
+        mock_execute.return_value = SandboxResult(
+            stdout="", stderr=mock_stderr, exit_code=1
+        )
 
         with pytest.raises(RuntimeError) as excinfo:
             await mythril_tool.analyze(contract_code)
 
-        assert f"Mythril analysis failed with exit code 1: {mock_stderr}" in str(excinfo.value)
+        assert f"Mythril analysis failed with exit code 1: {mock_stderr}" in str(
+            excinfo.value
+        )
         mock_execute.assert_called_once()

@@ -1,6 +1,8 @@
 import json
+
 import pytest
-from src.oal_agent.security.validation import Validator, JsonSchemaError
+
+from src.oal_agent.security.validation import JsonSchemaError, Validator
 
 
 @pytest.fixture
@@ -13,9 +15,9 @@ def setup_schemas(tmp_path):
         "type": "object",
         "properties": {
             "name": {"type": "string"},
-            "age": {"type": "integer", "minimum": 0}
+            "age": {"type": "integer", "minimum": 0},
         },
-        "required": ["name", "age"]
+        "required": ["name", "age"],
     }
     with open(valid_schema_path, "w") as f:
         json.dump(valid_schema_content, f)
@@ -52,17 +54,26 @@ class TestJsonSchemaValidation:
     def test_validate_json_with_schema_failure_required(self, setup_schemas):
         schema = Validator.load_json_schema(setup_schemas["valid_schema_path"])
         invalid_data_missing_field = {"name": "Bob"}
-        with pytest.raises(JsonSchemaError, match=r"JSON schema validation failed: 'age' is a required property"):
+        with pytest.raises(
+            JsonSchemaError,
+            match=r"JSON schema validation failed: 'age' is a required property",
+        ):
             Validator.validate_json_with_schema(invalid_data_missing_field, schema)
 
     def test_validate_json_with_schema_failure_type(self, setup_schemas):
         schema = Validator.load_json_schema(setup_schemas["valid_schema_path"])
         invalid_data_wrong_type = {"name": "Charlie", "age": "twenty"}
-        with pytest.raises(JsonSchemaError, match=r"JSON schema validation failed: 'twenty' is not of type 'integer'"):
+        with pytest.raises(
+            JsonSchemaError,
+            match=r"JSON schema validation failed: 'twenty' is not of type 'integer'",
+        ):
             Validator.validate_json_with_schema(invalid_data_wrong_type, schema)
 
     def test_validate_json_with_schema_failure_min_value(self, setup_schemas):
         schema = Validator.load_json_schema(setup_schemas["valid_schema_path"])
         invalid_data_min_value = {"name": "David", "age": -5}
-        with pytest.raises(JsonSchemaError, match=r"JSON schema validation failed: -5 is less than the minimum of 0"):
+        with pytest.raises(
+            JsonSchemaError,
+            match=r"JSON schema validation failed: -5 is less than the minimum of 0",
+        ):
             Validator.validate_json_with_schema(invalid_data_min_value, schema)
