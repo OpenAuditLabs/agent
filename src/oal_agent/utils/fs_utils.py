@@ -1,4 +1,7 @@
+import contextlib
 import logging
+import shutil
+import tempfile
 from pathlib import Path
 from typing import Any, Union
 
@@ -56,3 +59,29 @@ def read_file_content(file_path: Path, default_value: Any = None) -> Any:
     except (OSError, UnicodeDecodeError) as e:
         logger.debug(f"Error reading file {file_path}: {e}")
         return default_value
+
+
+@contextlib.contextmanager
+def safe_temp_dir(suffix: str = "", prefix: str = "tmp_") -> Path:
+    """
+    Context manager for creating a secure temporary directory.
+
+    The directory is created with 0o700 permissions (owner read/write/execute only)
+    and is automatically cleaned up when the context is exited.
+
+    Args:
+        suffix: If not empty, the file name will end with that suffix.
+        prefix: If not empty, the file name will begin with that prefix.
+
+    Yields:
+        Path: The path to the created temporary directory.
+    """
+    temp_dir: Path | None = None
+    try:
+        temp_dir = Path(tempfile.mkdtemp(suffix=suffix, prefix=prefix))
+        temp_dir.chmod(0o700)  # Owner read/write/execute only
+        yield temp_dir
+    finally:
+        if temp_dir and temp_dir.exists():
+            shutil.rmtree(temp_dir)
+

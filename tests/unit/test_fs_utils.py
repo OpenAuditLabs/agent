@@ -1,6 +1,7 @@
 from pathlib import Path
+import stat
 
-from src.oal_agent.utils.fs_utils import read_file_content, safe_path_join
+from src.oal_agent.utils.fs_utils import read_file_content, safe_path_join, safe_temp_dir
 
 
 def test_read_file_content_success(tmp_path: Path):
@@ -139,3 +140,26 @@ def test_safe_path_join_none_parts():
     assert safe_path_join("dir1", None, "dir2") == Path("dir1/dir2")
     assert safe_path_join(None, "dir1", None, "dir2") == Path("dir1/dir2")
     assert safe_path_join(None, None) == Path(".")
+
+
+def test_safe_temp_dir_creation_and_cleanup():
+    """
+    Tests that safe_temp_dir creates a directory with correct permissions and cleans it up.
+    """
+    temp_dir_path = None
+    with safe_temp_dir() as d:
+        temp_dir_path = d
+        assert temp_dir_path.is_dir()
+        assert (temp_dir_path.stat().st_mode & 0o777) == 0o700
+        (temp_dir_path / "test_file.txt").write_text("hello")
+    assert not temp_dir_path.exists()
+
+def test_safe_temp_dir_with_suffix_and_prefix():
+    """
+    Tests that safe_temp_dir respects suffix and prefix arguments.
+    """
+    with safe_temp_dir(suffix="_test_suffix", prefix="my_prefix_") as d:
+        assert d.is_dir()
+        assert d.name.startswith("my_prefix_")
+        assert d.name.endswith("_test_suffix")
+    assert not d.exists()
