@@ -21,6 +21,13 @@ pre-commit install
 
 ### Required
 
+| Package           | Minimum Version |
+| :---------------- | :-------------- |
+| Python            | 3.9             |
+| pip               | Latest          |
+| Git               | Latest          |
+| Redis             | 6.0             |
+
 - **Python**: 3.9 or higher (3.11 recommended)
 - **pip**: Latest version
 - **Git**: For version control
