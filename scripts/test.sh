@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e
 
-pytest_k_arg=""
+pytest_k_args=()
 while [[ "$#" -gt 0 ]]; do
     case "$1" in
         -k)
             if [ -n "$2" ]; then
-                pytest_k_arg="-k "$2""
+                pytest_k_args+=("-k" "$2")
                 shift # past argument
             else
                 echo "Error: -k option requires an argument."
@@ -23,12 +23,12 @@ done
 
 echo "Running unit tests..."
 source .venv/bin/activate
-pytest tests/unit/ -v --cov=src/oal_agent --cov-report=term-missing $pytest_k_arg
+pytest tests/unit/ -v --cov=src/oal_agent --cov-report=term-missing "${pytest_k_args[@]}"
 
 echo "Running integration tests..."
-pytest tests/integration/ -v $pytest_k_arg
+pytest tests/integration/ -v "${pytest_k_args[@]}"
 
 echo "Running e2e tests..."
-pytest tests/e2e/ -v $pytest_k_arg
+pytest tests/e2e/ -v "${pytest_k_args[@]}"
 
 echo "All tests passed!"
