@@ -6,6 +6,7 @@ source .venv/bin/activate
 echo "Running black..."
 black --check src/ tests/
 
+
 echo "Running isort..."
 isort --check-only src/ tests/
 
