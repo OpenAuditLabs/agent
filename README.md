@@ -155,35 +155,112 @@ python src/oal_agent/cli.py --profile dev serve
 python src/oal_agent/cli.py analyze path/to/contract.sol
 ```
 
-**Access the API:**
+Access the API:
+
+
 
 - API Documentation: http://localhost:8000/docs
+
 - Health Check: http://localhost:8000/health
+
+
 
 ### API Usage Example
 
+
+
 ```python
+
 import httpx
 
+
+
 # Submit a contract for analysis
+
 async with httpx.AsyncClient() as client:
+
     response = await client.post(
+
         "http://localhost:8000/api/v1/analysis/",
+
         json={
+
             "contract_code": "pragma solidity ^0.8.0; contract Example { ... }",
+
             "pipeline": "standard"
+
         }
+
     )
+
     job = response.json()
+
     job_id = job["job_id"]
 
+
+
     # Check job status
+
     status_response = await client.get(f"http://localhost:8000/api/v1/analysis/{job_id}")
+
     print(status_response.json())
 
+
+
     # Get results when complete
+
     results_response = await client.get(f"http://localhost:8000/api/v1/analysis/{job_id}/results")
+
     print(results_response.json())
+
+```
+
+
+
+### CLI Quickstart
+
+
+
+The `oal-agent` CLI provides direct access to the agent's functionalities.
+
+
+
+```bash
+
+oal-agent analyze data/contracts/VulnerableContract.sol
+
+```
+
+
+
+Expected output:
+
+
+
+```
+
+INFO:oal_agent.cli:Starting analysis for contract: data/contracts/VulnerableContract.sol
+
+INFO:oal_agent.core.orchestrator:Job submitted with ID: 12345678-1234-5678-1234-567812345678
+
+INFO:oal_agent.core.orchestrator:Analysis complete for job ID: 12345678-1234-5678-1234-567812345678
+
+--------------------------------------------------------------------------------
+
+Analysis Results for data/contracts/VulnerableContract.sol (Job ID: 12345678-1234-5678-1234-567812345678)
+
+--------------------------------------------------------------------------------
+
+Severity | Category          | Description
+
+---------|-------------------|--------------------------------------------------
+
+High     | Reentrancy        | Function 'withdraw' is vulnerable to reentrancy.
+
+Medium   | Integer Overflow  | Possible integer overflow in 'deposit' function.
+
+Low      | Unused Variable   | Variable 'owner' is declared but never used.
+
 ```
 
 ## 🧪 Testing
