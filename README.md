@@ -217,23 +217,7 @@ async with httpx.AsyncClient() as client:
 
 
 
-### CLI Quickstart
-
-
-
-The `oal-agent` CLI provides direct access to the agent's functionalities.
-
-
-
-```bash
-
-oal-agent analyze data/contracts/VulnerableContract.sol
-
-```
-
-
-
-Expected output:
+### CLI Quickstart (Under Development)
 
 
 
@@ -241,6 +225,7 @@ Expected output:
 
 
 
+The `oal-agent analyze` CLI command is currently under development.
 
 
 
@@ -248,34 +233,15 @@ Expected output:
 
 
 
-
-```text
-
+This feature will provide direct command-line access to the agent's analysis functionalities.
 
 
-INFO:oal_agent.cli:Starting analysis for contract: data/contracts/VulnerableContract.sol
 
-INFO:oal_agent.core.orchestrator:Job submitted with ID: 12345678-1234-5678-1234-567812345678
 
-INFO:oal_agent.core.orchestrator:Analysis complete for job ID: 12345678-1234-5678-1234-567812345678
 
---------------------------------------------------------------------------------
 
-Analysis Results for data/contracts/VulnerableContract.sol (Job ID: 12345678-1234-5678-1234-567812345678)
 
---------------------------------------------------------------------------------
-
-Severity | Category          | Description
-
----------|-------------------|--------------------------------------------------
-
-High     | Reentrancy        | Function 'withdraw' is vulnerable to reentrancy.
-
-Medium   | Integer Overflow  | Possible integer overflow in 'deposit' function.
-
-Low      | Unused Variable   | Variable 'owner' is declared but never used.
-
-```
+For current progress and details, please refer to the relevant GitHub issue or pull request (e.g., [#XXX](https://github.com/OpenAuditLabs/agent/issues/XXX)).
 
 ## 🧪 Testing
 
