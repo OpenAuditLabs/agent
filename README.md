@@ -159,9 +159,9 @@ Access the API:
 
 
 
-- API Documentation: http://localhost:8000/docs
+- API Documentation: [API Documentation](http://localhost:8000/docs)
 
-- Health Check: http://localhost:8000/health
+- Health Check: [Health Check](http://localhost:8000/health)
 
 
 
@@ -237,7 +237,21 @@ Expected output:
 
 
 
-```
+
+
+
+
+
+
+
+
+
+
+
+
+```text
+
+
 
 INFO:oal_agent.cli:Starting analysis for contract: data/contracts/VulnerableContract.sol
 
