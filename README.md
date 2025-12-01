@@ -155,36 +155,93 @@ python src/oal_agent/cli.py --profile dev serve
 python src/oal_agent/cli.py analyze path/to/contract.sol
 ```
 
-**Access the API:**
+Access the API:
 
-- API Documentation: http://localhost:8000/docs
-- Health Check: http://localhost:8000/health
+
+
+- API Documentation: [API Documentation](http://localhost:8000/docs)
+
+- Health Check: [Health Check](http://localhost:8000/health)
+
+
 
 ### API Usage Example
 
+
+
 ```python
+
 import httpx
 
+
+
 # Submit a contract for analysis
+
 async with httpx.AsyncClient() as client:
+
     response = await client.post(
+
         "http://localhost:8000/api/v1/analysis/",
+
         json={
+
             "contract_code": "pragma solidity ^0.8.0; contract Example { ... }",
+
             "pipeline": "standard"
+
         }
+
     )
+
     job = response.json()
+
     job_id = job["job_id"]
 
+
+
     # Check job status
+
     status_response = await client.get(f"http://localhost:8000/api/v1/analysis/{job_id}")
+
     print(status_response.json())
 
+
+
     # Get results when complete
+
     results_response = await client.get(f"http://localhost:8000/api/v1/analysis/{job_id}/results")
+
     print(results_response.json())
+
 ```
+
+
+
+### CLI Quickstart (Under Development)
+
+
+
+
+
+
+
+The `oal-agent analyze` CLI command is currently under development.
+
+
+
+
+
+
+
+This feature will provide direct command-line access to the agent's analysis functionalities.
+
+
+
+
+
+
+
+For current progress and details, please refer to the relevant GitHub issue or pull request (e.g., [#XXX](https://github.com/OpenAuditLabs/agent/issues/XXX)).
 
 ## 🧪 Testing
 
