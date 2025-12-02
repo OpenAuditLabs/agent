@@ -37,7 +37,10 @@ class Tracer:
     def start_span(self, name: str, attributes: dict | None = None):
         """Start a new trace span."""
         if self.tracer:
-            return self.tracer.start_as_current_span(name, attributes=attributes)
+            if attributes:
+                return self.tracer.start_as_current_span(name, attributes=attributes)
+            else:
+                return self.tracer.start_as_current_span(name)
         return DummySpan()
 
     def end_span(self):

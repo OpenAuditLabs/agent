@@ -2,7 +2,7 @@
 
 import logging
 
-from opentelemetry import metrics
+from opentelemetry import metrics as otel_metrics
 from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
@@ -29,8 +29,8 @@ class MetricsCollector:
                 OTLPMetricExporter(endpoint=settings.otlp_metrics_endpoint)
             )
             provider = MeterProvider(resource=resource, metric_readers=[reader])
-            metrics.set_meter_provider(provider)
-            self.meter = metrics.get_meter(__name__)
+            otel_metrics.set_meter_provider(provider)
+            self.meter = otel_metrics.get_meter(__name__)
             logger.info(
                 f"OpenTelemetry metrics initialized with OTLP endpoint: {settings.otlp_metrics_endpoint}"
             )
@@ -62,16 +62,15 @@ class MetricsCollector:
             self.high_water_marks[metric] = value
 
         if self.meter:
-            # For OTLP, gauges are typically observed, so we'll re-create for simplicity
-            # or use a callback instrument. For now, a simple synchronous gauge update.
             if metric not in self.otlp_gauge_metrics:
-                # OpenTelemetry Python SDK does not have a direct synchronous Gauge API for setting a value.
-                # The recommended way is to use an Asynchronous Gauge, or a Counter/UpDownCounter.
-                # For simplicity, we'll just log and acknowledge this limitation for now.
-                logger.debug(f"OTLP Gauge for {metric} would be set to {value}. "
-                             "OpenTelemetry Python SDK typically uses asynchronous gauges.")
-            # If we wanted to properly implement a synchronous gauge, we'd use an UpDownCounter.
-            # For now, we'll skip direct OTLP gauge setting here to avoid complexity of async callbacks.
+                self.otlp_gauge_metrics[metric] = self.meter.create_up_down_counter(
+                    metric,
+                    description=f"Application gauge metric: {metric}",
+                )
+            # Calculate the delta since the last recorded value
+            previous_value = self.metrics.get(metric, 0.0)
+            delta = value - previous_value
+            self.otlp_gauge_metrics[metric].add(delta)
 
     def get_metrics(self):
         """Get all metrics."""
