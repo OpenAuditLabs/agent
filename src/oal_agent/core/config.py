@@ -50,6 +50,8 @@ class Settings(BaseSettings):
     prometheus_pushgateway_url: str | None = None
     prometheus_pushgateway_job: str = "oal_agent"
     prometheus_pushgateway_enabled: bool = False
+    otlp_trace_endpoint: str | None = None
+    otlp_metrics_endpoint: str | None = None
     evaluation_mode: bool = False
     max_concurrent_pipelines: int = Field(10, gt=0)
     additional_policies_path: str | None = None
