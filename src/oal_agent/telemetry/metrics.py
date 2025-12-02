@@ -71,6 +71,7 @@ class MetricsCollector:
             previous_value = self.metrics.get(metric, 0.0)
             delta = value - previous_value
             self.otlp_gauge_metrics[metric].add(delta)
+            self.metrics[metric] = value
 
     def get_metrics(self):
         """Get all metrics."""

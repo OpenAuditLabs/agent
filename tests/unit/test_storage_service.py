@@ -129,8 +129,11 @@ async def test_save_and_load_valid_key(storage_service):
 
 @pytest.mark.asyncio
 async def test_save_rejects_invalid_key_dotdot(storage_service):
-    with pytest.raises(InvalidKey, match=r"Key cannot contain '..' or start '/' "):
+    key = "sub_dir/../evil_file.txt"
+    data = b"malicious content"
+    with pytest.raises(InvalidKey) as excinfo:
         await storage_service.save(key, data)
+    assert str(excinfo.value) == "Key cannot contain '..' or start '/'."
 
 
 @pytest.mark.asyncio
@@ -148,6 +151,8 @@ async def test_save_key_outside_storage_path(storage_service):
     with pytest.raises(
                     InvalidKey, match=r"Key cannot contain '..' or start '/'"
                 ):
+        await storage_service.save(key, data)
+
 
 @pytest.mark.asyncio
 async def test_load_invalid_key_dot_dot(storage_service):
@@ -168,7 +173,8 @@ async def test_load_key_outside_storage_path(storage_service):
     key = "sub_dir/../../evil_file.txt"
     with pytest.raises(
                     InvalidKey, match=r"Key cannot contain '..' or start '/'"
-                ):        await storage_service.load(key)
+                ):
+        await storage_service.load(key)
 
 
 @pytest.mark.asyncio
