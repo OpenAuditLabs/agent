@@ -3,11 +3,15 @@
 
 """Main FastAPI application."""
 
+from contextlib import asynccontextmanager
+
 import os
 import sys
 
+import redis.asyncio as redis
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from fastapi_limiter import FastAPILimiter
 
 from oal_agent import __version__
 from oal_agent.core.config import settings
@@ -22,31 +26,38 @@ logger = get_logger(__name__)
 
 queue_service = QueueService(queue_url=settings.queue_url)
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting up...")
+    try:
+        await queue_service.start()
+        if settings.rate_limit_enabled:
+            redis_connection = redis.from_url(settings.queue_url, encoding="utf8", decode_responses=True)
+            await FastAPILimiter.init(redis_connection)
+            logger.info("Rate limiting enabled.")
+    except Exception as e:
+        logger.exception("Failed to start services during startup: %s", e)
+        sys.exit(1)  # Exit to prevent running with a partially-initialized app
+
+    yield
+
+    logger.info("Shutting down...")
+    try:
+        await queue_service.stop()
+        if settings.rate_limit_enabled:
+            await FastAPILimiter.shutdown()
+    except Exception as e:
+        logger.exception("Failed to stop services during shutdown: %s", e)
+        # Do not re-raise to allow remaining shutdown tasks to run
+
+
 app = FastAPI(
     title="OAL Agent API",
     description="Smart Contract Security Analysis System",
     version=__version__,
+    lifespan=lifespan,
 )
-
-
-@app.on_event("startup")
-async def startup_event():
-    logger.info("Starting up...")
-    try:
-        await queue_service.start()
-    except Exception as e:
-        logger.exception("Failed to start queue service during startup: %s", e)
-        sys.exit(1)  # Exit to prevent running with a partially-initialized app
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    logger.info("Shutting down...")
-    try:
-        await queue_service.stop()
-    except Exception as e:
-        logger.exception("Failed to stop queue service during shutdown: %s", e)
-        # Do not re-raise to allow remaining shutdown tasks to run
 
 
 @app.exception_handler(Exception)
