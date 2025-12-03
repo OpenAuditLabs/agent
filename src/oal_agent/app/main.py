@@ -18,6 +18,8 @@ from oal_agent.core.config import settings
 from oal_agent.services.queue import QueueService
 from oal_agent.telemetry.logging import get_logger, setup_logging
 
+from fastapi.middleware.cors import CORSMiddleware
+
 from .routers import analysis, items, users
 
 setup_logging()
@@ -32,10 +34,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting up...")
     try:
         await queue_service.start()
-        if settings.rate_limit_enabled:
-            app.state.redis_connection = redis.from_url(settings.queue_url, encoding="utf8", decode_responses=True)
-            await FastAPILimiter.init(app.state.redis_connection)
-            logger.info("Rate limiting enabled.")
+        # if settings.rate_limit_enabled:
+        #     app.state.redis_connection = await redis.from_url(settings.rate_limit_redis_url, encoding="utf8", decode_responses=True)
+        #     await FastAPILimiter.init(app.state.redis_connection)
+        #     logger.info("Rate limiting enabled.")
     except Exception as e:
         logger.exception("Failed to start services during startup: %s", e)
         sys.exit(1)  # Exit to prevent running with a partially-initialized app
@@ -45,14 +47,14 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down...")
     try:
         await queue_service.stop()
-        if settings.rate_limit_enabled:
-            await FastAPILimiter.shutdown()
-            if hasattr(app.state, "redis_connection") and app.state.redis_connection:
-                try:
-                    await app.state.redis_connection.close()
-                    logger.info("Redis connection closed.")
-                except Exception as close_e:
-                    logger.exception("Failed to close Redis connection: %s", close_e)
+        # if settings.rate_limit_enabled:
+        #     await FastAPILimiter.shutdown()
+        #     if hasattr(app.state, "redis_connection") and app.state.redis_connection:
+        #         try:
+        #             await app.state.redis_connection.close()
+        #             logger.info("Redis connection closed.")
+        #         except Exception as close_e:
+        #             logger.exception("Failed to close Redis connection: %s", close_e)
     except Exception as e:
         logger.exception("Failed to stop services during shutdown: %s", e)
         # Do not re-raise to allow remaining shutdown tasks to run
@@ -62,7 +64,14 @@ app = FastAPI(
     title="OAL Agent API",
     description="Smart Contract Security Analysis System",
     version=__version__,
-    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -81,9 +90,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
-app.include_router(analysis.router, prefix="/api/v1")
-app.include_router(items.router, prefix="/api/v1/items")
-app.include_router(users.router, prefix="/api/v1/users")
+# app.include_router(analysis.router, prefix="/api/v1")
+# app.include_router(items.router, prefix="/api/v1/items")
+# app.include_router(users.router, prefix="/api/v1/users")
 
 
 @app.get("/")

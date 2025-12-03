@@ -6,65 +6,55 @@ from fastapi import status
 from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
+from slowapi.errors import RateLimitExceeded
+
 
 from oal_agent.app.main import app
 from oal_agent.core.config import reset_settings, settings
 
 
-# Helper to manage the rate limit counter in tests
-class MockRateLimiter:
-    def __init__(self, limit: int):
-        self.limit = limit
-        self.counter = 0
-
-    async def has_been_limited(self, key: str, rate: str) -> bool:
-        if self.counter < self.limit:
-            self.counter += 1
-            return False
-        return True
-
-
 @pytest.mark.asyncio
-@patch("oal_agent.app.main.FastAPILimiter")  # Patch the class in the target module
-@patch("redis.asyncio.from_url")
+@patch("fastapi_limiter.depends.RateLimiter") # Patch the dependency directly
+@patch("redis.asyncio.from_url") # Mock redis.asyncio.from_url
 async def test_rate_limiting_enabled(
-    mock_from_url: AsyncMock,
-    mock_fastapi_limiter_cls: MagicMock,  # This is the mocked class in main.py
+    mock_from_url: AsyncMock, # Mock for redis.asyncio.from_url
+    mock_rate_limiter_dep: MagicMock, # Mock for RateLimiter dependency
 ):
     """Test that rate limiting is enabled and works correctly."""
     reset_settings()
     settings.rate_limit_enabled = True
     settings.rate_limit_per_minute = 2
 
-    # Configure the mocked FastAPILimiter class methods
-    mock_fastapi_limiter_cls.init = AsyncMock()
-    mock_fastapi_limiter_cls.shutdown = AsyncMock()
+    # Mock Redis connection object and its methods
+    mock_redis_connection = MagicMock()
+    mock_redis_connection.script_load = AsyncMock(return_value="sha1_script") # Mock script_load
+    mock_redis_connection.close = AsyncMock() # Mock close method
 
-    # Mock Redis connection
-    mock_redis_connection = AsyncMock()
+    # Configure the mock for redis.asyncio.from_url to return our mock connection
+    # It needs to return a coroutine that, when awaited, gives mock_redis_connection
     mock_from_url.return_value = mock_redis_connection
 
-    mock_fastapi_limiter_cls._rate_limit_func = lambda request: f"{settings.rate_limit_per_minute}/minute"
-    mock_fastapi_limiter_cls._identifier_func = lambda request: "test-client"
-    def mock_exceeded_handler(request, response, p):
-        res = JSONResponse(status_code=status.HTTP_429_TOO_MANY_REQUESTS)
-        res.headers["x-ratelimit-remaining"] = "0"
-        return res
-    mock_fastapi_limiter_cls._rate_limit_exceeded_handler = mock_exceeded_handler
+    # Simulate the RateLimiter dependency directly
+    # We will use side_effect to raise RateLimitExceeded after a certain number of calls
+    call_count = 0
+    async def mock_rate_limiter_callable(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count > settings.rate_limit_per_minute:
+            raise RateLimitExceeded("Too Many Requests") # Simulate rate limit exceeded
+        return None # Allow the request to proceed otherwise
 
-    # Use our mock for Redis's evalsha to simulate rate limiting
-    # The Lua script typically returns [remaining_requests, total_requests, ttl]
-    # We want to simulate successful requests until the limit is reached, then 429.
-    # The first two calls should return 1 (not limited), subsequent calls 0 (limited).
-    mock_redis_connection.evalsha.side_effect = [
-        [1, settings.rate_limit_per_minute, 60], # Not limited, 1 request remaining
-        [0, settings.rate_limit_per_minute, 60], # Not limited, 0 requests remaining
-        [0, settings.rate_limit_per_minute, 60], # Limited, 0 requests remaining
-    ]
+    mock_rate_limiter_dep.side_effect = mock_rate_limiter_callable
+
 
     with TestClient(app) as client:
-        # FastAPILimiter.init should be called during app startup
-        mock_fastapi_limiter_cls.init.assert_called_once_with(mock_redis_connection)
+        # FastAPILimiter.init should be called during app startup with the mock_redis_connection
+        # We need to patch FastAPILimiter.init in main.py to assert it's called
+        with patch("oal_agent.app.main.FastAPILimiter.init", new=AsyncMock()) as mock_fastapilimiter_init:
+            # The actual FastAPILimiter.init will be called by the app's lifespan
+            # We just need to assert that our mock was called with the correct redis_connection
+            pass # No direct call here, it's triggered by TestClient(app) context
 
         # Make requests up to the limit
         response1 = client.get("/health")
@@ -79,12 +69,17 @@ async def test_rate_limiting_enabled(
         assert "x-ratelimit-remaining" in response3.headers
         assert response3.headers["x-ratelimit-remaining"] == "0"
 
-        # FastAPILimiter.shutdown should be called during app shutdown
-        mock_fastapi_limiter_cls.shutdown.assert_called_once()
+    # FastAPILimiter.shutdown should be called during app shutdown
+    with patch("oal_agent.app.main.FastAPILimiter.shutdown", new=AsyncMock()) as mock_fastapilimiter_shutdown:
+        pass # No direct call here, it's triggered by TestClient(app) context
+
+    mock_fastapilimiter_init.assert_called_once_with(mock_redis_connection)
+    mock_fastapilimiter_shutdown.assert_called_once()
+    mock_redis_connection.close.assert_called_once()
 
 
 @pytest.mark.asyncio
-@patch("oal_agent.app.main.FastAPILimiter")
+@patch("oal_agent.app.main.FastAPILimiter") # Keep this patch for test_rate_limiting_disabled
 @patch("redis.asyncio.from_url")
 async def test_rate_limiting_disabled(
     mock_from_url: AsyncMock,
@@ -112,46 +107,48 @@ async def test_rate_limiting_disabled(
 
 
 @pytest.mark.asyncio
-@patch("oal_agent.app.main.FastAPILimiter")
+@patch("fastapi_limiter.depends.RateLimiter")
 @patch("redis.asyncio.from_url")
 async def test_rate_limiting_multiple_endpoints(
     mock_from_url: AsyncMock,
-    mock_fastapi_limiter_cls: MagicMock,
+    mock_rate_limiter_dep: MagicMock,
 ):
     """Test that rate limiting applies across multiple endpoints."""
     reset_settings()
     settings.rate_limit_enabled = True
     settings.rate_limit_per_minute = 1
 
-    mock_fastapi_limiter_cls.init = AsyncMock()
-    mock_fastapi_limiter_cls.shutdown = AsyncMock()
+    # Mock Redis connection object and its methods
+    mock_redis_connection = MagicMock()
+    mock_redis_connection.script_load = AsyncMock(return_value="sha1_script")
+    mock_redis_connection.close = AsyncMock()
 
-    mock_redis_connection = AsyncMock()
     mock_from_url.return_value = mock_redis_connection
 
-    mock_fastapi_limiter_cls._rate_limit_func = lambda request: f"{settings.rate_limit_per_minute}/minute"
-    mock_fastapi_limiter_cls._identifier_func = lambda request: "test-client"
-    def mock_exceeded_handler(request, response, p):
-        res = JSONResponse(status_code=status.HTTP_429_TOO_MANY_REQUESTS)
-        res.headers["x-ratelimit-remaining"] = "0"
-        return res
-    mock_fastapi_limiter_cls._rate_limit_exceeded_handler = mock_exceeded_handler
+    call_count = 0
+    async def mock_rate_limiter_callable(*args, **kwargs):
+        nonlocal call_count
+        call_count += 1
+        if call_count > settings.rate_limit_per_minute:
+            raise RateLimitExceeded("Too Many Requests")
+        return None
 
-    # Use our mock for Redis's evalsha to simulate rate limiting
-    # The Lua script typically returns [remaining_requests, total_requests, ttl]
-    # We want to simulate successful requests until the limit is reached, then 429.
-    mock_redis_connection.evalsha.side_effect = [
-        [0, settings.rate_limit_per_minute, 60], # Not limited, 0 requests remaining
-        [0, settings.rate_limit_per_minute, 60], # Limited, 0 requests remaining
-    ]
-        with TestClient(app) as client:
-            mock_fastapi_limiter_cls.init.assert_called_once_with(mock_redis_connection)
+    mock_rate_limiter_dep.side_effect = mock_rate_limiter_callable
 
-            response1 = client.get("/health")
-            assert response1.status_code == 200
+    with TestClient(app) as client:
+        with patch("oal_agent.app.main.FastAPILimiter.init", new=AsyncMock()) as mock_fastapilimiter_init:
+            pass
 
-            # Second request to a different endpoint should also be rate-limited if the global limit is exceeded
-            response2 = client.get("/")
-            assert response2.status_code == 429
+        response1 = client.get("/health")
+        assert response1.status_code == 200
 
-        mock_fastapi_limiter_cls.shutdown.assert_called_once()
+        # Second request to a different endpoint should also be rate-limited if the global limit is exceeded
+        response2 = client.get("/")
+        assert response2.status_code == 429
+
+    with patch("oal_agent.app.main.FastAPILimiter.shutdown", new=AsyncMock()) as mock_fastapilimiter_shutdown:
+        pass
+
+    mock_fastapilimiter_init.assert_called_once_with(mock_redis_connection)
+    mock_fastapilimiter_shutdown.assert_called_once()
+    mock_redis_connection.close.assert_called_once()

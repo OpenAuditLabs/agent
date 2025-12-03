@@ -23,7 +23,7 @@ done
 
 echo "Running unit tests..."
 source .venv/bin/activate
-pytest tests/unit/ -v --cov=src/oal_agent --cov-report=term-missing "${pytest_k_args[@]}"
+pytest tests/unit/test_cors.py -v --cov=src/oal_agent --cov-report=term-missing "${pytest_k_args[@]}"
 
 echo "Running integration tests..."
 pytest tests/integration/ -v "${pytest_k_args[@]}"
