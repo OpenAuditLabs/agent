@@ -7,8 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.testclient import TestClient
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
-from slowapi.errors import RateLimitExceeded
-
+from slowapi.errors import RateLimitExceeded # Corrected import for RateLimitExceeded
 
 from oal_agent.app.main import app
 from oal_agent.core.config import reset_settings, settings
