@@ -1,4 +1,5 @@
-from locust import HttpUser, task, between
+from locust import HttpUser, between, task
+
 
 class AnalysisUser(HttpUser):
     wait_time = between(1, 2.5)

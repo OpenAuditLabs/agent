@@ -1,5 +1,3 @@
 """Telemetry module."""
 
-from . import logging
-from . import metrics
-from . import tracing
+from . import logging, metrics, tracing

@@ -1,6 +1,6 @@
-import pytest
-import asyncio
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from oal_agent.app.schemas.jobs import JobRequest
 from oal_agent.core.orchestrator import Orchestrator
@@ -22,6 +22,7 @@ contract SimpleStorage {
 }
 """
 
+
 @pytest.mark.asyncio
 async def test_full_analysis_pipeline_e2e():
     """
@@ -36,14 +37,18 @@ async def test_full_analysis_pipeline_e2e():
     job_id = "test-job-id-123"
     job_request_data = JobRequest(contract_code=SAMPLE_CONTRACT_CODE).model_dump()
 
-    with patch('oal_agent.agents.coordinator.CoordinatorAgent.route', new_callable=AsyncMock) as mock_route:
+    with patch(
+        "oal_agent.agents.coordinator.CoordinatorAgent.route", new_callable=AsyncMock
+    ) as mock_route:
         # Simulate successful routing by the coordinator
         mock_route.return_value = None
 
         await orchestrator.orchestrate(job_id, job_request_data)
 
         # Assert that the coordinator's route method was called
-        mock_route.assert_awaited_once_with({"job_id": job_id, "job_data": job_request_data})
+        mock_route.assert_awaited_once_with(
+            {"job_id": job_id, "job_data": job_request_data}
+        )
 
     # TODO: Once the full pipeline is implemented, assert on the actual analysis results.
     # For example:
