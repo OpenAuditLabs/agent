@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     evaluation_mode: bool = False
     max_concurrent_pipelines: int = Field(10, gt=0)
     additional_policies_path: str | None = None
+    rate_limit_enabled: bool = False
+    rate_limit_per_minute: int = 60
 
     @classmethod
     def from_dict(cls, env_vars: Dict[str, str]) -> "Settings":
