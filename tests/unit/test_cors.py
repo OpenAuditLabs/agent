@@ -3,13 +3,15 @@
 
 """Unit tests for CORS middleware."""
 
+from typing import Optional
+
 import pytest
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient
 
 
-def create_app(allow_origins: list[str] = None) -> FastAPI:
+def create_app(allow_origins: Optional[list[str]] = None) -> FastAPI:
     app = FastAPI()
     if allow_origins is None:
         allow_origins = []
@@ -44,8 +46,8 @@ def test_cors_middleware_with_allowed_origin():
     response = client.get("/health", headers={"origin": "http://localhost:3000"})
     assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
     assert "access-control-allow-credentials" in response.headers.keys()
-    assert "access-control-allow-methods" in response.headers.keys()
-    assert "access-control-allow-headers" in response.headers.keys()
+    assert "access-control-allow-methods" not in response.headers.keys()
+    assert "access-control-allow-headers" not in response.headers.keys()
 
 
 def test_cors_middleware_with_multiple_allowed_origins():

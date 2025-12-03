@@ -96,17 +96,19 @@ def is_system_path(path: Path) -> bool:
 
                 # as relative_to might be too strict with case or drive letters.
 
-                                abs_path_str = str(abs_path).lower()
+                abs_path_str = str(abs_path).lower()
 
-                                ro_path_str = str(ro_path).lower()
+                ro_path_str = str(ro_path).lower()
 
-                                if abs_path_str.startswith(ro_path_str):
+                if abs_path_str.startswith(ro_path_str):
 
-                                    # Ensure the match is at a path boundary
+                    # Ensure the match is at a path boundary
 
-                                    if len(abs_path_str) == len(ro_path_str) or abs_path_str[len(ro_path_str)] in ('/', '\\'):
+                    if len(abs_path_str) == len(ro_path_str) or abs_path_str[
+                        len(ro_path_str)
+                    ] in ("/", "\\"):
 
-                                        return True
+                        return True
 
             except TypeError:
 
