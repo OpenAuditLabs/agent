@@ -44,31 +44,40 @@ async def test_rate_limiting_enabled(
     mock_redis_connection = AsyncMock()
     mock_from_url.return_value = mock_redis_connection
 
-    # Set internal attributes on the *actual* FastAPILimiter for the middleware to use.
-    # This is necessary because `fastapi_limiter` uses class-level attributes for these.
-    FastAPILimiter._rate_limit_func = lambda request: f"{settings.rate_limit_per_minute}/minute"
-    FastAPILimiter._identifier_func = lambda request: "test-client"
-    FastAPILimiter._rate_limit_exceeded_handler = lambda request, response, p: JSONResponse(status_code=status.HTTP_429_TOO_MANY_REQUESTS)
+    mock_fastapi_limiter_cls._rate_limit_func = lambda request: f"{settings.rate_limit_per_minute}/minute"
+    mock_fastapi_limiter_cls._identifier_func = lambda request: "test-client"
+    def mock_exceeded_handler(request, response, p):
+        res = JSONResponse(status_code=status.HTTP_429_TOO_MANY_REQUESTS)
+        res.headers["x-ratelimit-remaining"] = "0"
+        return res
+    mock_fastapi_limiter_cls._rate_limit_exceeded_handler = mock_exceeded_handler
 
-    # Use our mock rate limiter for has_been_limited
-    mock_limiter = MockRateLimiter(limit=settings.rate_limit_per_minute)
-    with patch("fastapi_limiter.FastAPILimiter.has_been_limited", new=mock_limiter.has_been_limited):
-        with TestClient(app) as client:
-            # FastAPILimiter.init should be called during app startup
-            mock_fastapi_limiter_cls.init.assert_called_once_with(mock_redis_connection)
+    # Use our mock for Redis's evalsha to simulate rate limiting
+    # The Lua script typically returns [remaining_requests, total_requests, ttl]
+    # We want to simulate successful requests until the limit is reached, then 429.
+    # The first two calls should return 1 (not limited), subsequent calls 0 (limited).
+    mock_redis_connection.evalsha.side_effect = [
+        [1, settings.rate_limit_per_minute, 60], # Not limited, 1 request remaining
+        [0, settings.rate_limit_per_minute, 60], # Not limited, 0 requests remaining
+        [0, settings.rate_limit_per_minute, 60], # Limited, 0 requests remaining
+    ]
 
-            # Make requests up to the limit
-            response1 = client.get("/health")
-            assert response1.status_code == 200
+    with TestClient(app) as client:
+        # FastAPILimiter.init should be called during app startup
+        mock_fastapi_limiter_cls.init.assert_called_once_with(mock_redis_connection)
 
-            response2 = client.get("/health")
-            assert response2.status_code == 200
+        # Make requests up to the limit
+        response1 = client.get("/health")
+        assert response1.status_code == 200
 
-            # Exceed the limit
-            response3 = client.get("/health")
-            assert response3.status_code == 429
-            assert "x-ratelimit-remaining" in response3.headers
-            assert response3.headers["x-ratelimit-remaining"] == "0"
+        response2 = client.get("/health")
+        assert response2.status_code == 200
+
+        # Exceed the limit
+        response3 = client.get("/health")
+        assert response3.status_code == 429
+        assert "x-ratelimit-remaining" in response3.headers
+        assert response3.headers["x-ratelimit-remaining"] == "0"
 
         # FastAPILimiter.shutdown should be called during app shutdown
         mock_fastapi_limiter_cls.shutdown.assert_called_once()
@@ -120,12 +129,21 @@ async def test_rate_limiting_multiple_endpoints(
     mock_redis_connection = AsyncMock()
     mock_from_url.return_value = mock_redis_connection
 
-    FastAPILimiter._rate_limit_func = lambda request: f"{settings.rate_limit_per_minute}/minute"
-    FastAPILimiter._identifier_func = lambda request: "test-client"
-    FastAPILimiter._rate_limit_exceeded_handler = lambda request, response, p: JSONResponse(status_code=status.HTTP_429_TOO_MANY_REQUESTS)
+    mock_fastapi_limiter_cls._rate_limit_func = lambda request: f"{settings.rate_limit_per_minute}/minute"
+    mock_fastapi_limiter_cls._identifier_func = lambda request: "test-client"
+    def mock_exceeded_handler(request, response, p):
+        res = JSONResponse(status_code=status.HTTP_429_TOO_MANY_REQUESTS)
+        res.headers["x-ratelimit-remaining"] = "0"
+        return res
+    mock_fastapi_limiter_cls._rate_limit_exceeded_handler = mock_exceeded_handler
 
-    mock_limiter = MockRateLimiter(limit=settings.rate_limit_per_minute)
-    with patch("fastapi_limiter.FastAPILimiter.has_been_limited", new=mock_limiter.has_been_limited):
+    # Use our mock for Redis's evalsha to simulate rate limiting
+    # The Lua script typically returns [remaining_requests, total_requests, ttl]
+    # We want to simulate successful requests until the limit is reached, then 429.
+    mock_redis_connection.evalsha.side_effect = [
+        [0, settings.rate_limit_per_minute, 60], # Not limited, 0 requests remaining
+        [0, settings.rate_limit_per_minute, 60], # Limited, 0 requests remaining
+    ]
         with TestClient(app) as client:
             mock_fastapi_limiter_cls.init.assert_called_once_with(mock_redis_connection)
 

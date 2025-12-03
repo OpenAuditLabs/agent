@@ -33,8 +33,8 @@ async def lifespan(app: FastAPI):
     try:
         await queue_service.start()
         if settings.rate_limit_enabled:
-            redis_connection = redis.from_url(settings.queue_url, encoding="utf8", decode_responses=True)
-            await FastAPILimiter.init(redis_connection)
+            app.state.redis_connection = redis.from_url(settings.queue_url, encoding="utf8", decode_responses=True)
+            await FastAPILimiter.init(app.state.redis_connection)
             logger.info("Rate limiting enabled.")
     except Exception as e:
         logger.exception("Failed to start services during startup: %s", e)
@@ -47,6 +47,12 @@ async def lifespan(app: FastAPI):
         await queue_service.stop()
         if settings.rate_limit_enabled:
             await FastAPILimiter.shutdown()
+            if hasattr(app.state, "redis_connection") and app.state.redis_connection:
+                try:
+                    await app.state.redis_connection.close()
+                    logger.info("Redis connection closed.")
+                except Exception as close_e:
+                    logger.exception("Failed to close Redis connection: %s", close_e)
     except Exception as e:
         logger.exception("Failed to stop services during shutdown: %s", e)
         # Do not re-raise to allow remaining shutdown tasks to run
