@@ -29,6 +29,12 @@ def test_metrics_endpoint():
     assert response.json() == {"metrics": "Not implemented yet"}
 
 
+def test_livez_endpoint():
+    response = client.get("/livez")
+    assert response.status_code == 200
+    assert response.json() == {"status": "alive"}
+
+
 def test_build_info_endpoint():
     response = client.get("/build-info")
     assert response.status_code == 200

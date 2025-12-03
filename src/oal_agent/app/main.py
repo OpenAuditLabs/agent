@@ -94,6 +94,12 @@ async def health():
     return {"message": "OK"}
 
 
+@app.get("/livez")
+async def livez():
+    """Liveness check endpoint."""
+    return {"status": "alive"}
+
+
 @app.get("/ready")
 async def ready():
     """Readiness check endpoint."""
