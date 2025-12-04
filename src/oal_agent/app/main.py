@@ -3,15 +3,13 @@
 
 """Main FastAPI application."""
 
-from contextlib import asynccontextmanager
-
 import os
 import sys
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
-
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from oal_agent import __version__
 from oal_agent.core.config import settings
@@ -28,7 +26,11 @@ logger = get_logger(__name__)
 queue_service = QueueService(queue_url=settings.queue_url)
 storage_service = StorageService(
     storage_path=settings.storage_path,
-    encryption_key=settings.storage_encryption_key.encode("utf-8") if settings.storage_encryption_key else None,
+    encryption_key=(
+        settings.storage_encryption_key.encode("utf-8")
+        if settings.storage_encryption_key
+        else None
+    ),
 )
 
 
@@ -51,7 +53,6 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.exception("Failed to stop services during shutdown: %s", e)
         # Do not re-raise to allow remaining shutdown tasks to run
-
 
 
 app = FastAPI(

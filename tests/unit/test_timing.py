@@ -1,8 +1,6 @@
 import logging
 from unittest.mock import patch
 
-import pytest
-
 from src.oal_agent.utils.timing import timer
 
 

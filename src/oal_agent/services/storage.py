@@ -1,4 +1,5 @@
 import asyncio
+import os
 import secrets
 from pathlib import Path
 from typing import Optional
@@ -114,7 +115,10 @@ class StorageService:
         logger.debug("Checking storage service health...")
         # Check if the storage path exists and is writable
         if not await asyncio.to_thread(self.storage_path.is_dir):
-            logger.error("Storage path does not exist or is not a directory: %s", self.storage_path)
+            logger.error(
+                "Storage path does not exist or is not a directory: %s",
+                self.storage_path,
+            )
             return False
         if not await asyncio.to_thread(os.access, self.storage_path, os.W_OK):
             logger.error("Storage path is not writable: %s", self.storage_path)

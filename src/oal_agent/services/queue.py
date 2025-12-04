@@ -97,4 +97,3 @@ class QueueService:
         # In a real-world scenario with an external queue (e.g., Redis), you'd ping it here.
         # For an in-memory asyncio.Queue, we assume it's healthy if the app is running.
         return True
-

@@ -5,7 +5,6 @@
 
 from typing import Optional
 
-import pytest
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.testclient import TestClient

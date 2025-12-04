@@ -17,7 +17,6 @@ def test_root_endpoint():
     assert response.json() == {"message": "OAL Agent API"}
 
 
-
 def test_metrics_endpoint():
     response = client.get("/metrics")
     assert response.status_code == 200

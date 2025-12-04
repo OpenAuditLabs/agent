@@ -138,9 +138,9 @@ async def test_save_rejects_invalid_key_dotdot(storage_service):
 
 @pytest.mark.asyncio
 async def test_save_invalid_key_absolute_path(storage_service):
-        key = "/absolute/path"
-        data = b"sample data"
-        with pytest.raises(InvalidKey, match=r"Key cannot contain '..' or start '/' "):
+    key = "/absolute/path"
+    data = b"sample data"
+    with pytest.raises(InvalidKey, match=r"Key cannot contain '..' or start '/'"):
         await storage_service.save(key, data)
 
 
@@ -162,7 +162,8 @@ async def test_load_invalid_key_dot_dot(storage_service):
 @pytest.mark.asyncio
 async def test_load_invalid_key_absolute_path(storage_service):
     key = "/invalid/path"
-    with pytest.raises(InvalidKey, match=r"Key cannot contain '\.\.' or start '/'"):        await storage_service.load(key)
+    with pytest.raises(InvalidKey, match=r"Key cannot contain '..' or start '/' "):
+        await storage_service.load(key)
 
 
 @pytest.mark.asyncio
