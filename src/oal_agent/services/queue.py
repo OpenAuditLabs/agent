@@ -86,3 +86,16 @@ class QueueService:
             except asyncio.QueueEmpty:
                 break
         await self.queue.join()  # Wait until all jobs are processed
+
+    def check_health(self) -> bool:
+        """Checks the health of the queue service.
+
+        This method should never raise an exception. Instead, it should return `False`
+        if the queue service is unhealthy, and `True` otherwise.
+        For an in-memory queue, this simply returns True if the queue is initialized.
+        For an external queue (e.g., Redis), this would involve pinging the external service.
+        """
+        logger.debug("Checking queue service health...")
+        # In a real-world scenario with an external queue (e.g., Redis), you'd ping it here.
+        # For an in-memory asyncio.Queue, we assume it's healthy if the app is running.
+        return True
