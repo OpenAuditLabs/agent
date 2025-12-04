@@ -90,6 +90,8 @@ class QueueService:
     def check_health(self) -> bool:
         """Checks the health of the queue service.
 
+        This method should never raise an exception. Instead, it should return `False`
+        if the queue service is unhealthy, and `True` otherwise.
         For an in-memory queue, this simply returns True if the queue is initialized.
         For an external queue (e.g., Redis), this would involve pinging the external service.
         """

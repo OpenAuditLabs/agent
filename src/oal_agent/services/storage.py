@@ -111,7 +111,11 @@ class StorageService:
         return data
 
     def check_health(self) -> bool:
-        """Checks the health of the storage service."""
+        """Checks the health of the storage service.
+
+        This method should never raise an exception. Instead, it should return `False`
+        if the storage service is unhealthy, and `True` otherwise.
+        """
         logger.debug("Checking storage service health...")
         # Check if the storage path exists and is writable
         if not self.storage_path.is_dir():

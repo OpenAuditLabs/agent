@@ -35,7 +35,7 @@ storage_service = StorageService(
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan():
     logger.info("Starting up...")
     try:
         # Ensure storage directory exists
@@ -112,8 +112,15 @@ async def livez():
 @app.get("/readyz")
 def readyz():
     """Readiness check endpoint that verifies downstream dependencies."""
-    queue_healthy = queue_service.check_health()
-    storage_healthy = storage_service.check_health()
+    try:
+        queue_healthy = queue_service.check_health()
+    except Exception:
+        queue_healthy = False
+
+    try:
+        storage_healthy = storage_service.check_health()
+    except Exception:
+        storage_healthy = False
 
     if queue_healthy and storage_healthy:
         return {"status": "ready"}
