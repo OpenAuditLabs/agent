@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -9,17 +9,16 @@ from src.oal_agent.app.main import app, queue_service, storage_service
 client = TestClient(app)
 
 
-@pytest.mark.asyncio
-async def test_readyz_healthy():
+def test_readyz_healthy():
     """
     Test the /readyz endpoint when both queue and storage services are healthy.
     """
     with (
         patch.object(
-            queue_service, "check_health", new_callable=AsyncMock
+            queue_service, "check_health", new_callable=MagicMock
         ) as mock_queue_health,
         patch.object(
-            storage_service, "check_health", new_callable=AsyncMock
+            storage_service, "check_health", new_callable=MagicMock
         ) as mock_storage_health,
     ):
         mock_queue_health.return_value = True
@@ -33,17 +32,16 @@ async def test_readyz_healthy():
         mock_storage_health.assert_called_once()
 
 
-@pytest.mark.asyncio
-async def test_readyz_queue_unhealthy():
+def test_readyz_queue_unhealthy():
     """
     Test the /readyz endpoint when the queue service is unhealthy.
     """
     with (
         patch.object(
-            queue_service, "check_health", new_callable=AsyncMock
+            queue_service, "check_health", new_callable=MagicMock
         ) as mock_queue_health,
         patch.object(
-            storage_service, "check_health", new_callable=AsyncMock
+            storage_service, "check_health", new_callable=MagicMock
         ) as mock_storage_health,
     ):
         mock_queue_health.return_value = False
@@ -60,17 +58,16 @@ async def test_readyz_queue_unhealthy():
         mock_storage_health.assert_called_once()
 
 
-@pytest.mark.asyncio
-async def test_readyz_storage_unhealthy():
+def test_readyz_storage_unhealthy():
     """
     Test the /readyz endpoint when the storage service is unhealthy.
     """
     with (
         patch.object(
-            queue_service, "check_health", new_callable=AsyncMock
+            queue_service, "check_health", new_callable=MagicMock
         ) as mock_queue_health,
         patch.object(
-            storage_service, "check_health", new_callable=AsyncMock
+            storage_service, "check_health", new_callable=MagicMock
         ) as mock_storage_health,
     ):
         mock_queue_health.return_value = True
@@ -87,17 +84,16 @@ async def test_readyz_storage_unhealthy():
         mock_storage_health.assert_called_once()
 
 
-@pytest.mark.asyncio
-async def test_readyz_all_unhealthy():
+def test_readyz_all_unhealthy():
     """
     Test the /readyz endpoint when both queue and storage services are unhealthy.
     """
     with (
         patch.object(
-            queue_service, "check_health", new_callable=AsyncMock
+            queue_service, "check_health", new_callable=MagicMock
         ) as mock_queue_health,
         patch.object(
-            storage_service, "check_health", new_callable=AsyncMock
+            storage_service, "check_health", new_callable=MagicMock
         ) as mock_storage_health,
     ):
         mock_queue_health.return_value = False

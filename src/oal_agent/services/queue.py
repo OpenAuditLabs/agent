@@ -87,7 +87,7 @@ class QueueService:
                 break
         await self.queue.join()  # Wait until all jobs are processed
 
-    async def check_health(self) -> bool:
+    def check_health(self) -> bool:
         """Checks the health of the queue service.
 
         For an in-memory queue, this simply returns True if the queue is initialized.

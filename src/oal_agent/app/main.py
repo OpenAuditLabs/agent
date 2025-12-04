@@ -110,10 +110,10 @@ async def livez():
 
 
 @app.get("/readyz")
-async def readyz():
+def readyz():
     """Readiness check endpoint that verifies downstream dependencies."""
-    queue_healthy = await queue_service.check_health()
-    storage_healthy = await storage_service.check_health()
+    queue_healthy = queue_service.check_health()
+    storage_healthy = storage_service.check_health()
 
     if queue_healthy and storage_healthy:
         return {"status": "ready"}
