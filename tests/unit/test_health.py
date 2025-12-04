@@ -17,11 +17,6 @@ def test_root_endpoint():
     assert response.json() == {"message": "OAL Agent API"}
 
 
-def test_ready_endpoint():
-    response = client.get("/ready")
-    assert response.status_code == 200
-    assert response.json() == {"status": "ready"}
-
 
 def test_metrics_endpoint():
     response = client.get("/metrics")

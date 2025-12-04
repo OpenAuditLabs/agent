@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     evaluation_mode: bool = False
     max_concurrent_pipelines: int = Field(10, gt=0)
     additional_policies_path: str | None = None
+    storage_path: str = "data/storage"
+    storage_encryption_key: str | None = None
     rate_limit_enabled: bool = False
     rate_limit_per_minute: int = 60
     rate_limit_redis_url: str = "redis://localhost:6379"

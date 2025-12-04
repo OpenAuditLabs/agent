@@ -11,6 +11,9 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 from oal_agent.core.config import settings
 from oal_agent.core.errors import DecryptionError, InvalidKey
+from oal_agent.telemetry.logging import get_logger
+
+logger = get_logger(__name__)
 
 """Storage service."""
 
@@ -105,3 +108,15 @@ class StorageService:
             data = self._decrypt(data)
 
         return data
+
+    async def check_health(self) -> bool:
+        """Checks the health of the storage service."""
+        logger.debug("Checking storage service health...")
+        # Check if the storage path exists and is writable
+        if not await asyncio.to_thread(self.storage_path.is_dir):
+            logger.error("Storage path does not exist or is not a directory: %s", self.storage_path)
+            return False
+        if not await asyncio.to_thread(os.access, self.storage_path, os.W_OK):
+            logger.error("Storage path is not writable: %s", self.storage_path)
+            return False
+        return True

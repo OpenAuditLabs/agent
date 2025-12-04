@@ -16,6 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from oal_agent import __version__
 from oal_agent.core.config import settings
 from oal_agent.services.queue import QueueService
+from oal_agent.services.storage import StorageService
 from oal_agent.telemetry.logging import get_logger, setup_logging
 
 from .routers import analysis, items, users
@@ -25,12 +26,18 @@ setup_logging()
 logger = get_logger(__name__)
 
 queue_service = QueueService(queue_url=settings.queue_url)
+storage_service = StorageService(
+    storage_path=settings.storage_path,
+    encryption_key=settings.storage_encryption_key.encode("utf-8") if settings.storage_encryption_key else None,
+)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up...")
     try:
+        # Ensure storage directory exists
+        os.makedirs(settings.storage_path, exist_ok=True)
         await queue_service.start()
     except Exception as e:
         logger.exception("Failed to start services during startup: %s", e)
@@ -44,6 +51,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.exception("Failed to stop services during shutdown: %s", e)
         # Do not re-raise to allow remaining shutdown tasks to run
+
 
 
 app = FastAPI(
@@ -100,10 +108,27 @@ async def livez():
     return {"status": "alive"}
 
 
-@app.get("/ready")
-async def ready():
-    """Readiness check endpoint."""
-    return {"status": "ready"}
+@app.get("/readyz")
+async def readyz():
+    """Readiness check endpoint that verifies downstream dependencies."""
+    queue_healthy = await queue_service.check_health()
+    storage_healthy = await storage_service.check_health()
+
+    if queue_healthy and storage_healthy:
+        return {"status": "ready"}
+    else:
+        content = {}
+        if not queue_healthy:
+            content["queue"] = "unhealthy"
+        if not storage_healthy:
+            content["storage"] = "unhealthy"
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "status": "not ready",
+                "dependencies": content,
+            },
+        )
 
 
 @app.get("/metrics")
