@@ -59,6 +59,7 @@ app = FastAPI(
     title="OAL Agent API",
     description="Smart Contract Security Analysis System",
     version=__version__,
+    lifespan=lifespan,
 )
 
 
@@ -114,12 +115,14 @@ def readyz():
     """Readiness check endpoint that verifies downstream dependencies."""
     try:
         queue_healthy = queue_service.check_health()
-    except Exception:
+    except Exception as exc:
+        logger.exception('Queue health check failed unexpectedly: %s', exc)
         queue_healthy = False
 
     try:
         storage_healthy = storage_service.check_health()
-    except Exception:
+    except Exception as exc:
+        logger.exception('Storage health check failed unexpectedly: %s', exc)
         storage_healthy = False
 
     if queue_healthy and storage_healthy:
