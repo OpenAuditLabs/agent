@@ -39,16 +39,10 @@ storage_service = StorageService(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up...")
-    shutdown_event = asyncio.Event()
-    shutdown_in_progress = {"value": False}
 
-    def _handle_sigterm():
-        logger.info("SIGTERM received. Initiating graceful shutdown.")
-        shutdown_in_progress["value"] = True
-        shutdown_event.set()
 
-    loop = asyncio.get_running_loop()
-    loop.add_signal_handler(signal.SIGTERM, _handle_sigterm)
+
+
 
     try:
         # Ensure storage directory exists
