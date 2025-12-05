@@ -12,6 +12,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from starlette.types import ASGIApp, Receive, Scope, Send, Message
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import PlainTextResponse
+
+
 
 from oal_agent import __version__
 from oal_agent.core.config import settings
@@ -24,6 +29,25 @@ from .routers import analysis, items, users
 setup_logging()
 
 logger = get_logger(__name__)
+
+
+class ContentTypeMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint):
+        if request.method in ["POST", "PUT", "PATCH"]:
+            content_type = request.headers.get("Content-Type")
+            if not content_type or not content_type.startswith("application/json"):
+                logger.warning(
+                    "Rejected request with invalid Content-Type: %s from %s",
+                    content_type,
+                    request.client.host if request.client else "unknown",
+                )
+                return JSONResponse(
+                    status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                    content={"detail": "Unsupported Media Type. Only application/json is supported."},
+                )
+        response = await call_next(request)
+        return response
+
 
 queue_service = QueueService(queue_url=settings.queue_url)
 storage_service = StorageService(
@@ -79,6 +103,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(ContentTypeMiddleware)
 
 
 @app.exception_handler(Exception)
