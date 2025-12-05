@@ -17,7 +17,7 @@ def test_update_item_no_fields_provided(client):
     Should result in a 422 Unprocessable Entity error due to the ItemUpdate validator.
     """
     item_id = 1
-    response = client.patch(f"/api/v1/items/{item_id}", json={})
+    response = client.patch(f"/v1/items/{item_id}", json={})
 
     assert response.status_code == 422
     assert (
@@ -32,7 +32,7 @@ def test_update_item_with_name(client):
     """
     item_id = 1
     update_payload = {"name": "Updated Item Name"}
-    response = client.patch(f"/api/v1/items/{item_id}", json=update_payload)
+    response = client.patch(f"/v1/items/{item_id}", json=update_payload)
 
     assert response.status_code == 200
     assert response.json() == {"id": item_id, "name": "Updated Item Name"}
@@ -44,7 +44,7 @@ def test_update_item_with_description(client):
     """
     item_id = 1
     update_payload = {"description": "Updated Item Description"}
-    response = client.patch(f"/api/v1/items/{item_id}", json=update_payload)
+    response = client.patch(f"/v1/items/{item_id}", json=update_payload)
 
     assert response.status_code == 200
     assert response.json() == {"id": item_id, "description": "Updated Item Description"}
@@ -56,7 +56,7 @@ def test_update_item_with_both_fields(client):
     """
     item_id = 1
     update_payload = {"name": "New Name", "description": "New Description"}
-    response = client.patch(f"/api/v1/items/{item_id}", json=update_payload)
+    response = client.patch(f"/v1/items/{item_id}", json=update_payload)
 
     assert response.status_code == 200
     assert response.json() == {

@@ -21,7 +21,7 @@ def test_submit_analysis_success(client):
         "chain_id": 1,
         "pipeline": "static",
     }
-    response = client.post("/api/v1/analysis/", json=job_request_payload)
+    response = client.post("/v1/analysis/", json=job_request_payload)
 
     assert response.status_code == 200
     response_data = response.json()
@@ -36,7 +36,7 @@ def test_get_job_status_not_found(client):
     Test retrieving the status of a non-existent analysis job.
     """
     job_id = "non_existent_job_id"
-    response = client.get(f"/api/v1/analysis/{job_id}")
+    response = client.get(f"/v1/analysis/{job_id}")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Job not found"}
@@ -47,7 +47,7 @@ def test_get_job_results_not_found(client):
     Test retrieving the results of a non-existent analysis job.
     """
     job_id = "non_existent_job_id"
-    response = client.get(f"/api/v1/analysis/{job_id}/results")
+    response = client.get(f"/v1/analysis/{job_id}/results")
 
     assert response.status_code == 404
     assert response.json() == {"detail": "Results not found"}
@@ -110,7 +110,7 @@ def test_submit_analysis_malformed_payload(
     """
     Test submitting a smart contract for analysis with malformed payloads.
     """
-    response = client.post("/api/v1/analysis/", json=payload)
+    response = client.post("/v1/analysis/", json=payload)
 
     assert response.status_code == expected_status_code
     response_data = response.json()
