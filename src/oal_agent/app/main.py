@@ -3,7 +3,9 @@
 
 """Main FastAPI application."""
 
+import asyncio
 import os
+import signal
 import sys
 from contextlib import asynccontextmanager
 
@@ -35,8 +37,13 @@ storage_service = StorageService(
 
 
 @asynccontextmanager
-async def lifespan():
+async def lifespan(app: FastAPI):
     logger.info("Starting up...")
+
+
+
+
+
     try:
         # Ensure storage directory exists
         os.makedirs(settings.storage_path, exist_ok=True)
@@ -46,6 +53,8 @@ async def lifespan():
         sys.exit(1)  # Exit to prevent running with a partially-initialized app
 
     yield
+
+
 
     logger.info("Shutting down...")
     try:
