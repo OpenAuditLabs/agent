@@ -3,7 +3,9 @@
 
 """Main FastAPI application."""
 
+import asyncio
 import os
+import signal
 import sys
 from contextlib import asynccontextmanager
 
@@ -37,6 +39,17 @@ storage_service = StorageService(
 @asynccontextmanager
 async def lifespan():
     logger.info("Starting up...")
+    shutdown_event = asyncio.Event()
+    shutdown_in_progress = False
+
+    async def _handle_sigterm():
+        nonlocal shutdown_in_progress
+        logger.info("SIGTERM received. Initiating graceful shutdown.")
+        shutdown_in_progress = True
+        shutdown_event.set()
+
+    signal.signal(signal.SIGTERM, lambda *args: asyncio.create_task(_handle_sigterm()))
+
     try:
         # Ensure storage directory exists
         os.makedirs(settings.storage_path, exist_ok=True)
@@ -46,6 +59,10 @@ async def lifespan():
         sys.exit(1)  # Exit to prevent running with a partially-initialized app
 
     yield
+
+    # Wait for SIGTERM if not already in shutdown, or proceed if it was received during startup
+    if not shutdown_in_progress:
+        await shutdown_event.wait()
 
     logger.info("Shutting down...")
     try:
