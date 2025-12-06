@@ -90,6 +90,11 @@ async def lifespan(app: FastAPI):
 
 
 
+external_docs = {
+    "description": "OpenAuditLabs Agent Documentation",
+    "url": "https://docs.openauditlabs.com/agent",
+}
+
 tags_metadata = [
     {
         "name": "analysis",
@@ -113,11 +118,6 @@ tags_metadata = [
         "description": "Internal endpoints for system information and debugging.",
     },
 ]
-
-external_docs = {
-    "description": "OpenAuditLabs Agent Documentation",
-    "url": "https://docs.openauditlabs.com/agent",
-}
 
 app = FastAPI(
     title="OAL Agent API",
