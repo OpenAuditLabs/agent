@@ -9,20 +9,21 @@ import signal
 import sys
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request, status
+from fastapi import FastAPI, Request, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send, Message
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import PlainTextResponse
 
-
+from prometheus_client import CONTENT_TYPE_LATEST
 
 from oal_agent import __version__
 from oal_agent.core.config import settings
 from oal_agent.services.queue import QueueService
 from oal_agent.services.storage import StorageService
 from oal_agent.telemetry.logging import get_logger, setup_logging
+from oal_agent.telemetry.metrics import metrics
 
 from .routers import analysis, items, users
 
@@ -178,9 +179,9 @@ def readyz():
 
 
 @app.get("/metrics")
-async def metrics():
-    """Metrics endpoint."""
-    return {"metrics": "Not implemented yet"}
+async def metrics_endpoint():
+    """Metrics endpoint serving Prometheus-format metrics."""
+    return Response(content=metrics.generate_prometheus_metrics(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/build-info")
