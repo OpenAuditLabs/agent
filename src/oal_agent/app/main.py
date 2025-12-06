@@ -106,6 +106,7 @@ tags_metadata = [
     {
         "name": "monitoring",
         "description": "Health checks, metrics, and application status.",
+        "externalDocs": external_docs,
     },
     {
         "name": "internal",
