@@ -122,9 +122,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
-app.include_router(analysis.router, prefix="/api/v1")
-app.include_router(items.router, prefix="/api/v1/items")
-app.include_router(users.router, prefix="/api/v1/users")
+app.include_router(analysis.router, prefix="/v1/analysis")
+app.include_router(items.router, prefix="/v1/items")
+app.include_router(users.router, prefix="/v1/users")
 
 
 @app.get("/")

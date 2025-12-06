@@ -15,7 +15,7 @@ def test_get_all_users_default_pagination(client):
     """
     Test retrieving all users with default pagination parameters.
     """
-    response = client.get("/api/v1/users/")
+    response = client.get("/v1/users/")
 
     assert response.status_code == 200
     response_data = response.json()
@@ -34,7 +34,7 @@ def test_get_all_users_custom_pagination(client):
     """
     limit = 50
     offset = 10
-    response = client.get(f"/api/v1/users/?limit={limit}&offset={offset}")
+    response = client.get(f"/v1/users/?limit={limit}&offset={offset}")
 
     assert response.status_code == 200
     response_data = response.json()
@@ -58,7 +58,7 @@ def test_get_all_users_pagination_limits(client, limit, expected_status_code):
     """
     Test retrieving all users with limit parameter at its boundaries and beyond.
     """
-    response = client.get(f"/api/v1/users/?limit={limit}")
+    response = client.get(f"/v1/users/?limit={limit}")
 
     assert response.status_code == expected_status_code
     if expected_status_code == 200:
@@ -79,7 +79,7 @@ def test_get_all_users_pagination_offset(client, offset, expected_status_code):
     """
     Test retrieving all users with offset parameter at its boundaries and beyond.
     """
-    response = client.get(f"/api/v1/users/?offset={offset}")
+    response = client.get(f"/v1/users/?offset={offset}")
 
     assert response.status_code == expected_status_code
     if expected_status_code == 200:
