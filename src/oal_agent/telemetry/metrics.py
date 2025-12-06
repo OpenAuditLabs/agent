@@ -7,7 +7,7 @@ from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExp
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from prometheus_client import CollectorRegistry, Gauge, push_to_gateway
+from prometheus_client import CollectorRegistry, Gauge, push_to_gateway, generate_latest
 
 from src.oal_agent.core.config import settings
 
@@ -107,6 +107,20 @@ class MetricsCollector:
             )
         except Exception:
             logger.exception("Failed to push metrics to Prometheus Pushgateway")
+
+    def generate_prometheus_metrics(self) -> bytes:
+        """Generates Prometheus-format metrics.
+
+        Returns:
+            bytes: The metrics in Prometheus text format.
+        """
+        registry = CollectorRegistry()
+        for metric_name, value in self.metrics.items():
+            g = Gauge(
+                metric_name, f"Application metric: {metric_name}", registry=registry
+            )
+            g.set(value)
+        return generate_latest(registry)
 
 
 metrics = MetricsCollector()
