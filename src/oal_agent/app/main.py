@@ -123,7 +123,9 @@ app = FastAPI(
     description="Smart Contract Security Analysis System",
     version=__version__,
     openapi_tags=tags_metadata,
-    external_docs=external_docs,
+    openapi_external_docs=external_docs,
+    docs_url="/documentation",
+    redoc_url=None,
     lifespan=lifespan,
 )
 
@@ -165,19 +167,19 @@ async def root():
     return {"message": "OAL Agent API"}
 
 
-@app.get("/health")
+@app.get("/health", tags=["monitoring"])
 async def health():
     """Health check endpoint."""
     return {"message": "OK"}
 
 
-@app.get("/livez")
+@app.get("/livez", tags=["monitoring"])
 async def livez():
     """Liveness check endpoint."""
     return {"status": "alive"}
 
 
-@app.get("/readyz")
+@app.get("/readyz", tags=["monitoring"])
 def readyz():
     """Readiness check endpoint that verifies downstream dependencies."""
     try:
@@ -209,13 +211,13 @@ def readyz():
         )
 
 
-@app.get("/metrics")
+@app.get("/metrics", tags=["monitoring"])
 async def metrics_endpoint():
     """Metrics endpoint serving Prometheus-format metrics."""
     return Response(content=metrics.generate_prometheus_metrics(), media_type=CONTENT_TYPE_LATEST)
 
 
-@app.get("/build-info")
+@app.get("/build-info", tags=["internal"])
 async def build_info():
     """Returns build information from environment variables."""
     return {
