@@ -89,10 +89,41 @@ async def lifespan(app: FastAPI):
         # Do not re-raise to allow remaining shutdown tasks to run
 
 
+
+tags_metadata = [
+    {
+        "name": "analysis",
+        "description": "Operations related to smart contract analysis.",
+    },
+    {
+        "name": "items",
+        "description": "Manage audit items and their lifecycle.",
+    },
+    {
+        "name": "users",
+        "description": "User management operations.",
+    },
+    {
+        "name": "monitoring",
+        "description": "Health checks, metrics, and application status.",
+    },
+    {
+        "name": "internal",
+        "description": "Internal endpoints for system information and debugging.",
+    },
+]
+
+external_docs = {
+    "description": "OpenAuditLabs Agent Documentation",
+    "url": "https://docs.openauditlabs.com/agent",
+}
+
 app = FastAPI(
     title="OAL Agent API",
     description="Smart Contract Security Analysis System",
     version=__version__,
+    openapi_tags=tags_metadata,
+    external_docs=external_docs,
     lifespan=lifespan,
 )
 
