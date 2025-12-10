@@ -61,6 +61,7 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 60
     rate_limit_redis_url: str = "redis://localhost:6379"
     cors_origins: list[str] = Field([], min_length=0)
+    compression_minimum_size: int = 1000
 
     @classmethod
     def from_dict(cls, env_vars: Dict[str, str]) -> "Settings":

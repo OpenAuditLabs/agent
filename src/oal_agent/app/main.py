@@ -16,6 +16,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send, Message
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import PlainTextResponse
 from starlette.middleware.gzip import GZipMiddleware
+from starlette.middleware.brotli import BrotliMiddleware
 
 from prometheus_client import CONTENT_TYPE_LATEST
 
@@ -140,7 +141,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(BrotliMiddleware, minimum_size=settings.compression_minimum_size)
+app.add_middleware(GZipMiddleware, minimum_size=settings.compression_minimum_size)
 
 app.add_middleware(ContentTypeMiddleware)
 
