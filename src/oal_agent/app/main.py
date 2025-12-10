@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send, Message
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import PlainTextResponse
+from starlette.middleware.gzip import GZipMiddleware
 
 from prometheus_client import CONTENT_TYPE_LATEST
 
@@ -138,6 +139,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(ContentTypeMiddleware)
 
