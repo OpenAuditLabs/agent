@@ -23,29 +23,31 @@ class QueueService:
     def __init__(self, queue_url: str, max_size: int = 0):
         """Initialize queue service."""
         self.queue_url = queue_url
-        self.queue: asyncio.Queue[Dict[str, Any]] = asyncio.Queue(maxsize=max_size)
+        self.queue: asyncio.PriorityQueue[tuple[int, Dict[str, Any]]] = asyncio.PriorityQueue(maxsize=max_size)
         self.worker_task = None
         self.orchestrator = Orchestrator()
 
-    async def enqueue(self, job_id: str, job_data: dict):
-        """Add a job to the queue."""
+    async def enqueue(self, job_id: str, job_data: dict, priority: int = 0):
+        """Add a job to the queue with a given priority. Lower numbers mean higher priority."""
         try:
-            self.queue.put_nowait({"job_id": job_id, "job_data": job_data})
+            self.queue.put_nowait((priority, {"job_id": job_id, "job_data": job_data}))
             metrics.gauge("queue_depth", self.queue.qsize())
         except asyncio.QueueFull:
             raise QueueFullError("Queue is full, cannot enqueue job.")
 
-    async def dequeue(self):
-        """Get next job from queue."""
-        return await self.queue.get()
+    async def dequeue(self) -> Dict[str, Any]:
+        """Get next job from queue, returning only the job data."""
+        priority, job = await self.queue.get()
+        return job
 
     async def _worker(self):
         """Background worker to process jobs."""
-        job: Optional[Dict[str, Any]] = None  # Initialize job to None
+        job_item: Optional[tuple[int, Dict[str, Any]]] = None  # Initialize job_item to None
         try:
             while True:
                 metrics.gauge("queue_depth", self.queue.qsize())
-                job = await self.queue.get()
+                job_item = await self.queue.get()
+                _priority, job = job_item  # Unpack priority and job dictionary
                 start_time = time.time()
                 try:
                     logger.debug("Processing job: %s", job["job_id"])
@@ -55,13 +57,13 @@ class QueueService:
                     logger.exception("Error processing job: %s", job["job_id"])
                 finally:
                     if (
-                        job
+                        job_item
                     ):  # Ensure task_done is only called if a job was actually obtained
                         self.queue.task_done()
                         metrics.gauge("queue_depth", self.queue.qsize())
                         processing_time = time.time() - start_time
                         metrics.gauge("queue_processing_time_seconds", processing_time)
-                job = None  # Reset job after task_done
+                job_item = None  # Reset job_item after task_done
         except asyncio.CancelledError:
             logger.info("Worker cancelled, exiting gracefully")
             raise
@@ -79,7 +81,7 @@ class QueueService:
         # Drain remaining items in the queue
         while not self.queue.empty():
             try:
-                job = self.queue.get_nowait()
+                _priority, job = self.queue.get_nowait()
                 logger.debug("Draining unacknowledged job: %s", job["job_id"])
                 self.queue.task_done()
                 metrics.gauge("queue_depth", self.queue.qsize())

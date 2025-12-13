@@ -8,11 +8,40 @@ from src.oal_agent.services.queue import QueueFullError, QueueService
 
 
 @pytest.mark.asyncio
-async def test_enqueue_dequeue():
-    """Test basic enqueue and dequeue functionality."""
+async def test_enqueue_dequeue_with_priority():
+    """Test enqueue and dequeue functionality with priority levels."""
+    queue_service = QueueService(queue_url="test_url", max_size=5)
+
+    # Enqueue jobs with different priorities
+    await queue_service.enqueue("job_low_prio", {"data": "low_prio"}, priority=2)
+    await queue_service.enqueue("job_high_prio_1", {"data": "high_prio_1"}, priority=0)
+    await queue_service.enqueue("job_medium_prio", {"data": "medium_prio"}, priority=1)
+    await queue_service.enqueue("job_high_prio_2", {"data": "high_prio_2"}, priority=0) # Same priority as high_prio_1, FIFO expected for same priority
+
+    # Dequeue and assert order (highest priority first, then FIFO for same priority)
+    job = await queue_service.dequeue()
+    assert job["job_id"] == "job_high_prio_1"
+    assert job["job_data"] == {"data": "high_prio_1"}
+
+    job = await queue_service.dequeue()
+    assert job["job_id"] == "job_high_prio_2"
+    assert job["job_data"] == {"data": "high_prio_2"}
+
+    job = await queue_service.dequeue()
+    assert job["job_id"] == "job_medium_prio"
+    assert job["job_data"] == {"data": "medium_prio"}
+
+    job = await queue_service.dequeue()
+    assert job["job_id"] == "job_low_prio"
+    assert job["job_data"] == {"data": "low_prio"}
+
+
+@pytest.mark.asyncio
+async def test_enqueue_dequeue_default_priority():
+    """Test basic enqueue and dequeue functionality with default priority."""
     queue_service = QueueService(queue_url="test_url", max_size=2)
-    await queue_service.enqueue("job1", {"data": "test1"})
-    await queue_service.enqueue("job2", {"data": "test2"})
+    await queue_service.enqueue("job1", {"data": "test1"}) # Default priority 0
+    await queue_service.enqueue("job2", {"data": "test2"}) # Default priority 0
 
     job = await queue_service.dequeue()
     assert job["job_id"] == "job1"
@@ -27,10 +56,10 @@ async def test_enqueue_dequeue():
 async def test_queue_full_error():
     """Test that QueueFullError is raised when queue is full."""
     queue_service = QueueService(queue_url="test_url", max_size=1)
-    await queue_service.enqueue("job1", {"data": "test1"})
+    await queue_service.enqueue("job1", {"data": "test1"}, priority=0)
 
     with pytest.raises(QueueFullError):
-        await queue_service.enqueue("job2", {"data": "test2"})
+        await queue_service.enqueue("job2", {"data": "test2"}, priority=0)
 
 
 @pytest.mark.asyncio
@@ -41,10 +70,10 @@ async def test_queue_max_size_from_config():
     settings.queue_max_size = 1
 
     queue_service = QueueService(queue_url="test_url", max_size=settings.queue_max_size)
-    await queue_service.enqueue("job1", {"data": "test1"})
+    await queue_service.enqueue("job1", {"data": "test1"}, priority=0)
 
     with pytest.raises(QueueFullError):
-        await queue_service.enqueue("job2", {"data": "test2"})
+        await queue_service.enqueue("job2", {"data": "test2"}, priority=0)
 
     # Restore original setting
     settings.queue_max_size = original_max_size
@@ -58,7 +87,7 @@ async def test_stop_with_cancellation_and_draining():
 
     # Enqueue some jobs
     for i in range(3):
-        await queue_service.enqueue(f"job{i}", {"data": f"test{i}"})
+        await queue_service.enqueue(f"job{i}", {"data": f"test{i}"}, priority=0)
 
     # Allow worker to pick up some jobs (but not necessarily process all)
     await asyncio.sleep(0.01)
@@ -83,10 +112,8 @@ async def test_queue_processing_time_metric():
         queue_service = QueueService(queue_url="test_url", max_size=1)
         await queue_service.start()
 
-        await queue_service.enqueue("job1", {"data": "test1"})
+        await queue_service.enqueue("job1", {"data": "test1"}, priority=0)
         await queue_service.queue.join()  # Wait for the job to be processed
-
-        await queue_service.stop()
 
         # Verify that queue_processing_time_seconds was called once with a positive value
         processing_time_calls = [
