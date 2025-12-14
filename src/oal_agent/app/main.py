@@ -28,6 +28,7 @@ from oal_agent.telemetry.logging import get_logger, setup_logging
 from oal_agent.telemetry.metrics import metrics
 
 from .routers import analysis, items, users, jobs
+from . import dependencies
 
 setup_logging()
 
@@ -71,24 +72,20 @@ async def lifespan(app: FastAPI):
 
 
 
-    global queue_service
     dependencies._queue_service = queue_service
 
     try:
         # Ensure storage directory exists
         os.makedirs(settings.storage_path, exist_ok=True)
         await queue_service.start()
-
-    yield
-
-
-
-    logger.info("Shutting down...")
-    try:
-        await queue_service.stop()
-    except Exception as e:
-        logger.exception("Failed to stop services during shutdown: %s", e)
-        # Do not re-raise to allow remaining shutdown tasks to run
+        yield
+    finally:
+        logger.info("Shutting down...")
+        try:
+            await queue_service.stop()
+        except Exception as e:
+            logger.exception("Failed to stop services during shutdown: %s", e)
+            # Do not re-raise to allow remaining shutdown tasks to run
 
 
 

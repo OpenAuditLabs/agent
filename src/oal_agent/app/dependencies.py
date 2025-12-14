@@ -7,6 +7,7 @@ from fastapi import Header
 from pydantic import BaseModel
 
 from oal_agent.telemetry.logging import logger
+from oal_agent.services.queue import QueueService
 
 
 def get_db() -> Generator:
