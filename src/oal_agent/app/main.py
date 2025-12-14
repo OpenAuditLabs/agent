@@ -71,13 +71,13 @@ async def lifespan(app: FastAPI):
 
 
 
+    global queue_service
+    dependencies._queue_service = queue_service
+
     try:
         # Ensure storage directory exists
         os.makedirs(settings.storage_path, exist_ok=True)
         await queue_service.start()
-    except Exception as e:
-        logger.exception("Failed to start services during startup: %s", e)
-        sys.exit(1)  # Exit to prevent running with a partially-initialized app
 
     yield
 

@@ -15,10 +15,15 @@ def get_db() -> Generator:
     yield None
 
 
-def get_queue() -> Generator:
-    """Queue dependency."""
-    # TODO: Implement queue connection
-    yield None
+
+_queue_service: Optional[QueueService] = None
+
+def get_queue_service() -> QueueService:
+    """Dependency that provides the QueueService instance."""
+    if _queue_service is None:
+        raise ValueError("QueueService has not been initialized.")
+    return _queue_service
+
 
 
 async def get_request_duration() -> AsyncGenerator[None, None]:
