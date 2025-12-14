@@ -14,3 +14,6 @@ opentelemetry-api==1.38.0
 opentelemetry-exporter-otlp==1.38.0
 jsonschema>=4.18.0,<5
 fastapi-limiter>=0.1.5
+starlette-brotli-middleware # Added missing dependency
+pydantic-settings # Added missing dependency
+aiofiles # Added missing dependency

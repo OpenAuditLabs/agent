@@ -84,7 +84,7 @@ async def lifespan(app: FastAPI):
         try:
             await queue_service.stop()
         except Exception as e:
-            logger.exception("Failed to stop services during shutdown: %s", e)
+            logger.exception("Failed to stop services during shutdown")
             # Do not re-raise to allow remaining shutdown tasks to run
 
 
