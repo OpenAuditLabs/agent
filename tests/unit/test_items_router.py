@@ -11,12 +11,9 @@ from src.oal_agent.app.routers.items import _next_id as router_next_id # Import 
 @pytest.fixture(scope="module", autouse=True)
 def reset_items_db():
     """Resets the in-memory database before each test module to ensure isolation."""
+    global router_next_id
     original_items = items_db.copy()
     original_next_id = router_next_id
-    yield
-    items_db.clear()
-    items_db.update(original_items)
-    global router_next_id
     router_next_id = original_next_id
 
 

@@ -55,10 +55,12 @@ class JobResponse(BaseModel):
             return self
 
         allowed_transitions = {
-            "PENDING": ["RUNNING"],
-            "RUNNING": ["COMPLETED", "FAILED"],
+            "QUEUED": ["PENDING", "CANCELLED"],
+            "PENDING": ["RUNNING", "CANCELLED"],
+            "RUNNING": ["COMPLETED", "FAILED", "CANCELLED"],
             "COMPLETED": [],
             "FAILED": [],
+            "CANCELLED": [],
         }
 
         if new_status not in allowed_transitions.get(previous_status, []):

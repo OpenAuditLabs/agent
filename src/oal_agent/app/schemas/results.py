@@ -14,6 +14,7 @@ class AnalysisStatus(str, Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    CANCELLED = "cancelled"
     UNKNOWN = "unknown"
 
 

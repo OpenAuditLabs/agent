@@ -27,7 +27,7 @@ from oal_agent.services.storage import StorageService
 from oal_agent.telemetry.logging import get_logger, setup_logging
 from oal_agent.telemetry.metrics import metrics
 
-from .routers import analysis, items, users
+from .routers import analysis, items, users, jobs
 
 setup_logging()
 
@@ -107,6 +107,10 @@ tags_metadata = [
         "description": "Manage audit items and their lifecycle.",
     },
     {
+        "name": "jobs",
+        "description": "Manage analysis jobs and their status.",
+    },
+    {
         "name": "users",
         "description": "User management operations.",
     },
@@ -165,6 +169,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 app.include_router(analysis.router, prefix="/v1/analysis")
 app.include_router(items.router, prefix="/v1/items")
 app.include_router(users.router, prefix="/v1/users")
+app.include_router(jobs.router, prefix="/v1/jobs")
 
 
 @app.get("/")
