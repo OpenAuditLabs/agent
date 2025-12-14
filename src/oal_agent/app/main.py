@@ -27,7 +27,8 @@ from oal_agent.services.storage import StorageService
 from oal_agent.telemetry.logging import get_logger, setup_logging
 from oal_agent.telemetry.metrics import metrics
 
-from .routers import analysis, items, users
+from .routers import analysis, items, users, jobs
+from . import dependencies
 
 setup_logging()
 
@@ -71,24 +72,20 @@ async def lifespan(app: FastAPI):
 
 
 
+    dependencies._queue_service = queue_service
+
     try:
         # Ensure storage directory exists
         os.makedirs(settings.storage_path, exist_ok=True)
         await queue_service.start()
-    except Exception as e:
-        logger.exception("Failed to start services during startup: %s", e)
-        sys.exit(1)  # Exit to prevent running with a partially-initialized app
-
-    yield
-
-
-
-    logger.info("Shutting down...")
-    try:
-        await queue_service.stop()
-    except Exception as e:
-        logger.exception("Failed to stop services during shutdown: %s", e)
-        # Do not re-raise to allow remaining shutdown tasks to run
+        yield
+    finally:
+        logger.info("Shutting down...")
+        try:
+            await queue_service.stop()
+        except Exception as e:
+            logger.exception("Failed to stop services during shutdown")
+            # Do not re-raise to allow remaining shutdown tasks to run
 
 
 
@@ -105,6 +102,10 @@ tags_metadata = [
     {
         "name": "items",
         "description": "Manage audit items and their lifecycle.",
+    },
+    {
+        "name": "jobs",
+        "description": "Manage analysis jobs and their status.",
     },
     {
         "name": "users",
@@ -165,6 +166,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 app.include_router(analysis.router, prefix="/v1/analysis")
 app.include_router(items.router, prefix="/v1/items")
 app.include_router(users.router, prefix="/v1/users")
+app.include_router(jobs.router, prefix="/v1/jobs")
 
 
 @app.get("/")
