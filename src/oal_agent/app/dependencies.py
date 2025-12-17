@@ -1,6 +1,8 @@
 """FastAPI dependencies."""
 
+import contextvars
 import time
+import uuid
 from typing import AsyncGenerator, Generator, Optional
 
 from fastapi import Header
@@ -18,6 +20,10 @@ def get_db() -> Generator:
 
 
 _queue_service: Optional[QueueService] = None
+
+_request_id_ctx: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+    "request_id", default=None
+)
 
 def get_queue_service() -> QueueService:
     """Dependency that provides the QueueService instance."""
@@ -38,7 +44,8 @@ async def get_request_duration() -> AsyncGenerator[None, None]:
     finally:
         end_time = time.monotonic()
         duration = end_time - start_time
-        logger.info("Request duration: %.4f seconds", duration)
+        request_id = _request_id_ctx.get()
+        logger.info("Request ID: %s, duration: %.4f seconds", request_id, duration)
 
 
 class RequestMetadata(BaseModel):
@@ -67,9 +74,20 @@ def get_request_metadata(
 ) -> RequestMetadata:
     """
     Dependency that provides RequestMetadata to other dependencies and routers.
+    Extracts or generates a request ID and propagates it to all downstream calls and logs.
     """
-    return RequestMetadata(
+    if request_id is None:
+        request_id = str(uuid.uuid4())
+    _request_id_ctx.set(request_id)
+    metadata = RequestMetadata(
         request_id=request_id,
         user_agent=user_agent,
         x_forwarded_for=x_forwarded_for,
     )
+    logger.info(
+        "Request ID: %s, Client IP: %s, User-Agent: %s",
+        metadata.request_id,
+        metadata.client_ip,
+        metadata.user_agent,
+    )
+    return metadata
