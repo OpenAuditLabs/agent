@@ -2,10 +2,14 @@
 
 import asyncio
 import random
+import logging
 from abc import ABC, abstractmethod
 
-from oal_agent.core.errors import LLMTimeoutError
+from oal_agent.core.errors import LLMProviderError
 from oal_agent.llm.guards import LLMGuards
+
+
+logger = logging.getLogger(__name__)
 
 
 class LLMProvider(ABC):
@@ -76,7 +80,7 @@ class OpenAIProvider(LLMProvider):
             The generated text from the OpenAI model.
 
         Raises:
-            LLMTimeoutError: If the OpenAI API call times out after all retries.
+            LLMProviderError: If the OpenAI API call times out after all retries.
             ValueError: If input validation fails for retry_attempts or timeout.
         """
         if not self.guards.validate_retry_attempts(retry_attempts):
@@ -101,8 +105,8 @@ class OpenAIProvider(LLMProvider):
                     )
                     await asyncio.sleep(backoff_time)
                 else:
-                    raise LLMTimeoutError(
-                        message="OpenAI API call timed out after multiple retries."
+                    raise LLMProviderError(
+                        message="LLM call timed out after multiple retries."
                     ) from e
             except asyncio.CancelledError:
                 raise
@@ -115,3 +119,24 @@ class OpenAIProvider(LLMProvider):
                     await asyncio.sleep(backoff_time)
                 else:
                     raise
+
+
+class FallbackLLMProvider(LLMProvider):
+    """LLM provider that attempts to use multiple providers in a fallback sequence."""
+
+    def __init__(self, providers: list[LLMProvider]):
+        if not providers:
+            raise ValueError("At least one LLM provider must be provided for FallbackLLMProvider.")
+        self.providers = providers
+
+    async def generate(self, prompt: str, retry_attempts: int = 3, timeout: int = 60, **kwargs) -> str:
+        for i, provider in enumerate(self.providers):
+            try:
+                logger.info(f"Attempting to use LLM provider {i + 1}/{len(self.providers)}: {type(provider).__name__}")
+                return await provider.generate(prompt, retry_attempts, timeout, **kwargs)
+            except LLMProviderError as e:
+                logger.warning(f"Provider {type(provider).__name__} failed: {e}. Attempting next provider...")
+            except Exception as e:
+                logger.error(f"An unexpected error occurred with provider {type(provider).__name__}: {e}. Attempting next provider...")
+        
+        raise LLMProviderError("All LLM providers failed to generate a response.")
